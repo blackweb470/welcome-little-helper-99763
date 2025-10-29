@@ -71,6 +71,8 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     var iframe = document.createElement('iframe');
     iframe.src = '${appUrl}/widget/${id}';
     iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:100%;height:100%;border:none;z-index:999999;pointer-events:none;';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
+    iframe.setAttribute('allow', 'microphone');
     iframe.id = 'lyqn-chat-widget';
     
     // Allow interactions with the widget
