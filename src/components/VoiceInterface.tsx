@@ -11,9 +11,10 @@ interface VoiceInterfaceProps {
   businessId: string;
   onSpeakingChange?: (speaking: boolean) => void;
   onTranscript?: (text: string, role: 'user' | 'assistant') => void;
+  onConversationCreated?: (conversationId: string) => void;
 }
 
-const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript }: VoiceInterfaceProps) => {
+const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversationCreated }: VoiceInterfaceProps) => {
   const { toast } = useToast();
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -129,6 +130,7 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript }: VoiceInt
       if (convError) throw convError;
       
       setConversationId(convData.id);
+      onConversationCreated?.(convData.id);
       
       // Link conversation to visitor session
       if (trackerRef.current) {

@@ -12,6 +12,9 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { ProductCatalog } from "@/components/dashboard/ProductCatalog";
 import { BehavioralScoring } from "@/components/dashboard/BehavioralScoring";
 import { FeaturesDocumentation } from "@/components/dashboard/FeaturesDocumentation";
+import { TicketsList } from "@/components/dashboard/TicketsList";
+import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
+import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -61,7 +64,7 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="businesses" className="space-y-6">
-          <TabsList className="grid grid-cols-7">
+          <TabsList className="grid grid-cols-10 w-full">
             <TabsTrigger value="businesses">Businesses</TabsTrigger>
             <TabsTrigger value="features">Features</TabsTrigger>
             <TabsTrigger value="analytics" disabled={!selectedBusinessId}>
@@ -69,6 +72,15 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="conversations" disabled={!selectedBusinessId}>
               Conversations
+            </TabsTrigger>
+            <TabsTrigger value="tickets" disabled={!selectedBusinessId}>
+              Tickets
+            </TabsTrigger>
+            <TabsTrigger value="livechat" disabled={!selectedBusinessId}>
+              Live Chat
+            </TabsTrigger>
+            <TabsTrigger value="proactive" disabled={!selectedBusinessId}>
+              Proactive
             </TabsTrigger>
             <TabsTrigger value="products" disabled={!selectedBusinessId}>
               Products
@@ -102,6 +114,24 @@ const Dashboard = () => {
           <TabsContent value="conversations">
             {selectedBusinessId && (
               <ConversationsList businessId={selectedBusinessId} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="tickets">
+            {selectedBusinessId && (
+              <TicketsList businessId={selectedBusinessId} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="livechat">
+            {selectedBusinessId && (
+              <LiveChatQueue businessId={selectedBusinessId} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="proactive">
+            {selectedBusinessId && (
+              <ProactiveChatRules businessId={selectedBusinessId} />
             )}
           </TabsContent>
 

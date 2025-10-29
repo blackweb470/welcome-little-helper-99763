@@ -14,6 +14,9 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
+  const [proactiveShown, setProactiveShown] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [liveChatSession, setLiveChatSession] = useState<any>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -27,7 +30,78 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     };
 
     fetchSettings();
+    checkProactiveRules();
   }, [businessId]);
+
+  const checkProactiveRules = async () => {
+    if (proactiveShown) return;
+
+    try {
+      const { data: rules } = await supabase
+        .from('proactive_chat_rules')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('enabled', true)
+        .order('priority', { ascending: false });
+
+      if (!rules || rules.length === 0) return;
+
+      // Check time on page trigger
+      const timeRule = rules.find(r => r.trigger_type === 'time_on_page');
+      if (timeRule) {
+        const triggerValue = timeRule.trigger_value as { seconds?: number };
+        setTimeout(() => {
+          if (!isOpen && !proactiveShown) {
+            setIsOpen(true);
+            setProactiveShown(true);
+            handleTranscript(timeRule.message, 'assistant');
+          }
+        }, (triggerValue?.seconds || 30) * 1000);
+      }
+    } catch (error) {
+      console.error('Error checking proactive rules:', error);
+    }
+  };
+
+  const requestLiveAgent = async (reason: string) => {
+    try {
+      // Create conversation if not exists
+      let convId = conversationId;
+      if (!convId) {
+        const { data: conv } = await supabase
+          .from('conversations')
+          .insert({ business_id: businessId })
+          .select()
+          .single();
+        
+        if (conv) {
+          convId = conv.id;
+          setConversationId(convId);
+        }
+      }
+
+      if (!convId) return;
+
+      const { data: session, error } = await supabase
+        .from('live_chat_sessions')
+        .insert({
+          conversation_id: convId,
+          status: 'queued',
+          queued_at: new Date().toISOString(),
+          transfer_reason: reason
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setLiveChatSession(session);
+      handleTranscript('Your request has been sent to our team. An agent will join shortly.', 'assistant');
+    } catch (error) {
+      console.error('Error requesting live agent:', error);
+      handleTranscript('Sorry, unable to connect to a live agent right now. Please try again.', 'assistant');
+    }
+  };
 
   const handleTranscript = (text: string, role: "user" | "assistant") => {
     setTranscript(prev => [...prev, { text, role }]);
@@ -127,10 +201,31 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
               {/* Voice interface */}
               <div className="border-t p-4 bg-muted/30">
+                {liveChatSession?.status === 'queued' && (
+                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+                    <p className="font-medium text-yellow-800">Waiting for agent...</p>
+                  </div>
+                )}
+                {liveChatSession?.status === 'active' && (
+                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
+                    <p className="font-medium text-green-800">Connected to agent</p>
+                  </div>
+                )}
                 <VoiceInterface
                   businessId={businessId}
                   onTranscript={handleTranscript}
+                  onConversationCreated={setConversationId}
                 />
+                {!liveChatSession && (
+                  <Button
+                    onClick={() => requestLiveAgent('Customer requested live support')}
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                  >
+                    Talk to Live Agent
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

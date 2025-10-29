@@ -1,0 +1,263 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Zap, Plus, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface ProactiveRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  trigger_type: string;
+  trigger_value: any;
+  message: string;
+  priority: number;
+}
+
+interface ProactiveChatRulesProps {
+  businessId: string;
+}
+
+export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
+  const [rules, setRules] = useState<ProactiveRule[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    trigger_type: 'time_on_page',
+    trigger_value: { seconds: 30 },
+    message: 'Hi! I noticed you\'ve been browsing for a while. Can I help you find something?'
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchRules();
+  }, [businessId]);
+
+  const fetchRules = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('proactive_chat_rules')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('priority', { ascending: false });
+
+      if (error) throw error;
+      setRules(data || []);
+    } catch (error) {
+      console.error('Error fetching rules:', error);
+    }
+  };
+
+  const createRule = async () => {
+    try {
+      const { error } = await supabase
+        .from('proactive_chat_rules')
+        .insert({
+          business_id: businessId,
+          name: formData.name,
+          trigger_type: formData.trigger_type,
+          trigger_value: formData.trigger_value,
+          message: formData.message,
+          enabled: true
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Proactive chat rule created"
+      });
+
+      setShowForm(false);
+      setFormData({
+        name: '',
+        trigger_type: 'time_on_page',
+        trigger_value: { seconds: 30 },
+        message: 'Hi! I noticed you\'ve been browsing for a while. Can I help you find something?'
+      });
+      fetchRules();
+    } catch (error) {
+      console.error('Error creating rule:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create rule",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const toggleRule = async (ruleId: string, enabled: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('proactive_chat_rules')
+        .update({ enabled })
+        .eq('id', ruleId);
+
+      if (error) throw error;
+      fetchRules();
+    } catch (error) {
+      console.error('Error toggling rule:', error);
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('proactive_chat_rules')
+        .delete()
+        .eq('id', ruleId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Rule deleted"
+      });
+      fetchRules();
+    } catch (error) {
+      console.error('Error deleting rule:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete rule",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5" />
+            Proactive Chat Rules
+          </div>
+          <Button onClick={() => setShowForm(!showForm)} size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Rule
+          </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {showForm && (
+          <div className="border rounded-lg p-4 space-y-4">
+            <div>
+              <Label>Rule Name</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Welcome new visitors"
+              />
+            </div>
+
+            <div>
+              <Label>Trigger Type</Label>
+              <Select
+                value={formData.trigger_type}
+                onValueChange={(value) => {
+                  const defaultValues: any = {
+                    time_on_page: { seconds: 30 },
+                    exit_intent: {},
+                    high_engagement: { score: 70 },
+                    page_visit: { url: '/' },
+                    scroll_depth: { percentage: 50 }
+                  };
+                  setFormData({ 
+                    ...formData, 
+                    trigger_type: value,
+                    trigger_value: defaultValues[value]
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="time_on_page">Time on Page</SelectItem>
+                  <SelectItem value="exit_intent">Exit Intent</SelectItem>
+                  <SelectItem value="high_engagement">High Engagement</SelectItem>
+                  <SelectItem value="page_visit">Page Visit</SelectItem>
+                  <SelectItem value="scroll_depth">Scroll Depth</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.trigger_type === 'time_on_page' && (
+              <div>
+                <Label>Seconds on Page</Label>
+                <Input
+                  type="number"
+                  value={formData.trigger_value.seconds}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    trigger_value: { seconds: parseInt(e.target.value) }
+                  })}
+                />
+              </div>
+            )}
+
+            <div>
+              <Label>Message</Label>
+              <Textarea
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                placeholder="Enter the message to show to visitors"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={createRule} disabled={!formData.name || !formData.message}>
+                Create Rule
+              </Button>
+              <Button onClick={() => setShowForm(false)} variant="outline">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {rules.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No proactive chat rules yet. Create one to automatically engage visitors!
+            </p>
+          ) : (
+            rules.map((rule) => (
+              <div key={rule.id} className="border rounded-lg p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{rule.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Trigger: {rule.trigger_type.replace('_', ' ')}
+                    </p>
+                    <p className="text-sm mt-2">{rule.message}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={rule.enabled}
+                      onCheckedChange={(checked) => toggleRule(rule.id, checked)}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => deleteRule(rule.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
