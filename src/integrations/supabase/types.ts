@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_availability: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          current_chats: number | null
+          id: string
+          last_activity_at: string | null
+          max_concurrent_chats: number | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          current_chats?: number | null
+          id?: string
+          last_activity_at?: string | null
+          max_concurrent_chats?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          current_chats?: number | null
+          id?: string
+          last_activity_at?: string | null
+          max_concurrent_chats?: number | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_availability_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           auto_offline_minutes: number | null
@@ -132,6 +176,57 @@ export type Database = {
           },
         ]
       }
+      live_chat_sessions: {
+        Row: {
+          accepted_at: string | null
+          agent_id: string | null
+          conversation_id: string
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          queued_at: string | null
+          status: string
+          transfer_reason: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          agent_id?: string | null
+          conversation_id: string
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          queued_at?: string | null
+          status?: string
+          transfer_reason?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          agent_id?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          queued_at?: string | null
+          status?: string
+          transfer_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_sessions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "live_chat_sessions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           analyzed_at: string | null
@@ -182,6 +277,53 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proactive_chat_rules: {
+        Row: {
+          business_id: string
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          message: string
+          name: string
+          priority: number | null
+          trigger_type: string
+          trigger_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          message: string
+          name: string
+          priority?: number | null
+          trigger_type: string
+          trigger_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          message?: string
+          name?: string
+          priority?: number | null
+          trigger_type?: string
+          trigger_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proactive_chat_rules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -259,6 +401,79 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          business_id: string
+          conversation_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          priority: string
+          resolved_at: string | null
+          status: string
+          title: string
+          updated_at: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_id: string
+          conversation_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          business_id?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "tickets_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
