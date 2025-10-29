@@ -17,6 +17,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [proactiveShown, setProactiveShown] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [liveChatSession, setLiveChatSession] = useState<any>(null);
+  const [textInput, setTextInput] = useState("");
+  const [sendMessageFn, setSendMessageFn] = useState<((text: string) => Promise<void>) | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -105,6 +107,29 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
   const handleTranscript = (text: string, role: "user" | "assistant") => {
     setTranscript(prev => [...prev, { text, role }]);
+  };
+
+  const handleSendText = async () => {
+    if (!textInput.trim() || !sendMessageFn) return;
+
+    const message = textInput.trim();
+    setTextInput("");
+    
+    // Add to transcript immediately
+    handleTranscript(message, "user");
+    
+    try {
+      await sendMessageFn(message);
+    } catch (error) {
+      console.error('Error sending text message:', error);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendText();
+    }
   };
 
   const primaryColor = settings?.primary_color || "#000000";
@@ -199,32 +224,63 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                 ))}
               </div>
 
-              {/* Voice interface */}
-              <div className="border-t p-4 bg-muted/30">
+              {/* Voice and Text interface */}
+              <div className="border-t bg-muted/30">
                 {liveChatSession?.status === 'queued' && (
-                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+                  <div className="m-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
                     <p className="font-medium text-yellow-800">Waiting for agent...</p>
                   </div>
                 )}
                 {liveChatSession?.status === 'active' && (
-                  <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
+                  <div className="m-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
                     <p className="font-medium text-green-800">Connected to agent</p>
                   </div>
                 )}
-                <VoiceInterface
-                  businessId={businessId}
-                  onTranscript={handleTranscript}
-                  onConversationCreated={setConversationId}
-                />
+                
+                {/* Voice Interface */}
+                <div className="p-4">
+                  <VoiceInterface
+                    businessId={businessId}
+                    onTranscript={handleTranscript}
+                    onConversationCreated={setConversationId}
+                    onChatReady={setSendMessageFn}
+                  />
+                </div>
+
+                {/* Text Input */}
+                <div className="px-4 pb-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={textInput}
+                      onChange={(e) => setTextInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Type a message..."
+                      disabled={!sendMessageFn}
+                      className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <Button
+                      onClick={handleSendText}
+                      disabled={!textInput.trim() || !sendMessageFn}
+                      size="sm"
+                      style={{ backgroundColor: sendMessageFn ? primaryColor : undefined }}
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+
                 {!liveChatSession && (
-                  <Button
-                    onClick={() => requestLiveAgent('Customer requested live support')}
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                  >
-                    Talk to Live Agent
-                  </Button>
+                  <div className="px-4 pb-4">
+                    <Button
+                      onClick={() => requestLiveAgent('Customer requested live support')}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Talk to Live Agent
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

@@ -12,9 +12,10 @@ interface VoiceInterfaceProps {
   onSpeakingChange?: (speaking: boolean) => void;
   onTranscript?: (text: string, role: 'user' | 'assistant') => void;
   onConversationCreated?: (conversationId: string) => void;
+  onChatReady?: (sendMessage: (text: string) => Promise<void>) => void;
 }
 
-const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversationCreated }: VoiceInterfaceProps) => {
+const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversationCreated, onChatReady }: VoiceInterfaceProps) => {
   const { toast } = useToast();
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -142,6 +143,11 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
       const visitorId = trackerRef.current?.['visitorId'] || null;
       chatRef.current = new RealtimeChat(businessId, handleMessage, handleStatusChange, visitorId);
       await chatRef.current.init();
+      
+      // Provide sendMessage function to parent
+      if (onChatReady && chatRef.current) {
+        onChatReady((text: string) => chatRef.current!.sendMessage(text));
+      }
       
       toast({
         title: "Connected",
