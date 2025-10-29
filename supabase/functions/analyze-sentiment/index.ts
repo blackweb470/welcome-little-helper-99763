@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const requestSchema = z.object({
+  messageId: z.string().uuid({ message: "Invalid messageId format" }),
+  content: z.string().min(1).max(5000, { message: "Content must be between 1 and 5000 characters" })
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,11 +18,8 @@ serve(async (req) => {
   }
 
   try {
-    const { messageId, content } = await req.json();
-
-    if (!messageId || !content) {
-      throw new Error('messageId and content are required');
-    }
+    const body = await req.json();
+    const { messageId, content } = requestSchema.parse(body);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {

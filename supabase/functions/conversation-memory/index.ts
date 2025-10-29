@@ -1,10 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const requestSchema = z.object({
+  action: z.enum(["retrieve_context", "update_context"], { 
+    invalid_type_error: "Invalid action",
+    required_error: "Action is required"
+  }),
+  visitorId: z.string().min(1).max(200),
+  businessId: z.string().uuid({ message: "Invalid businessId format" }),
+  conversationId: z.string().uuid({ message: "Invalid conversationId format" }).optional()
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,7 +23,8 @@ serve(async (req) => {
   }
 
   try {
-    const { action, visitorId, businessId, conversationId } = await req.json();
+    const body = await req.json();
+    const { action, visitorId, businessId, conversationId } = requestSchema.parse(body);
     
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
