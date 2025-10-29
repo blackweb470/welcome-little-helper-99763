@@ -65,31 +65,55 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
-    const code = `<!-- LYQN Chat Widget -->
+    const code = `<!-- LYQN Chat Widget - Works with React, Next.js, Vue, and any HTML/JS framework -->
 <script>
   (function() {
-    var iframe = document.createElement('iframe');
-    iframe.src = '${appUrl}/widget/${id}';
-    iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:100%;height:100%;border:none;z-index:999999;pointer-events:none;';
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
-    iframe.setAttribute('allow', 'microphone');
-    iframe.id = 'lyqn-chat-widget';
-    
-    // Allow interactions with the widget
-    iframe.onload = function() {
-      iframe.contentWindow.postMessage({type: 'LYQN_WIDGET_READY'}, '${appUrl}');
-    };
-    
-    document.body.appendChild(iframe);
-    
-    // Listen for widget interactions
-    window.addEventListener('message', function(e) {
-      if (e.origin === '${appUrl}' && e.data.type === 'WIDGET_INTERACTION') {
-        iframe.style.pointerEvents = 'auto';
+    // Ensure DOM is ready
+    function initWidget() {
+      // Prevent duplicate widgets
+      if (document.getElementById('lyqn-chat-widget')) {
+        return;
       }
-    });
+
+      var iframe = document.createElement('iframe');
+      iframe.src = '${appUrl}/widget/${id}';
+      iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:100%;height:100%;border:none;z-index:999999;pointer-events:none;';
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+      iframe.setAttribute('allow', 'microphone');
+      iframe.id = 'lyqn-chat-widget';
+      iframe.title = 'LYQN Chat Widget';
+      
+      // Allow interactions with the widget
+      iframe.onload = function() {
+        try {
+          iframe.contentWindow.postMessage({type: 'LYQN_WIDGET_READY'}, '${appUrl}');
+        } catch(e) {
+          console.error('LYQN Widget: Failed to send ready message', e);
+        }
+      };
+      
+      document.body.appendChild(iframe);
+      
+      // Listen for widget interactions
+      window.addEventListener('message', function(e) {
+        if (e.origin === '${appUrl}' && e.data && e.data.type === 'WIDGET_INTERACTION') {
+          iframe.style.pointerEvents = 'auto';
+        }
+      });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initWidget);
+    } else {
+      initWidget();
+    }
   })();
-</script>`;
+</script>
+
+<!-- For React/Next.js: Place this in your layout or use dangerouslySetInnerHTML -->
+<!-- For Vue: Add to your main template or use v-html -->
+<!-- For plain HTML: Paste before closing </body> tag -->`;
     setEmbedCode(code);
   };
 
@@ -173,9 +197,21 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
       <Card className="p-6 space-y-4">
         <h3 className="font-semibold">Embed Code - LYQN Chat Widget</h3>
         <p className="text-sm text-muted-foreground">
-          Copy this code and paste it before the closing &lt;/body&gt; tag in your website's HTML to add the LYQN chat widget with the chatbot icon.
+          Universal embed code compatible with React, Next.js, Vue, Angular, and plain HTML.
         </p>
-        <pre className="bg-secondary p-4 rounded text-sm overflow-x-auto">
+        
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium">Installation Instructions:</h4>
+          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+            <li><strong>Plain HTML:</strong> Paste before closing &lt;/body&gt; tag</li>
+            <li><strong>React:</strong> Add to index.html or use dangerouslySetInnerHTML in layout</li>
+            <li><strong>Next.js:</strong> Add to pages/_document.js or app/layout.tsx</li>
+            <li><strong>Vue:</strong> Add to index.html or use v-html in App.vue</li>
+            <li><strong>Angular:</strong> Add to index.html</li>
+          </ul>
+        </div>
+
+        <pre className="bg-secondary p-4 rounded text-sm overflow-x-auto max-h-96">
           <code>{embedCode}</code>
         </pre>
         <Button
