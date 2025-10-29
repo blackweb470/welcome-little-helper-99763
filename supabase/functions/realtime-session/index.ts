@@ -53,6 +53,40 @@ serve(async (req) => {
     const settings = await settingsResponse.json();
     let systemPrompt = settings[0]?.system_prompt || 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.';
     
+    // Fetch business documents to enhance AI knowledge
+    const documentsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/business_documents?business_id=eq.${businessId}&status=eq.ready&select=file_name,summary,content_text`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        }
+      }
+    );
+    
+    const documents = await documentsResponse.json();
+    
+    // Add business knowledge from documents
+    if (documents && Array.isArray(documents) && documents.length > 0) {
+      systemPrompt += '\n\n=== Business Knowledge Base ===';
+      systemPrompt += '\nThe following is important information about this business. Use this to provide accurate and contextual responses:\n\n';
+      
+      for (const doc of documents) {
+        systemPrompt += `Document: ${doc.file_name}\n`;
+        if (doc.summary) {
+          systemPrompt += `Summary: ${doc.summary}\n`;
+        }
+        // Include a portion of content_text if available (limit to prevent token overflow)
+        if (doc.content_text) {
+          const contentPreview = doc.content_text.substring(0, 2000);
+          systemPrompt += `Content: ${contentPreview}${doc.content_text.length > 2000 ? '...' : ''}\n`;
+        }
+        systemPrompt += '\n';
+      }
+      
+      systemPrompt += 'Use this information to answer customer questions accurately. If you don\'t know something that\'s not in these documents, be honest about it.';
+    }
+    
     // Add memory context if available
     if (memory && memory.summary) {
       systemPrompt += `\n\nPrevious conversation context for this visitor:\nSummary: ${memory.summary}`;

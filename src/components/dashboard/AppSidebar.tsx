@@ -10,7 +10,8 @@ import {
   Target,
   Settings,
   BookOpen,
-  LogOut
+  LogOut,
+  FileText
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const businessItems = [
   { title: "Live Chat", path: "livechat", icon: Users },
   { title: "Proactive", path: "proactive", icon: Zap },
   { title: "Products", path: "products", icon: Package },
+  { title: "Documents", path: "documents", icon: FileText },
   { title: "Scoring", path: "scoring", icon: Target },
   { title: "Settings", path: "settings", icon: Settings },
 ];

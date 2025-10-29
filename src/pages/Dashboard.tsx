@@ -14,6 +14,7 @@ import { FeaturesDocumentation } from "@/components/dashboard/FeaturesDocumentat
 import { TicketsList } from "@/components/dashboard/TicketsList";
 import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
+import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -77,6 +78,7 @@ const Dashboard = () => {
                    currentTab === 'livechat' ? 'Live Chat' :
                    currentTab === 'proactive' ? 'Proactive Chat' :
                    currentTab === 'products' ? 'Products' :
+                   currentTab === 'documents' ? 'Business Documents' :
                    currentTab === 'scoring' ? 'Behavioral Scoring' :
                    currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
                 </h1>
@@ -134,6 +136,10 @@ const Dashboard = () => {
 
                 {currentTab === 'scoring' && (
                   <BehavioralScoring businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'documents' && (
+                  <BusinessDocuments businessId={selectedBusinessId} />
                 )}
 
                 {currentTab === 'settings' && (

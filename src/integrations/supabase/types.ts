@@ -58,6 +58,59 @@ export type Database = {
           },
         ]
       }
+      business_documents: {
+        Row: {
+          business_id: string
+          content_text: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          metadata: Json | null
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          content_text?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          content_text?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_documents_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           auto_offline_minutes: number | null
