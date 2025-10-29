@@ -27,6 +27,14 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
 
   // Initialize visitor tracking on mount
   useEffect(() => {
+    // Validate UUID format before initializing tracker
+    const isValidUUID = businessId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(businessId);
+    
+    if (!isValidUUID) {
+      console.error('Invalid businessId for visitor tracking:', businessId);
+      return;
+    }
+    
     trackerRef.current = new VisitorTracker(businessId);
     trackerRef.current.startSession();
     
