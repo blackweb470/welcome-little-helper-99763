@@ -86,7 +86,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         .select('status')
         .eq('user_id', user.id)
         .eq('business_id', businessId)
-        .single();
+        .maybeSingle();
 
       if (data) setAgentStatus(data.status);
     } catch (error) {

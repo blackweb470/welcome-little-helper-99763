@@ -33,7 +33,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
       .from('widget_settings')
       .select('*')
       .eq('business_id', businessId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       toast({
@@ -46,8 +46,21 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 
     if (data) {
       setSettings(data);
-      generateEmbedCode(businessId);
+    } else {
+      // Create default settings if none exist
+      const { error: insertError } = await supabase
+        .from('widget_settings')
+        .insert({
+          business_id: businessId,
+          ...settings
+        });
+
+      if (insertError) {
+        console.error('Error creating default settings:', insertError);
+      }
     }
+    
+    generateEmbedCode(businessId);
   };
 
   const generateEmbedCode = (id: string) => {
