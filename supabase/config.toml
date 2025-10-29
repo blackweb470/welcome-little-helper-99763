@@ -10,7 +10,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ai-assist]
-verify_jwt = false
+verify_jwt = true
 
 [functions.conversation-memory]
 verify_jwt = false
@@ -19,7 +19,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.update-sla-metrics]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-ticket]
-verify_jwt = false
+verify_jwt = true
