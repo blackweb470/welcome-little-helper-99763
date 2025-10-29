@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Building2, ExternalLink, Copy } from "lucide-react";
+import { Plus, Building2, ExternalLink, Copy, Trash2 } from "lucide-react";
 
 interface Business {
   id: string;
@@ -93,6 +93,33 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
 
     setIsCreating(false);
     setNewBusiness({ name: '', domain: '' });
+    fetchBusinesses();
+  };
+
+  const deleteBusiness = async (id: string) => {
+    const { error } = await supabase
+      .from('businesses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete business",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Business deleted successfully",
+    });
+
+    if (selectedBusinessId === id) {
+      onSelectBusiness('');
+    }
+    
     fetchBusinesses();
   };
 
@@ -192,6 +219,19 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
                     Copy Widget URL
                   </Button>
                 </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete "${business.name}"?`)) {
+                      deleteBusiness(business.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Business
+                </Button>
               </div>
             )}
           </Card>
