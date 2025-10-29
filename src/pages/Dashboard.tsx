@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import BusinessList from "@/components/dashboard/BusinessList";
 import ConversationsList from "@/components/dashboard/ConversationsList";
 import WidgetSettings from "@/components/dashboard/WidgetSettings";
@@ -18,9 +17,10 @@ import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const currentTab = searchParams.get('tab') || 'businesses';
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -49,112 +49,104 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
+
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">AI Widget Dashboard</h1>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign Out
-          </Button>
-        </div>
-      </header>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar 
+          hasSelectedBusiness={!!selectedBusinessId} 
+          onSignOut={handleSignOut}
+        />
+        
+        <main className="flex-1 overflow-auto">
+          <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-16 items-center gap-4 px-6">
+              <SidebarTrigger />
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  {currentTab === 'businesses' ? 'Businesses' :
+                   currentTab === 'features' ? 'Features' :
+                   currentTab === 'analytics' ? 'Analytics' :
+                   currentTab === 'conversations' ? 'Conversations' :
+                   currentTab === 'tickets' ? 'Tickets' :
+                   currentTab === 'livechat' ? 'Live Chat' :
+                   currentTab === 'proactive' ? 'Proactive Chat' :
+                   currentTab === 'products' ? 'Products' :
+                   currentTab === 'scoring' ? 'Behavioral Scoring' :
+                   currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
+                </h1>
+              </div>
+            </div>
+          </header>
 
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="businesses" className="space-y-6">
-          <TabsList className="grid grid-cols-10 w-full">
-            <TabsTrigger value="businesses">Businesses</TabsTrigger>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="analytics" disabled={!selectedBusinessId}>
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="conversations" disabled={!selectedBusinessId}>
-              Conversations
-            </TabsTrigger>
-            <TabsTrigger value="tickets" disabled={!selectedBusinessId}>
-              Tickets
-            </TabsTrigger>
-            <TabsTrigger value="livechat" disabled={!selectedBusinessId}>
-              Live Chat
-            </TabsTrigger>
-            <TabsTrigger value="proactive" disabled={!selectedBusinessId}>
-              Proactive
-            </TabsTrigger>
-            <TabsTrigger value="products" disabled={!selectedBusinessId}>
-              Products
-            </TabsTrigger>
-            <TabsTrigger value="scoring" disabled={!selectedBusinessId}>
-              Scoring
-            </TabsTrigger>
-            <TabsTrigger value="settings" disabled={!selectedBusinessId}>
-              Settings
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="businesses">
-            <BusinessList 
-              userId={user.id} 
-              onSelectBusiness={setSelectedBusinessId}
-              selectedBusinessId={selectedBusinessId}
-            />
-          </TabsContent>
-
-          <TabsContent value="features">
-            <FeaturesDocumentation />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            {selectedBusinessId && (
-              <AnalyticsDashboard businessId={selectedBusinessId} />
+          <div className="p-6 animate-fade-in">
+            {currentTab === 'businesses' && (
+              <Card className="p-6">
+                <BusinessList 
+                  userId={user.id} 
+                  onSelectBusiness={(id) => {
+                    setSelectedBusinessId(id);
+                    setActiveTab('analytics');
+                  }}
+                  selectedBusinessId={selectedBusinessId}
+                />
+              </Card>
             )}
-          </TabsContent>
 
-          <TabsContent value="conversations">
-            {selectedBusinessId && (
-              <ConversationsList businessId={selectedBusinessId} />
+            {currentTab === 'features' && (
+              <FeaturesDocumentation />
             )}
-          </TabsContent>
 
-          <TabsContent value="tickets">
             {selectedBusinessId && (
-              <TicketsList businessId={selectedBusinessId} />
-            )}
-          </TabsContent>
+              <>
+                {currentTab === 'analytics' && (
+                  <AnalyticsDashboard businessId={selectedBusinessId} />
+                )}
 
-          <TabsContent value="livechat">
-            {selectedBusinessId && (
-              <LiveChatQueue businessId={selectedBusinessId} />
-            )}
-          </TabsContent>
+                {currentTab === 'conversations' && (
+                  <Card className="p-6">
+                    <ConversationsList businessId={selectedBusinessId} />
+                  </Card>
+                )}
 
-          <TabsContent value="proactive">
-            {selectedBusinessId && (
-              <ProactiveChatRules businessId={selectedBusinessId} />
-            )}
-          </TabsContent>
+                {currentTab === 'tickets' && (
+                  <TicketsList businessId={selectedBusinessId} />
+                )}
 
-          <TabsContent value="products">
-            {selectedBusinessId && (
-              <ProductCatalog businessId={selectedBusinessId} />
-            )}
-          </TabsContent>
+                {currentTab === 'livechat' && (
+                  <LiveChatQueue businessId={selectedBusinessId} />
+                )}
 
-          <TabsContent value="scoring">
-            {selectedBusinessId && (
-              <BehavioralScoring businessId={selectedBusinessId} />
-            )}
-          </TabsContent>
+                {currentTab === 'proactive' && (
+                  <ProactiveChatRules businessId={selectedBusinessId} />
+                )}
 
-          <TabsContent value="settings">
-            {selectedBusinessId && (
-              <WidgetSettings businessId={selectedBusinessId} />
+                {currentTab === 'products' && (
+                  <Card className="p-6">
+                    <ProductCatalog businessId={selectedBusinessId} />
+                  </Card>
+                )}
+
+                {currentTab === 'scoring' && (
+                  <BehavioralScoring businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'settings' && (
+                  <Card className="p-6">
+                    <WidgetSettings businessId={selectedBusinessId} />
+                  </Card>
+                )}
+              </>
             )}
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+          </div>
+        </main>
+      </div>
+    </SidebarProvider>
   );
 };
 
