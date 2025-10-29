@@ -53,10 +53,24 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
   }, [userId]);
 
   const createBusiness = async () => {
-    if (!newBusiness.name) {
+    if (!newBusiness.name.trim()) {
       toast({
         title: "Error",
         description: "Business name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if business name already exists
+    const existingBusiness = businesses.find(
+      b => b.name.toLowerCase() === newBusiness.name.trim().toLowerCase()
+    );
+    
+    if (existingBusiness) {
+      toast({
+        title: "Error",
+        description: "A business with this name already exists",
         variant: "destructive",
       });
       return;
@@ -66,16 +80,20 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
       .from('businesses')
       .insert({
         owner_id: userId,
-        name: newBusiness.name,
-        domain: newBusiness.domain || null,
+        name: newBusiness.name.trim(),
+        domain: newBusiness.domain?.trim() || null,
       })
       .select()
       .single();
 
     if (error) {
+      // Handle unique constraint violation
+      const isDuplicate = error.code === '23505';
       toast({
         title: "Error",
-        description: "Failed to create business",
+        description: isDuplicate 
+          ? "A business with this name already exists" 
+          : "Failed to create business",
         variant: "destructive",
       });
       return;
