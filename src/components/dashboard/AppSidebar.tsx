@@ -64,7 +64,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut }: AppSidebarProps) 
           </div>
           {open && (
             <div>
-              <h2 className="font-bold text-lg">AI Widget</h2>
+              <h2 className="font-bold text-lg">LYQN</h2>
               <p className="text-xs text-muted-foreground">Dashboard</p>
             </div>
           )}

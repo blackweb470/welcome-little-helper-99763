@@ -64,12 +64,29 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
   };
 
   const generateEmbedCode = (id: string) => {
-    const code = `<script src="${window.location.origin}/widget.js"></script>
+    const appUrl = window.location.origin;
+    const code = `<!-- LYQN Chat Widget -->
 <script>
-  AIWidget.init({
-    businessId: "${id}",
-    position: "bottom-right"
-  });
+  (function() {
+    var iframe = document.createElement('iframe');
+    iframe.src = '${appUrl}/widget/${id}';
+    iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:100%;height:100%;border:none;z-index:999999;pointer-events:none;';
+    iframe.id = 'lyqn-chat-widget';
+    
+    // Allow interactions with the widget
+    iframe.onload = function() {
+      iframe.contentWindow.postMessage({type: 'LYQN_WIDGET_READY'}, '${appUrl}');
+    };
+    
+    document.body.appendChild(iframe);
+    
+    // Listen for widget interactions
+    window.addEventListener('message', function(e) {
+      if (e.origin === '${appUrl}' && e.data.type === 'WIDGET_INTERACTION') {
+        iframe.style.pointerEvents = 'auto';
+      }
+    });
+  })();
 </script>`;
     setEmbedCode(code);
   };
@@ -152,9 +169,9 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
       </Card>
 
       <Card className="p-6 space-y-4">
-        <h3 className="font-semibold">Embed Code</h3>
+        <h3 className="font-semibold">Embed Code - LYQN Chat Widget</h3>
         <p className="text-sm text-muted-foreground">
-          Copy this code and paste it into your website's HTML to add the chat widget.
+          Copy this code and paste it before the closing &lt;/body&gt; tag in your website's HTML to add the LYQN chat widget with the chatbot icon.
         </p>
         <pre className="bg-secondary p-4 rounded text-sm overflow-x-auto">
           <code>{embedCode}</code>
