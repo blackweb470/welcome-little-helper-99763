@@ -135,23 +135,24 @@ const Index = () => {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">LYQN Documentation</h1>
-              <p className="text-muted-foreground mt-2">
-                Complete guide to using your AI-powered customer engagement platform
-              </p>
+            <div className="flex items-center gap-2">
+              <Bot className="w-6 h-6 text-primary" />
+              <h1 className="text-2xl font-bold">LYQN</h1>
             </div>
             <div className="flex gap-2">
-              <Button asChild variant="outline">
-                <Link to="/docs">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Documentation
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/features">
+                  Features
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link to="/dashboard">
-                  <Home className="mr-2 h-4 w-4" />
-                  Dashboard
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/docs">
+                  Docs
+                </Link>
+              </Button>
+              <Button asChild size="sm">
+                <Link to="/auth">
+                  Get Started
                 </Link>
               </Button>
             </div>
