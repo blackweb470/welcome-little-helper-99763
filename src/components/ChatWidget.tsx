@@ -69,10 +69,16 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     try {
       // Create conversation if not exists
       let convId = conversationId;
+      const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
+      
       if (!convId) {
         const { data: conv } = await supabase
           .from('conversations')
-          .insert({ business_id: businessId })
+          .insert({ 
+            business_id: businessId,
+            visitor_id: visitorId,
+            started_at: new Date().toISOString()
+          })
           .select()
           .single();
         
@@ -96,6 +102,19 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         .single();
 
       if (error) throw error;
+
+      // Send notification
+      await supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'chat_transfer',
+          businessId: businessId,
+          data: {
+            conversationId: convId,
+            visitorId: visitorId,
+            message: reason,
+          },
+        },
+      });
 
       setLiveChatSession(session);
       handleTranscript('Your request has been sent to our team. An agent will join shortly.', 'assistant');

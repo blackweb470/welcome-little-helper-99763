@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, User, Clock, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { requestNotificationPermission, showBrowserNotification } from "@/utils/notifications";
 
 interface ChatSession {
   id: string;
@@ -30,13 +31,34 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   useEffect(() => {
     fetchSessions();
     fetchAgentStatus();
+    
+    // Request notification permission
+    requestNotificationPermission();
 
     const channel = supabase
       .channel('live-chat-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'live_chat_sessions'
+        },
+        (payload) => {
+          fetchSessions();
+          // Show browser notification for new chat requests
+          if (payload.new.status === 'queued') {
+            showBrowserNotification('New Chat Transfer Request', {
+              body: payload.new.transfer_reason || 'A visitor wants to speak with a live agent',
+              tag: `chat-${payload.new.id}`,
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
           schema: 'public',
           table: 'live_chat_sessions'
         },
