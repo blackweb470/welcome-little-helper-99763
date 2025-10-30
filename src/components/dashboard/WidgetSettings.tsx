@@ -65,39 +65,101 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
-    const code = `<!-- LYQN Chat Widget - Works with React, Next.js, Vue, and any HTML/JS framework -->
+    const code = `<!-- LYQN Chat Widget (Improved) -->
+<style>
+  /* Floating Chat Button */
+  #chat-toggle {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    z-index: 1000000;
+    background-color: #333;
+    color: #fff;
+    width: 60px;
+    height: 60px;
+    border: none;
+    border-radius: 50%;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+  }
+
+  #chat-toggle:hover {
+    background-color: #5C6BC0;
+    transform: scale(1.05);
+  }
+
+  /* Slide animation */
+  @keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Chat Iframe (Hidden by default) */
+  #lyqn-chat-widget {
+    position: fixed;
+    bottom: 90px;
+    right: 25px;
+    width: 400px;
+    height: 550px;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+    z-index: 999999;
+    display: none;
+    animation: slideUp 0.4s ease;
+  }
+
+  /* Responsive (Mobile view) */
+  @media (max-width: 768px) {
+    #lyqn-chat-widget {
+      width: 100%;
+      height: 60%;
+      right: 0;
+      bottom: 0;
+      border-radius: 0;
+    }
+
+    #chat-toggle {
+      bottom: 15px;
+      right: 15px;
+      width: 55px;
+      height: 55px;
+      font-size: 24px;
+    }
+  }
+</style>
+
+<button id="chat-toggle" title="Chat with us">💬</button>
+
 <script>
   (function() {
-    // Ensure DOM is ready
     function initWidget() {
-      // Prevent duplicate widgets
-      if (document.getElementById('lyqn-chat-widget')) {
-        return;
-      }
+      if (document.getElementById('lyqn-chat-widget')) return;
 
       var iframe = document.createElement('iframe');
       iframe.src = '${appUrl}/embed/${id}';
-      iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:450px;height:650px;border:none;z-index:999999;';
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
-      iframe.setAttribute('allow', 'microphone');
       iframe.id = 'lyqn-chat-widget';
       iframe.title = 'LYQN Chat Widget';
-      
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+      iframe.setAttribute('allow', 'microphone');
       document.body.appendChild(iframe);
+
+      // Toggle open/close
+      var btn = document.getElementById('chat-toggle');
+      btn.addEventListener('click', function() {
+        iframe.style.display = (iframe.style.display === 'none' || iframe.style.display === '') ? 'block' : 'none';
+      });
     }
 
-    // Initialize when DOM is ready
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initWidget);
     } else {
       initWidget();
     }
   })();
-</script>
-
-<!-- For React/Next.js: Place this in your layout or use dangerouslySetInnerHTML -->
-<!-- For Vue: Add to your main template or use v-html -->
-<!-- For plain HTML: Paste before closing </body> tag -->`;
+</script>`;
     setEmbedCode(code);
   };
 
