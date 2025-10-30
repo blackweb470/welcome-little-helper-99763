@@ -55,6 +55,12 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       if (data) {
         console.log('Fetched live chat session:', data);
         setLiveChatSession(data);
+        
+        // Show agent joined message when status becomes active
+        if (data.status === 'active' && liveChatSession?.status === 'queued') {
+          console.log('Status changed from queued to active - agent joined!');
+          handleTranscript('An agent has joined the chat!', 'assistant');
+        }
       }
     } catch (error) {
       console.error('Error fetching live chat session:', error);
@@ -67,6 +73,22 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       fetchLiveChatSession(conversationId);
     }
   }, [conversationId]);
+
+  // Poll for status updates when in queued state
+  useEffect(() => {
+    if (!conversationId || liveChatSession?.status !== 'queued') return;
+
+    console.log('Starting polling for queued session');
+    const pollInterval = setInterval(() => {
+      console.log('Polling for session status update');
+      fetchLiveChatSession(conversationId);
+    }, 2000); // Poll every 2 seconds
+
+    return () => {
+      console.log('Stopping polling');
+      clearInterval(pollInterval);
+    };
+  }, [conversationId, liveChatSession?.status]);
 
   // Real-time subscription for live chat session updates
   useEffect(() => {
