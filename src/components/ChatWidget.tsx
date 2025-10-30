@@ -71,6 +71,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   useEffect(() => {
     if (!conversationId) return;
 
+    console.log('Setting up live chat session subscription for:', conversationId);
+
     const channel = supabase
       .channel(`live-chat-${conversationId}`)
       .on(
@@ -84,20 +86,22 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         (payload) => {
           console.log('Live chat session updated:', payload);
           if (payload.new) {
-            setLiveChatSession(payload.new);
+            const newSession = payload.new as any;
+            setLiveChatSession(newSession);
             
             // Notify visitor when agent accepts
-            const newStatus = (payload.new as any).status;
-            const oldStatus = (payload.old as any)?.status;
-            if (newStatus === 'active' && oldStatus === 'queued') {
+            if (newSession.status === 'active' && payload.eventType === 'UPDATE') {
               handleTranscript('An agent has joined the chat!', 'assistant');
             }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Live chat subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up live chat session subscription');
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
