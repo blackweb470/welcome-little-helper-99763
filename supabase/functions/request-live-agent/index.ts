@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { businessId, visitorId, conversationId, reason } = await req.json();
-    console.log('Live agent request:', { businessId, visitorId, conversationId, reason });
+    const { businessId, visitorId, conversationId, reason, visitorEmail } = await req.json();
+    console.log('Live agent request:', { businessId, visitorId, conversationId, reason, visitorEmail });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
         .insert({ 
           business_id: businessId,
           visitor_id: visitorId,
+          visitor_email: visitorEmail,
           started_at: new Date().toISOString()
         })
         .select()
@@ -38,6 +39,12 @@ Deno.serve(async (req) => {
       }
       
       finalConversationId = conv.id;
+    } else if (visitorEmail) {
+      // Update existing conversation with email
+      await supabase
+        .from('conversations')
+        .update({ visitor_email: visitorEmail })
+        .eq('id', finalConversationId);
     }
 
     // Create live chat session
@@ -57,7 +64,7 @@ Deno.serve(async (req) => {
       throw sessionError;
     }
 
-    // Send notification
+    // Send notification to business owner
     await supabase.functions.invoke('send-notification', {
       body: {
         type: 'chat_transfer',
@@ -65,6 +72,7 @@ Deno.serve(async (req) => {
         data: {
           conversationId: finalConversationId,
           visitorId: visitorId,
+          visitorEmail: visitorEmail,
           message: reason,
         },
       },

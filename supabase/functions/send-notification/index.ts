@@ -12,14 +12,16 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved']),
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted']),
   businessId: z.string().uuid("Invalid business ID format"),
   data: z.object({
     conversationId: z.string().uuid("Invalid conversation ID format").optional(),
     ticketId: z.string().uuid("Invalid ticket ID format").optional(),
     visitorId: z.string().max(255).optional(),
+    visitorEmail: z.string().email("Invalid email format").optional(),
     message: z.string().max(5000).optional(),
     agentEmail: z.string().email("Invalid email format").optional(),
+    agentName: z.string().optional(),
   }),
 });
 
@@ -85,8 +87,29 @@ const handler = async (req: Request): Promise<Response> => {
     
     let subject = "";
     let html = "";
+    let recipientEmail = ownerEmail; // Default to owner
 
     switch (type) {
+      case 'agent_accepted':
+        // Send to visitor when agent accepts
+        recipientEmail = data.visitorEmail || '';
+        if (!recipientEmail) {
+          console.error('No visitor email provided for agent_accepted notification');
+          return new Response(
+            JSON.stringify({ error: 'No visitor email provided' }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        subject = `✅ Agent Joined Your Chat - ${sanitizedBusinessName}`;
+        html = `
+          <h1>An agent has joined your chat!</h1>
+          <p>Your chat request has been accepted by ${data.agentName || 'our team'}.</p>
+          <p>You can now continue your conversation.</p>
+          <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
+          <p>Please return to the chat window to continue.</p>
+        `;
+        break;
+
       case 'chat_transfer':
         subject = `🔔 Live Chat Transfer Request - ${sanitizedBusinessName}`;
         html = `
@@ -94,6 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
           <p>A visitor has requested to speak with a live agent.</p>
           <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
           <p><strong>Visitor ID:</strong> ${data.visitorId || 'N/A'}</p>
+          ${data.visitorEmail ? `<p><strong>Visitor Email:</strong> ${data.visitorEmail}</p>` : ''}
           ${data.message ? `<p><strong>Reason:</strong> ${data.message.substring(0, 500)}</p>` : ''}
           <p>Please log in to your dashboard to accept this chat.</p>
         `;
@@ -134,7 +158,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "AI Chat Support <onboarding@resend.dev>",
-      to: [ownerEmail],
+      to: [recipientEmail],
       subject: subject,
       html: html,
     });

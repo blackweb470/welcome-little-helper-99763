@@ -265,6 +265,7 @@ export type Database = {
           id: string
           metadata: Json | null
           started_at: string | null
+          visitor_email: string | null
           visitor_id: string | null
         }
         Insert: {
@@ -273,6 +274,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           started_at?: string | null
+          visitor_email?: string | null
           visitor_id?: string | null
         }
         Update: {
@@ -281,6 +283,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           started_at?: string | null
+          visitor_email?: string | null
           visitor_id?: string | null
         }
         Relationships: [
@@ -676,6 +679,7 @@ export type Database = {
           referrer_url: string | null
           started_at: string | null
           total_time_seconds: number | null
+          visitor_email: string | null
           visitor_id: string
         }
         Insert: {
@@ -695,6 +699,7 @@ export type Database = {
           referrer_url?: string | null
           started_at?: string | null
           total_time_seconds?: number | null
+          visitor_email?: string | null
           visitor_id: string
         }
         Update: {
@@ -714,6 +719,7 @@ export type Database = {
           referrer_url?: string | null
           started_at?: string | null
           total_time_seconds?: number | null
+          visitor_email?: string | null
           visitor_id?: string
         }
         Relationships: [

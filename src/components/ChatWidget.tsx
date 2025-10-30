@@ -24,6 +24,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [showEscalateButton, setShowEscalateButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [visitorEmail, setVisitorEmail] = useState("");
+  const [showEmailInput, setShowEmailInput] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -193,6 +195,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         .insert({
           business_id: businessId,
           visitor_id: visitorId,
+          visitor_email: visitorEmail || null,
           started_at: new Date().toISOString()
         })
         .select()
@@ -239,6 +242,13 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
   const requestLiveAgent = async (reason: string) => {
     try {
+      // Show email input if not provided
+      if (!visitorEmail) {
+        setShowEmailInput(true);
+        handleTranscript('Please provide your email so we can notify you when an agent joins.', 'assistant');
+        return;
+      }
+
       // Ensure we have a visitor ID
       let visitorId = localStorage.getItem('visitor_id');
       if (!visitorId) {
@@ -254,6 +264,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           .insert({
             business_id: businessId,
             visitor_id: visitorId,
+            visitor_email: visitorEmail,
             started_at: new Date().toISOString()
           })
           .select()
@@ -278,7 +289,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
             businessId: businessId,
             visitorId: visitorId,
             conversationId: currentConvId,
-            reason: reason
+            reason: reason,
+            visitorEmail: visitorEmail
           })
         }
       );
@@ -497,6 +509,34 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                   <div className="m-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
                     <p className="font-medium text-green-800 dark:text-green-200">✅ You are speaking to an agent</p>
                     <p className="text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
+                  </div>
+                )}
+                
+                {/* Email Input - Shows when requesting live agent */}
+                {showEmailInput && !visitorEmail && (
+                  <div className="px-4 pt-4 pb-2">
+                    <div className="flex flex-col gap-2">
+                      <input
+                        type="email"
+                        value={visitorEmail}
+                        onChange={(e) => setVisitorEmail(e.target.value)}
+                        placeholder="Enter your email..."
+                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                      />
+                      <Button
+                        onClick={() => {
+                          if (visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)) {
+                            setShowEmailInput(false);
+                            requestLiveAgent('User requested live agent');
+                          }
+                        }}
+                        disabled={!visitorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)}
+                        size="sm"
+                        style={{ backgroundColor: visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail) ? primaryColor : undefined }}
+                      >
+                        Submit Email
+                      </Button>
+                    </div>
                   </div>
                 )}
                 
