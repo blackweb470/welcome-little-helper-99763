@@ -509,7 +509,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                       onChange={(e) => setTextInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Type a message..."
-                      maxLength={50}
+                      maxLength={150}
                       className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                     />
                     <Button
