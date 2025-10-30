@@ -38,6 +38,10 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [acceptingChat, setAcceptingChat] = useState<string | null>(null);
+  const [endingChat, setEndingChat] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +140,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
   const updateAgentStatus = async (newStatus: string) => {
     try {
+      setUpdatingStatus(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -162,11 +167,14 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         description: "Failed to update status",
         variant: "destructive"
       });
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
   const acceptChat = async (sessionId: string) => {
     try {
+      setAcceptingChat(sessionId);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
@@ -201,11 +209,14 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         description: "Failed to accept chat",
         variant: "destructive"
       });
+    } finally {
+      setAcceptingChat(null);
     }
   };
 
   const endChat = async (sessionId: string) => {
     try {
+      setEndingChat(sessionId);
       const { error } = await supabase
         .from('live_chat_sessions')
         .update({
@@ -233,6 +244,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         description: "Failed to end chat",
         variant: "destructive"
       });
+    } finally {
+      setEndingChat(null);
     }
   };
 
@@ -255,6 +268,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     if (!messageInput.trim() || !selectedSession) return;
 
     try {
+      setSendingMessage(true);
       const { error } = await supabase
         .from('messages')
         .insert({
@@ -274,6 +288,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         description: "Failed to send message",
         variant: "destructive"
       });
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -334,9 +350,10 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
               }}
               size="sm"
               variant="outline"
+              disabled={endingChat === selectedSession.id}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
-              End Chat
+              {endingChat === selectedSession.id ? "Ending..." : "End Chat"}
             </Button>
           </CardTitle>
         </CardHeader>
@@ -374,7 +391,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 placeholder="Type your message..."
                 className="flex-1"
               />
-              <Button onClick={sendMessage} disabled={!messageInput.trim()}>
+              <Button onClick={sendMessage} disabled={!messageInput.trim() || sendingMessage}>
                 <Send className="w-4 h-4" />
               </Button>
             </div>
@@ -398,8 +415,9 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
               size="sm"
               variant={agentStatus === 'online' ? 'default' : 'outline'}
               onClick={() => updateAgentStatus(agentStatus === 'online' ? 'offline' : 'online')}
+              disabled={updatingStatus}
             >
-              {agentStatus === 'online' ? 'Go Offline' : 'Go Online'}
+              {updatingStatus ? 'Updating...' : (agentStatus === 'online' ? 'Go Offline' : 'Go Online')}
             </Button>
             <Badge variant={agentStatus === 'online' ? 'default' : 'secondary'}>
               {agentStatus}
@@ -435,11 +453,11 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                     </div>
                     <Button 
                       onClick={() => acceptChat(session.id)}
-                      disabled={agentStatus !== 'online'}
+                      disabled={agentStatus !== 'online' || acceptingChat === session.id}
                       size="sm"
                       className="w-full"
                     >
-                      Accept Chat
+                      {acceptingChat === session.id ? 'Accepting...' : 'Accept Chat'}
                     </Button>
                   </div>
                 ))
@@ -478,9 +496,10 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                         onClick={() => endChat(session.id)}
                         size="sm"
                         variant="outline"
+                        disabled={endingChat === session.id}
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        End
+                        {endingChat === session.id ? 'Ending...' : 'End'}
                       </Button>
                     </div>
                   </div>

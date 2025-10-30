@@ -23,6 +23,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [isTextMode, setIsTextMode] = useState(true); // Default to text mode
   const [showEscalateButton, setShowEscalateButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -273,10 +274,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   }, [transcript]);
 
   const handleSendText = async () => {
-    if (!textInput.trim()) return;
+    if (!textInput.trim() || sendingMessage) return;
 
     const message = textInput.trim();
     setTextInput("");
+    setSendingMessage(true);
     
     // Add to transcript immediately
     handleTranscript(message, "user");
@@ -328,6 +330,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       console.error('Error sending text message:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       handleTranscript(`Sorry, there was an error: ${errorMsg}`, 'assistant');
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -459,11 +463,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                     />
                     <Button
                       onClick={handleSendText}
-                      disabled={!textInput.trim()}
+                      disabled={!textInput.trim() || sendingMessage}
                       size="sm"
-                      style={{ backgroundColor: textInput.trim() ? primaryColor : undefined }}
+                      style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
                     >
-                      Send
+                      {sendingMessage ? 'Sending...' : 'Send'}
                     </Button>
                   </div>
                 </div>
