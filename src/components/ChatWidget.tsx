@@ -37,6 +37,77 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     checkProactiveRules();
   }, [businessId]);
 
+  // Real-time subscription for live chat session updates
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`live-chat-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'live_chat_sessions',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('Live chat session updated:', payload);
+          if (payload.new) {
+            setLiveChatSession(payload.new);
+            
+            // Notify visitor when agent accepts
+            const newStatus = (payload.new as any).status;
+            const oldStatus = (payload.old as any)?.status;
+            if (newStatus === 'active' && oldStatus === 'queued') {
+              handleTranscript('An agent has joined the chat!', 'assistant');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
+
+  // Real-time subscription for new messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`messages-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('New message received:', payload);
+          // Only show messages from assistant that we haven't sent ourselves
+          const newMessage = payload.new as any;
+          if (newMessage.role === 'assistant') {
+            // Check if this message is already in transcript to avoid duplicates
+            const isDuplicate = transcript.some(
+              msg => msg.text === newMessage.content && msg.role === 'assistant'
+            );
+            if (!isDuplicate) {
+              handleTranscript(newMessage.content, 'assistant');
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, transcript]);
+
   const initializeTextConversation = async () => {
     try {
       const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
