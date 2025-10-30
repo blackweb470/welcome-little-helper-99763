@@ -11,7 +11,11 @@ const WidgetEmbed = () => {
     return null;
   }
 
-  return <ChatWidget businessId={businessId} />;
+  return (
+    <div className="min-h-screen w-full bg-transparent">
+      <ChatWidget businessId={businessId} />
+    </div>
+  );
 };
 
 export default WidgetEmbed;
