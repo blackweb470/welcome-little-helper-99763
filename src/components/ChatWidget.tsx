@@ -167,7 +167,9 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       if (!convId) {
         const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
         
-        const { data: convData } = await supabase
+        console.log('Creating conversation for business:', businessId, 'visitor:', visitorId);
+        
+        const { data: convData, error: convError } = await supabase
           .from('conversations')
           .insert({
             business_id: businessId,
@@ -177,9 +179,15 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           .select()
           .single();
 
+        if (convError) {
+          console.error('Error creating conversation:', convError);
+          throw new Error(`Failed to create conversation: ${convError.message}`);
+        }
+
         if (convData) {
           convId = convData.id;
           setConversationId(convId);
+          console.log('Conversation created:', convId);
         }
       }
 
