@@ -197,15 +197,29 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         });
 
       // Get AI response
-      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('ai-assist', {
-        body: {
-          conversationId: convId,
-          message: message,
-          businessId: businessId
+      const response = await fetch(
+        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/ai-assist`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw`
+          },
+          body: JSON.stringify({
+            conversationId: convId,
+            message: message,
+            businessId: businessId
+          })
         }
-      });
+      );
 
-      if (aiError) throw aiError;
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI assist error:', response.status, errorText);
+        throw new Error(`AI service error: ${response.status}`);
+      }
+
+      const aiResponse = await response.json();
 
       if (aiResponse?.reply) {
         handleTranscript(aiResponse.reply, "assistant");
