@@ -487,7 +487,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
               {/* Text and Voice interface */}
               <div className="border-t bg-background">
-                {liveChatSession?.status === 'queued' && (
+                {liveChatSession?.status === 'queued' && liveChatSession?.status !== 'active' && (
                   <div className="m-4 p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
                     <p className="font-medium text-yellow-800 dark:text-yellow-200">⏳ Waiting for agent...</p>
                     <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
@@ -495,8 +495,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                 )}
                 {liveChatSession?.status === 'active' && (
                   <div className="m-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
-                    <p className="font-medium text-green-800 dark:text-green-200">👤 You're now chatting with a human agent</p>
-                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">AI responses are paused</p>
+                    <p className="font-medium text-green-800 dark:text-green-200">✅ Speaking with live agent</p>
                   </div>
                 )}
                 
@@ -509,6 +508,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                       onChange={(e) => setTextInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Type a message..."
+                      maxLength={50}
                       className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                     />
                     <Button
