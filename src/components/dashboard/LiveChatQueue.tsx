@@ -259,26 +259,30 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const handleViewChat = (session: ChatSession) => {
     setSelectedSession(session);
     fetchMessages(session.conversation_id);
+  };
 
-    // Subscribe to new messages
+  // Real-time subscription for messages in selected session
+  useEffect(() => {
+    if (!selectedSession) return;
+
     const channel = supabase
-      .channel(`messages-${session.conversation_id}`)
+      .channel(`messages-${selectedSession.conversation_id}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `conversation_id=eq.${session.conversation_id}`
+          filter: `conversation_id=eq.${selectedSession.conversation_id}`
         },
-        () => fetchMessages(session.conversation_id)
+        () => fetchMessages(selectedSession.conversation_id)
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  };
+  }, [selectedSession]);
 
   const queuedSessions = sessions.filter(s => s.status === 'queued');
   const activeSessions = sessions.filter(s => s.status === 'active');
