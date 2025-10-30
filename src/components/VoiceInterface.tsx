@@ -203,6 +203,19 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
         } catch (error) {
           console.error('Error updating conversation memory:', error);
         }
+        
+        // Learn from this conversation
+        try {
+          await supabase.functions.invoke('learn-from-conversation', {
+            body: {
+              conversationId,
+              businessId
+            }
+          });
+          console.log('AI learned from conversation');
+        } catch (error) {
+          console.error('Error learning from conversation:', error);
+        }
       }
       
       setConversationId(null);

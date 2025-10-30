@@ -66,6 +66,19 @@ serve(async (req) => {
     
     const documents = await documentsResponse.json();
     
+    // Fetch business learnings
+    const learningsResponse = await fetch(
+      `${supabaseUrl}/rest/v1/business_learnings?business_id=eq.${businessId}&confidence_score=gte.0.6&order=usage_count.desc&limit=20&select=learning_type,content,confidence_score`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        }
+      }
+    );
+    
+    const learnings = await learningsResponse.json();
+    
     // Add business knowledge from documents
     if (documents && Array.isArray(documents) && documents.length > 0) {
       systemPrompt += '\n\n=== Business Knowledge Base ===';
@@ -85,6 +98,30 @@ serve(async (req) => {
       }
       
       systemPrompt += 'Use this information to answer customer questions accurately. If you don\'t know something that\'s not in these documents, be honest about it.';
+    }
+    
+    // Add learnings from past conversations
+    if (learnings && Array.isArray(learnings) && learnings.length > 0) {
+      systemPrompt += '\n\n=== Learnings from Past Conversations ===';
+      systemPrompt += '\nThe AI has learned the following from previous customer interactions with this specific business:\n\n';
+      
+      const groupedLearnings: Record<string, string[]> = {};
+      
+      for (const learning of learnings) {
+        if (!groupedLearnings[learning.learning_type]) {
+          groupedLearnings[learning.learning_type] = [];
+        }
+        groupedLearnings[learning.learning_type].push(learning.content);
+      }
+      
+      for (const [type, items] of Object.entries(groupedLearnings)) {
+        systemPrompt += `\n${type.replace(/_/g, ' ').toUpperCase()}:\n`;
+        for (const item of items) {
+          systemPrompt += `- ${item}\n`;
+        }
+      }
+      
+      systemPrompt += '\nApply these learnings when responding to customers. This knowledge is specific to this business and improves with each conversation.';
     }
     
     // Add memory context if available

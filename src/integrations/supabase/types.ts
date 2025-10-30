@@ -111,6 +111,70 @@ export type Database = {
           },
         ]
       }
+      business_learnings: {
+        Row: {
+          business_id: string
+          confidence_score: number | null
+          content: string
+          created_at: string | null
+          id: string
+          last_used_at: string | null
+          learning_type: string
+          metadata: Json | null
+          source_conversation_id: string | null
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          business_id: string
+          confidence_score?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          learning_type?: string
+          metadata?: Json | null
+          source_conversation_id?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          business_id?: string
+          confidence_score?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          learning_type?: string
+          metadata?: Json | null
+          source_conversation_id?: string | null
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_learnings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_learnings_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "business_learnings_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           auto_offline_minutes: number | null

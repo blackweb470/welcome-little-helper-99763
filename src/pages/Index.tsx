@@ -121,116 +121,226 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center justify-between">
+      <header className="border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Bot className="w-6 h-6 text-primary" />
-              <h1 className="text-2xl font-bold">LYQN</h1>
+              <div className="relative">
+                <Bot className="w-8 h-8 text-primary" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                LYQN AI
+              </span>
             </div>
-            <div className="flex gap-2">
+            <nav className="flex items-center gap-4">
               <Button asChild variant="ghost" size="sm">
-                <Link to="/features">
-                  Features
-                </Link>
+                <Link to="/features">Features</Link>
               </Button>
               <Button asChild variant="ghost" size="sm">
-                <Link to="/docs">
-                  Docs
-                </Link>
+                <Link to="/docs">Docs</Link>
               </Button>
-              <Button asChild size="sm">
-                <Link to="/auth">
-                  Get Started
-                </Link>
+              <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Link to="/auth">Start Free Trial</Link>
               </Button>
-            </div>
+            </nav>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4">
         {/* Hero Section */}
-        <section className="py-20 text-center">
-          <Badge variant="secondary" className="mb-4">
-            <Sparkles className="w-3 h-3 mr-1" />
-            Powered by OpenAI Realtime API
-          </Badge>
-          
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 max-w-4xl mx-auto">
-            The Most Advanced AI Customer Support Agent
-          </h2>
-          
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Not just a chatbot. A complete AI-powered customer engagement platform with voice, 
-            sentiment analysis, behavioral scoring, and intelligent automation.
-          </p>
-
-          <div className="flex flex-wrap gap-4 justify-center mb-12">
-            <Button size="lg" onClick={() => navigate("/auth")}>
-              Start Free Trial
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => {
-              document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' });
-            }}>
-              Try Live Demo
-            </Button>
+        <section className="relative py-32 text-center overflow-hidden">
+          {/* Animated background */}
+          <div className="absolute inset-0 -z-10">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse delay-700" />
           </div>
+          
+          <div className="space-y-8">
+            <Badge variant="secondary" className="text-sm px-4 py-2">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Self-Learning AI • Powered by OpenAI
+            </Badge>
+            
+            <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight max-w-5xl mx-auto">
+              AI That Learns
+              <br />
+              <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                Your Business
+              </span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              Revolutionary AI customer support that gets smarter with every conversation.
+              Learns your products, customers, and business—automatically.
+            </p>
+
+            <div className="flex flex-wrap gap-4 justify-center pt-4">
+              <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/auth")}>
+                Start Free Trial
+                <Sparkles className="w-5 h-5 ml-2" />
+              </Button>
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6" onClick={() => {
+                document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' });
+              }}>
+                Watch Demo
+              </Button>
+            </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto pt-12">
             {benefits.map((benefit, i) => (
-              <Card key={i} className="p-6 text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{benefit.stat}</div>
-                <div className="font-semibold mb-1">{benefit.label}</div>
-                <div className="text-xs text-muted-foreground">{benefit.description}</div>
+              <Card key={i} className="p-8 text-center border-2 hover:border-primary/50 transition-all hover:shadow-lg bg-card/50 backdrop-blur">
+                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-primary to-primary/60 bg-clip-text text-transparent mb-3">
+                  {benefit.stat}
+                </div>
+                <div className="font-semibold text-lg mb-2">{benefit.label}</div>
+                <div className="text-sm text-muted-foreground">{benefit.description}</div>
               </Card>
             ))}
+          </div>
+          </div>
+        </section>
+
+        {/* Self-Learning Feature Highlight */}
+        <section className="py-20 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <Badge variant="secondary" className="text-sm">
+                <Brain className="w-4 h-4 mr-2" />
+                Revolutionary Technology
+              </Badge>
+              <h3 className="text-4xl md:text-5xl font-bold">
+                Gets Smarter With Every Conversation
+              </h3>
+              <p className="text-xl text-muted-foreground leading-relaxed">
+                Our AI doesn't just respond—it learns. Every customer interaction teaches it about your products, 
+                policies, and customer preferences. The more conversations, the more intelligent it becomes.
+              </p>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <div className="mt-1 p-1 bg-primary/10 rounded">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Automatic Learning</div>
+                    <div className="text-muted-foreground">Extracts insights from AI and human conversations</div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="mt-1 p-1 bg-primary/10 rounded">
+                    <Target className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Business-Specific Knowledge</div>
+                    <div className="text-muted-foreground">Learns your unique products, policies, and FAQs</div>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="mt-1 p-1 bg-primary/10 rounded">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold mb-1">Continuous Improvement</div>
+                    <div className="text-muted-foreground">Response quality improves automatically over time</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+            <Card className="p-8 bg-gradient-to-br from-primary/5 to-secondary/5 border-2">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-background rounded-lg">
+                  <MessageSquare className="w-6 h-6 text-primary" />
+                  <div className="text-sm flex-1">
+                    <div className="font-medium mb-1">Customer asks about shipping</div>
+                    <div className="text-muted-foreground text-xs">AI learns: "Standard shipping is 3-5 days"</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-background rounded-lg">
+                  <Brain className="w-6 h-6 text-primary" />
+                  <div className="text-sm flex-1">
+                    <div className="font-medium mb-1">AI stores the knowledge</div>
+                    <div className="text-muted-foreground text-xs">Added to business-specific learning database</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-background rounded-lg">
+                  <Zap className="w-6 h-6 text-primary" />
+                  <div className="text-sm flex-1">
+                    <div className="font-medium mb-1">Next customer gets instant answer</div>
+                    <div className="text-muted-foreground text-xs">AI applies learned knowledge automatically</div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </section>
 
         {/* Demo Section */}
-        <section id="demo" className="py-16 max-w-4xl mx-auto">
-          <Card className="p-8 md:p-12 bg-card/50 backdrop-blur border-2">
-            <div className="text-center space-y-4">
-              <h3 className="text-3xl font-bold">Experience It Live</h3>
-              <p className="text-muted-foreground">
-                Sign up for free to try our AI voice assistant with real-time conversations
+        <section id="demo" className="py-20 max-w-5xl mx-auto">
+          <Card className="p-12 md:p-16 bg-gradient-to-br from-primary/5 via-background to-secondary/5 border-2 border-primary/20">
+            <div className="text-center space-y-6">
+              <Badge variant="secondary" className="text-sm">
+                <Mic className="w-4 h-4 mr-2" />
+                Live Demo Available
+              </Badge>
+              <h3 className="text-4xl md:text-5xl font-bold">See the Future of Customer Support</h3>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Experience our self-learning AI in action. Watch it get smarter with every interaction.
               </p>
-              <Button size="lg" onClick={() => navigate("/auth")}>
-                Start Free Trial
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                No credit card required • Full access to all features
-              </p>
+              <div className="flex flex-wrap gap-4 justify-center pt-4">
+                <Button size="lg" className="text-lg px-8 py-6" onClick={() => navigate("/auth")}>
+                  Start Free Trial
+                  <Sparkles className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-3 gap-6 pt-8 max-w-3xl mx-auto">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">✓</div>
+                  <div className="text-sm font-medium mt-2">No Credit Card</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">✓</div>
+                  <div className="text-sm font-medium mt-2">5 Min Setup</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">✓</div>
+                  <div className="text-sm font-medium mt-2">Full Features</div>
+                </div>
+              </div>
             </div>
           </Card>
         </section>
 
         {/* Why Superior Section */}
-        <section className="py-16 text-center">
-          <Badge variant="secondary" className="mb-4">Why We're Different</Badge>
-          <h3 className="text-4xl font-bold mb-4">Not Your Average Chatbot</h3>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-12">
-            While others offer basic chat, we deliver an enterprise-grade AI customer engagement platform 
-            with features that actually drive results.
+        <section className="py-20 text-center">
+          <Badge variant="secondary" className="mb-6 text-sm">
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Enterprise-Grade Features
+          </Badge>
+          <h3 className="text-4xl md:text-5xl font-bold mb-6">
+            Beyond Basic Chatbots
+          </h3>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-16">
+            While competitors offer simple chat, we deliver a complete AI platform with advanced learning,
+            voice capabilities, and deep business intelligence.
           </p>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             {features.map((feature, i) => (
-              <Card key={i} className="p-6 text-left hover:shadow-lg transition-shadow">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg text-primary">
+              <Card key={i} className="p-8 text-left hover:shadow-xl hover:border-primary/30 transition-all group bg-card/50 backdrop-blur">
+                <div className="space-y-4">
+                  <div className="p-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl text-primary w-fit group-hover:scale-110 transition-transform">
                     {feature.icon}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold text-lg">{feature.title}</h4>
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      <h4 className="font-bold text-xl">{feature.title}</h4>
                       <Badge variant="secondary" className="text-xs">{feature.badge}</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                   </div>
                 </div>
               </Card>
@@ -274,29 +384,61 @@ const Index = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 text-center">
-          <Card className="p-12 max-w-3xl mx-auto bg-gradient-to-br from-primary/10 to-secondary/10">
-            <h3 className="text-4xl font-bold mb-4">Ready to Transform Your Customer Support?</h3>
-            <p className="text-xl text-muted-foreground mb-8">
-              Join businesses already using the most advanced AI agent. Start your free trial today.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/auth")}>
-                Start Free Trial
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/auth")}>
-                View Pricing
-              </Button>
+        <section className="py-24 text-center">
+          <Card className="p-16 max-w-4xl mx-auto bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 relative overflow-hidden">
+            <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(white,transparent_70%)]" />
+            <div className="relative z-10 space-y-8">
+              <h3 className="text-5xl md:text-6xl font-bold">
+                Ready to Deploy AI That Actually Learns?
+              </h3>
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
+                Join innovative businesses using self-learning AI to transform customer support.
+                Start free, no credit card required.
+              </p>
+              <div className="flex flex-wrap gap-6 justify-center pt-6">
+                <Button size="lg" className="text-lg px-10 py-7" onClick={() => navigate("/auth")}>
+                  Start Free Trial
+                  <Sparkles className="w-5 h-5 ml-2" />
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg px-10 py-7" onClick={() => navigate("/docs")}>
+                  View Documentation
+                  <FileText className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+              <div className="flex items-center justify-center gap-8 pt-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-primary" />
+                  <span>No Credit Card</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <span>5 Min Setup</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <span>AI Learns Instantly</span>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground mt-6">No credit card required • Setup in 5 minutes</p>
           </Card>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-8 text-center text-muted-foreground">
+      <footer className="border-t py-12 bg-muted/30">
         <div className="container mx-auto px-4">
-          <p>© 2025 AI Support Pro. All rights reserved.</p>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Bot className="w-6 h-6 text-primary" />
+              <span className="font-bold text-xl">LYQN AI</span>
+            </div>
+            <div className="flex gap-8 text-sm text-muted-foreground">
+              <Link to="/features" className="hover:text-foreground transition-colors">Features</Link>
+              <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
+              <Link to="/auth" className="hover:text-foreground transition-colors">Login</Link>
+            </div>
+            <p className="text-sm text-muted-foreground">© 2025 LYQN AI. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>
