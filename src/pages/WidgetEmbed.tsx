@@ -23,7 +23,7 @@ const WidgetEmbed = () => {
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-screen h-screen overflow-hidden">
       <ChatWidget businessId={businessId} />
     </div>
   );
