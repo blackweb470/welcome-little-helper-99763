@@ -37,18 +37,17 @@ const WidgetEmbed = () => {
       )}
 
       {/* Toggle Button */}
-      <Button
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-[1000000] w-14 h-14 md:w-16 md:h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-primary hover:bg-primary/90"
-        size="icon"
+        className="fixed bottom-6 right-6 z-[1000000] w-14 h-14 md:w-16 md:h-16 rounded-full transition-all duration-300 hover:scale-110 bg-transparent border-none cursor-pointer"
         title={isOpen ? "Close chat" : "Chat with us"}
       >
         {isOpen ? (
-          <X className="w-6 h-6 md:w-7 md:h-7" />
+          <X className="w-6 h-6 md:w-7 md:h-7 text-foreground" />
         ) : (
-          <MessageCircle className="w-6 h-6 md:w-7 md:h-7" />
+          <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-foreground" />
         )}
-      </Button>
+      </button>
     </>
   );
 };
