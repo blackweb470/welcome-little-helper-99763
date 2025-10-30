@@ -37,6 +37,34 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     checkProactiveRules();
   }, [businessId]);
 
+  // Fetch current live chat session status
+  const fetchLiveChatSession = async (convId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('live_chat_sessions')
+        .select('*')
+        .eq('conversation_id', convId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        console.log('Fetched live chat session:', data);
+        setLiveChatSession(data);
+      }
+    } catch (error) {
+      console.error('Error fetching live chat session:', error);
+    }
+  };
+
+  // Fetch live chat session when conversationId is set
+  useEffect(() => {
+    if (conversationId) {
+      fetchLiveChatSession(conversationId);
+    }
+  }, [conversationId]);
+
   // Real-time subscription for live chat session updates
   useEffect(() => {
     if (!conversationId) return;
