@@ -178,6 +178,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('Accepting chat session:', sessionId);
       const { error } = await supabase
         .from('live_chat_sessions')
         .update({
@@ -188,6 +189,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         .eq('id', sessionId);
 
       if (error) throw error;
+
+      console.log('Chat session updated to active status');
 
       // Find the session and open it automatically
       const session = sessions.find(s => s.id === sessionId);

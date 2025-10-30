@@ -79,22 +79,40 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
           table: 'live_chat_sessions',
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          console.log('Live chat session updated:', payload);
+          console.log('Live chat session UPDATE received:', payload);
           if (payload.new) {
             const newSession = payload.new as any;
-            const oldSession = payload.old as any;
+            console.log('Updating liveChatSession state to:', newSession);
             setLiveChatSession(newSession);
             
-            // Notify visitor when agent accepts (status changes from queued to active)
-            if (newSession.status === 'active' && oldSession?.status === 'queued') {
+            // Notify visitor when agent accepts
+            if (newSession.status === 'active') {
+              console.log('Agent has joined - status is now active');
               handleTranscript('An agent has joined the chat!', 'assistant');
             }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'live_chat_sessions',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('Live chat session INSERT received:', payload);
+          if (payload.new) {
+            const newSession = payload.new as any;
+            console.log('New session created:', newSession);
+            setLiveChatSession(newSession);
           }
         }
       )
