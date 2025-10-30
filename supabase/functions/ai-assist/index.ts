@@ -15,7 +15,128 @@ serve(async (req) => {
   try {
     const requestBody = await req.json();
     
-    // Validate input
+    // Handle both chat and analytics requests
+    const { conversationId, message, businessId, action, context, lastMessage, sentiment, conversation } = requestBody;
+    
+    // If this is a chat request
+    if (conversationId && message && businessId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY is not configured');
+      }
+
+      // Fetch widget settings
+      const { data: settings } = await supabase
+        .from('widget_settings')
+        .select('system_prompt')
+        .eq('business_id', businessId)
+        .single();
+
+      let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.';
+
+      // Fetch business documents
+      const { data: documents } = await supabase
+        .from('business_documents')
+        .select('file_name, summary, content_text')
+        .eq('business_id', businessId)
+        .eq('status', 'ready');
+
+      if (documents && documents.length > 0) {
+        systemPrompt += '\n\n=== Business Knowledge Base ===\n';
+        systemPrompt += 'The following is important information about this business:\n\n';
+        
+        for (const doc of documents) {
+          systemPrompt += `Document: ${doc.file_name}\n`;
+          if (doc.summary) systemPrompt += `Summary: ${doc.summary}\n`;
+          if (doc.content_text) {
+            const contentPreview = doc.content_text.substring(0, 2000);
+            systemPrompt += `Content: ${contentPreview}${doc.content_text.length > 2000 ? '...' : ''}\n`;
+          }
+          systemPrompt += '\n';
+        }
+      }
+
+      // Fetch business learnings
+      const { data: learnings } = await supabase
+        .from('business_learnings')
+        .select('learning_type, content')
+        .eq('business_id', businessId)
+        .gte('confidence_score', 0.6)
+        .order('usage_count', { ascending: false })
+        .limit(20);
+
+      if (learnings && learnings.length > 0) {
+        systemPrompt += '\n\n=== Learnings from Past Conversations ===\n';
+        systemPrompt += 'Apply these insights when responding:\n\n';
+        
+        const grouped: Record<string, string[]> = {};
+        for (const learning of learnings) {
+          if (!grouped[learning.learning_type]) {
+            grouped[learning.learning_type] = [];
+          }
+          grouped[learning.learning_type].push(learning.content);
+        }
+        
+        for (const [type, items] of Object.entries(grouped)) {
+          systemPrompt += `\n${type.replace(/_/g, ' ').toUpperCase()}:\n`;
+          items.forEach(item => systemPrompt += `- ${item}\n`);
+        }
+      }
+
+      // Fetch conversation history
+      const { data: messages } = await supabase
+        .from('messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(20);
+
+      const conversationHistory = messages?.map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content
+      })) || [];
+
+      console.log('Calling AI for chat response');
+
+      // Call Lovable AI
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...conversationHistory,
+            { role: 'user', content: message }
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('AI API error:', response.status, errorText);
+        throw new Error(`AI API error: ${errorText}`);
+      }
+
+      const aiData = await response.json();
+      const reply = aiData.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+
+      console.log('AI response generated successfully');
+
+      return new Response(
+        JSON.stringify({ reply }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Otherwise handle analytics requests
     const schema = z.object({
       action: z.enum(['suggest_response', 'generate_insights']),
       context: z.string().max(10000).optional(),
@@ -24,21 +145,21 @@ serve(async (req) => {
       conversation: z.string().max(50000).optional()
     });
     
-    const { action, context, lastMessage, sentiment, conversation } = schema.parse(requestBody);
+    const validated = schema.parse({ action, context, lastMessage, sentiment, conversation });
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    if (action === 'suggest_response') {
+    if (validated.action === 'suggest_response') {
       const prompt = `You are an AI assistant helping a customer support agent. Based on the following conversation context and the customer's sentiment, suggest 3 helpful response options.
 
 Conversation context:
-${context}
+${validated.context}
 
-Last customer message: ${lastMessage}
-Customer sentiment: ${sentiment}
+Last customer message: ${validated.lastMessage}
+Customer sentiment: ${validated.sentiment}
 
 Provide 3 different response suggestions that:
 1. Address the customer's concern directly
@@ -78,10 +199,10 @@ Format your response as a JSON object with a "responses" array containing the 3 
       );
     }
 
-    if (action === 'generate_insights') {
+    if (validated.action === 'generate_insights') {
       const prompt = `Analyze this customer support conversation and provide insights:
 
-${conversation}
+${validated.conversation}
 
 Provide:
 1. Key topics discussed (as an array)

@@ -30,11 +30,6 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         .single();
       
       if (data) setSettings(data);
-      
-      // Initialize text mode conversation
-      if (!conversationId) {
-        initializeTextConversation();
-      }
     };
 
     fetchSettings();
@@ -167,47 +162,62 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     handleTranscript(message, "user");
     
     try {
-      // If voice is being used and sendMessageFn exists, use it
-      if (sendMessageFn) {
-        await sendMessageFn(message);
-      } else {
-        // Text-only mode: save message and get AI response
-        if (!conversationId) {
-          await initializeTextConversation();
-        }
+      // Initialize conversation if needed
+      let convId = conversationId;
+      if (!convId) {
+        const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
         
-        if (conversationId) {
-          // Save user message
-          await supabase
-            .from('messages')
-            .insert({
-              conversation_id: conversationId,
-              role: 'user',
-              content: message
-            });
+        const { data: convData } = await supabase
+          .from('conversations')
+          .insert({
+            business_id: businessId,
+            visitor_id: visitorId,
+            started_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-          // Get AI response
-          const { data: aiResponse } = await supabase.functions.invoke('ai-assist', {
-            body: {
-              conversationId: conversationId,
-              message: message,
-              businessId: businessId
-            }
-          });
-
-          if (aiResponse?.reply) {
-            handleTranscript(aiResponse.reply, "assistant");
-            
-            // Save assistant message
-            await supabase
-              .from('messages')
-              .insert({
-                conversation_id: conversationId,
-                role: 'assistant',
-                content: aiResponse.reply
-              });
-          }
+        if (convData) {
+          convId = convData.id;
+          setConversationId(convId);
         }
+      }
+
+      if (!convId) {
+        throw new Error('Could not create conversation');
+      }
+
+      // Save user message
+      await supabase
+        .from('messages')
+        .insert({
+          conversation_id: convId,
+          role: 'user',
+          content: message
+        });
+
+      // Get AI response
+      const { data: aiResponse, error: aiError } = await supabase.functions.invoke('ai-assist', {
+        body: {
+          conversationId: convId,
+          message: message,
+          businessId: businessId
+        }
+      });
+
+      if (aiError) throw aiError;
+
+      if (aiResponse?.reply) {
+        handleTranscript(aiResponse.reply, "assistant");
+        
+        // Save assistant message
+        await supabase
+          .from('messages')
+          .insert({
+            conversation_id: convId,
+            role: 'assistant',
+            content: aiResponse.reply
+          });
       }
     } catch (error) {
       console.error('Error sending text message:', error);
