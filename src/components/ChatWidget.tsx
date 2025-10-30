@@ -495,7 +495,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                 )}
                 {liveChatSession?.status === 'active' && (
                   <div className="m-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
-                    <p className="font-medium text-green-800 dark:text-green-200">✅ Speaking with live agent</p>
+                    <p className="font-medium text-green-800 dark:text-green-200">✅ You are speaking to an agent</p>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
                   </div>
                 )}
                 
