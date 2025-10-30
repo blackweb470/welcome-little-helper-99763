@@ -175,6 +175,15 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
       if (error) throw error;
 
+      // Find the session and open it automatically
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        // Clear previous messages and open the chat
+        setMessages([]);
+        setSelectedSession(session);
+        fetchMessages(session.conversation_id);
+      }
+
       toast({
         title: "Chat accepted",
         description: "You can now respond to the customer"
@@ -200,6 +209,12 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         .eq('id', sessionId);
 
       if (error) throw error;
+
+      // Clear state when ending chat
+      setSelectedSession(null);
+      setMessages([]);
+      setMessageInput("");
+      fetchSessions();
 
       toast({
         title: "Chat ended",
@@ -257,6 +272,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   };
 
   const handleViewChat = (session: ChatSession) => {
+    // Clear previous messages before loading new conversation
+    setMessages([]);
     setSelectedSession(session);
     fetchMessages(session.conversation_id);
   };
