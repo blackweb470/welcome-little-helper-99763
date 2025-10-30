@@ -315,15 +315,23 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       const data = await response.json();
       console.log('Response received:', data);
 
+      // Update conversation ID if returned
+      if (data.conversationId && !conversationId) {
+        setConversationId(data.conversationId);
+      }
+
+      // If human agent is active, don't show AI response
+      if (data.humanAgentActive) {
+        console.log('Human agent is handling this conversation');
+        return;
+      }
+
       if (data.reply) {
         handleTranscript(data.reply, "assistant");
-        if (data.conversationId && !conversationId) {
-          setConversationId(data.conversationId);
-        }
         if (data.shouldEscalate) {
           setShowEscalateButton(true);
         }
-      } else {
+      } else if (!data.humanAgentActive) {
         throw new Error('No reply from AI');
       }
     } catch (error) {
@@ -440,13 +448,15 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
               {/* Text and Voice interface */}
               <div className="border-t bg-background">
                 {liveChatSession?.status === 'queued' && (
-                  <div className="m-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-                    <p className="font-medium text-yellow-800">Waiting for agent...</p>
+                  <div className="m-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">⏳ Waiting for agent...</p>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
                   </div>
                 )}
                 {liveChatSession?.status === 'active' && (
-                  <div className="m-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
-                    <p className="font-medium text-green-800">Connected to agent</p>
+                  <div className="m-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+                    <p className="font-medium text-green-800 dark:text-green-200">👤 You're now chatting with a human agent</p>
+                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">AI responses are paused</p>
                   </div>
                 )}
                 

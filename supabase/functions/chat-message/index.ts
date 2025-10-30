@@ -63,6 +63,27 @@ Deno.serve(async (req) => {
         content: message
       });
 
+    // Check if there's an active live chat session (human agent is handling this)
+    const { data: liveSession } = await supabase
+      .from('live_chat_sessions')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    // If human agent is active, don't generate AI response
+    if (liveSession) {
+      console.log('Human agent active, skipping AI response');
+      return new Response(
+        JSON.stringify({ 
+          reply: null, 
+          conversationId, 
+          humanAgentActive: true 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get AI response
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
