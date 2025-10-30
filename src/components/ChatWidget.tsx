@@ -20,6 +20,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [textInput, setTextInput] = useState("");
   const [sendMessageFn, setSendMessageFn] = useState<((text: string) => Promise<void>) | null>(null);
   const [isTextMode, setIsTextMode] = useState(true); // Default to text mode
+  const [showEscalateButton, setShowEscalateButton] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -198,6 +199,9 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         if (data.conversationId && !conversationId) {
           setConversationId(data.conversationId);
         }
+        if (data.shouldEscalate) {
+          setShowEscalateButton(true);
+        }
       } else {
         throw new Error('No reply from AI');
       }
@@ -354,15 +358,36 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                   </div>
                 )}
 
-                {!liveChatSession && (
+                {!liveChatSession && !showEscalateButton && (
                   <div className="px-4 pb-4">
                     <Button
-                      onClick={() => requestLiveAgent('Customer requested live support')}
+                      onClick={() => {
+                        const msg = "I would like to speak to a live agent";
+                        setTextInput(msg);
+                        setTimeout(() => handleSendText(), 0);
+                      }}
                       variant="outline"
                       size="sm"
                       className="w-full"
                     >
                       Talk to Live Agent
+                    </Button>
+                  </div>
+                )}
+                
+                {showEscalateButton && !liveChatSession && (
+                  <div className="px-4 pb-4">
+                    <Button
+                      onClick={() => {
+                        requestLiveAgent('AI determined escalation needed');
+                        setShowEscalateButton(false);
+                      }}
+                      variant="default"
+                      size="sm"
+                      className="w-full"
+                      style={{ backgroundColor: primaryColor }}
+                    >
+                      Connect to Live Agent Now
                     </Button>
                   </div>
                 )}

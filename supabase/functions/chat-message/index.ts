@@ -99,6 +99,8 @@ Deno.serve(async (req) => {
     // Build system prompt
     let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant.';
     
+    systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
+    
     if (documents && documents.length > 0) {
       systemPrompt += '\n\nBusiness Knowledge:\n' + documents.map((d: any) => 
         `${d.file_name}:\n${d.content_text}`
@@ -134,7 +136,11 @@ Deno.serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const reply = aiData.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+    let reply = aiData.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+    
+    // Check if AI wants to escalate
+    const shouldEscalate = reply.includes('ESCALATE_TO_AGENT');
+    let cleanReply = reply.replace('ESCALATE_TO_AGENT', '').trim();
 
     // Save assistant message
     await supabase
@@ -142,13 +148,13 @@ Deno.serve(async (req) => {
       .insert({
         conversation_id: conversationId,
         role: 'assistant',
-        content: reply
+        content: cleanReply
       });
 
     console.log('AI response generated successfully');
 
     return new Response(
-      JSON.stringify({ reply, conversationId }),
+      JSON.stringify({ reply: cleanReply, conversationId, shouldEscalate }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
