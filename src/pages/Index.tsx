@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import VoiceInterface from "@/components/VoiceInterface";
-import { supabase } from "@/integrations/supabase/client";
 import { 
   MessageSquare, 
   Brain, 
@@ -24,12 +21,6 @@ import {
 
 const Index = () => {
   const navigate = useNavigate();
-  const [businessId] = useState("demo"); // Demo mode for landing page
-  const [messages, setMessages] = useState<Array<{role: string, content: string}>>([]);
-
-  const handleTranscript = (text: string, role: 'user' | 'assistant') => {
-    setMessages(prev => [...prev, { role, content: text }]);
-  };
 
   const features = [
     {
@@ -203,45 +194,18 @@ const Index = () => {
         {/* Demo Section */}
         <section id="demo" className="py-16 max-w-4xl mx-auto">
           <Card className="p-8 md:p-12 bg-card/50 backdrop-blur border-2">
-            <div className="text-center mb-8">
-              <h3 className="text-3xl font-bold mb-2">Experience It Live</h3>
-              <p className="text-muted-foreground">Click the microphone to start a voice conversation with our AI agent</p>
+            <div className="text-center space-y-4">
+              <h3 className="text-3xl font-bold">Experience It Live</h3>
+              <p className="text-muted-foreground">
+                Sign up for free to try our AI voice assistant with real-time conversations
+              </p>
+              <Button size="lg" onClick={() => navigate("/auth")}>
+                Start Free Trial
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                No credit card required • Full access to all features
+              </p>
             </div>
-            
-            <VoiceInterface 
-              businessId={businessId}
-              onTranscript={handleTranscript}
-            />
-            
-            {messages.length > 0 && (
-              <div className="mt-8 space-y-3 max-h-80 overflow-y-auto">
-                {messages.slice(-5).map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`p-4 rounded-lg ${
-                      msg.role === 'user'
-                        ? 'bg-primary/10 ml-auto max-w-[85%]'
-                        : 'bg-secondary max-w-[85%]'
-                    }`}
-                  >
-                    <p className="text-sm font-semibold mb-1 flex items-center gap-2">
-                      {msg.role === 'user' ? (
-                        <>
-                          <Users className="w-4 h-4" />
-                          You
-                        </>
-                      ) : (
-                        <>
-                          <Bot className="w-4 h-4" />
-                          AI Agent
-                        </>
-                      )}
-                    </p>
-                    <p>{msg.content}</p>
-                  </div>
-                ))}
-              </div>
-            )}
           </Card>
         </section>
 

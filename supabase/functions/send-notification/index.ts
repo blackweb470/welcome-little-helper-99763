@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -10,17 +11,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface NotificationRequest {
-  type: 'chat_transfer' | 'new_message' | 'ticket_created' | 'ticket_resolved';
-  businessId: string;
-  data: {
-    conversationId?: string;
-    ticketId?: string;
-    visitorId?: string;
-    message?: string;
-    agentEmail?: string;
-  };
-}
+const NotificationRequestSchema = z.object({
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved']),
+  businessId: z.string().uuid("Invalid business ID format"),
+  data: z.object({
+    conversationId: z.string().uuid("Invalid conversation ID format").optional(),
+    ticketId: z.string().uuid("Invalid ticket ID format").optional(),
+    visitorId: z.string().max(255).optional(),
+    message: z.string().max(5000).optional(),
+    agentEmail: z.string().email("Invalid email format").optional(),
+  }),
+});
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -28,7 +29,19 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { type, businessId, data }: NotificationRequest = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validation = NotificationRequestSchema.safeParse(body);
+    if (!validation.success) {
+      console.error("Validation error:", validation.error);
+      return new Response(
+        JSON.stringify({ error: "Invalid input", details: validation.error.issues }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { type, businessId, data } = validation.data;
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -67,45 +80,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Sanitize business name for HTML
+    const sanitizedBusinessName = business.name.replace(/[<>]/g, '');
+    
     let subject = "";
     let html = "";
 
     switch (type) {
       case 'chat_transfer':
-        subject = `🔔 Live Chat Transfer Request - ${business.name}`;
+        subject = `🔔 Live Chat Transfer Request - ${sanitizedBusinessName}`;
         html = `
           <h1>New Live Chat Transfer</h1>
           <p>A visitor has requested to speak with a live agent.</p>
-          <p><strong>Conversation ID:</strong> ${data.conversationId}</p>
-          <p><strong>Visitor ID:</strong> ${data.visitorId}</p>
-          ${data.message ? `<p><strong>Reason:</strong> ${data.message}</p>` : ''}
+          <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
+          <p><strong>Visitor ID:</strong> ${data.visitorId || 'N/A'}</p>
+          ${data.message ? `<p><strong>Reason:</strong> ${data.message.substring(0, 500)}</p>` : ''}
           <p>Please log in to your dashboard to accept this chat.</p>
         `;
         break;
 
       case 'new_message':
-        subject = `💬 New Message - ${business.name}`;
+        subject = `💬 New Message - ${sanitizedBusinessName}`;
         html = `
           <h1>New Message Received</h1>
-          <p>${data.message}</p>
-          <p><strong>Conversation ID:</strong> ${data.conversationId}</p>
+          <p>${data.message ? data.message.substring(0, 500) : 'No message content'}</p>
+          <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
         `;
         break;
 
       case 'ticket_created':
-        subject = `🎫 New Support Ticket - ${business.name}`;
+        subject = `🎫 New Support Ticket - ${sanitizedBusinessName}`;
         html = `
           <h1>New Support Ticket Created</h1>
-          <p><strong>Ticket ID:</strong> ${data.ticketId}</p>
-          ${data.message ? `<p><strong>Details:</strong> ${data.message}</p>` : ''}
+          <p><strong>Ticket ID:</strong> ${data.ticketId || 'N/A'}</p>
+          ${data.message ? `<p><strong>Details:</strong> ${data.message.substring(0, 500)}</p>` : ''}
         `;
         break;
 
       case 'ticket_resolved':
-        subject = `✅ Ticket Resolved - ${business.name}`;
+        subject = `✅ Ticket Resolved - ${sanitizedBusinessName}`;
         html = `
           <h1>Support Ticket Resolved</h1>
-          <p><strong>Ticket ID:</strong> ${data.ticketId}</p>
+          <p><strong>Ticket ID:</strong> ${data.ticketId || 'N/A'}</p>
         `;
         break;
 
