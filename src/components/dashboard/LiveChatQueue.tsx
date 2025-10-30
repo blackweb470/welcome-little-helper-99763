@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,12 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const { toast } = useToast();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useEffect(() => {
     fetchSessions();
@@ -308,7 +314,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   if (selectedSession) {
     return (
       <Card className="h-[600px] flex flex-col">
-        <CardHeader className="border-b">
+        <CardHeader className="border-b flex-shrink-0">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button
@@ -334,7 +340,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
             </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col p-0">
+        <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((msg) => (
@@ -356,9 +362,10 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
-          <div className="border-t p-4">
+          <div className="border-t p-4 flex-shrink-0 bg-background">
             <div className="flex gap-2">
               <Input
                 value={messageInput}
