@@ -162,88 +162,42 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     handleTranscript(message, "user");
     
     try {
-      // Initialize conversation if needed
-      let convId = conversationId;
-      if (!convId) {
-        const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
-        
-        console.log('Creating conversation for business:', businessId, 'visitor:', visitorId);
-        
-        const { data: convData, error: convError } = await supabase
-          .from('conversations')
-          .insert({
-            business_id: businessId,
-            visitor_id: visitorId,
-            started_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+      const visitorId = localStorage.getItem('visitor_id') || `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('visitor_id', visitorId);
 
-        if (convError) {
-          console.error('Error creating conversation:', convError);
-          throw new Error(`Failed to create conversation: ${convError.message}`);
-        }
-
-        if (convData) {
-          convId = convData.id;
-          setConversationId(convId);
-          console.log('Conversation created:', convId);
-        }
-      }
-
-      if (!convId) {
-        throw new Error('Could not create conversation');
-      }
-
-      // Save user message
-      await supabase
-        .from('messages')
-        .insert({
-          conversation_id: convId,
-          role: 'user',
-          content: message
-        });
-
-      // Get AI response
-      console.log('Calling ai-assist function for conversation:', convId);
+      console.log('Sending message to chat-message function');
+      
       const response = await fetch(
-        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/ai-assist`,
+        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/chat-message`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw`
           },
           body: JSON.stringify({
-            conversationId: convId,
-            message: message,
-            businessId: businessId
+            businessId: businessId,
+            visitorId: visitorId,
+            message: message
           })
         }
       );
 
-      console.log('AI response status:', response.status);
+      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('AI assist error:', response.status, errorText);
-        throw new Error(`AI service error: ${response.status} - ${errorText}`);
+        console.error('Chat message error:', response.status, errorText);
+        throw new Error(`Service error: ${response.status}`);
       }
 
-      const aiResponse = await response.json();
-      console.log('AI response received:', aiResponse);
+      const data = await response.json();
+      console.log('Response received:', data);
 
-      if (aiResponse?.reply) {
-        handleTranscript(aiResponse.reply, "assistant");
-        
-        // Save assistant message
-        await supabase
-          .from('messages')
-          .insert({
-            conversation_id: convId,
-            role: 'assistant',
-            content: aiResponse.reply
-          });
+      if (data.reply) {
+        handleTranscript(data.reply, "assistant");
+        if (data.conversationId && !conversationId) {
+          setConversationId(data.conversationId);
+        }
       } else {
         throw new Error('No reply from AI');
       }

@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.ai-assist]
 verify_jwt = false
+
+[functions.chat-message]
+verify_jwt = false
