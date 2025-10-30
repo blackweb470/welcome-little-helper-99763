@@ -488,7 +488,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
               {/* Text and Voice interface */}
               <div className="border-t bg-background">
                 {liveChatSession?.status === 'queued' && (
-                  <div className="m-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
+                  <div className="m-4 p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
                     <p className="font-medium text-yellow-800 dark:text-yellow-200">⏳ Waiting for agent...</p>
                     <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
                   </div>
