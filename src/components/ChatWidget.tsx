@@ -197,6 +197,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         });
 
       // Get AI response
+      console.log('Calling ai-assist function for conversation:', convId);
       const response = await fetch(
         `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/ai-assist`,
         {
@@ -213,13 +214,16 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         }
       );
 
+      console.log('AI response status:', response.status);
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('AI assist error:', response.status, errorText);
-        throw new Error(`AI service error: ${response.status}`);
+        throw new Error(`AI service error: ${response.status} - ${errorText}`);
       }
 
       const aiResponse = await response.json();
+      console.log('AI response received:', aiResponse);
 
       if (aiResponse?.reply) {
         handleTranscript(aiResponse.reply, "assistant");
@@ -232,10 +236,13 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
             role: 'assistant',
             content: aiResponse.reply
           });
+      } else {
+        throw new Error('No reply from AI');
       }
     } catch (error) {
       console.error('Error sending text message:', error);
-      handleTranscript('Sorry, there was an error processing your message.', 'assistant');
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      handleTranscript(`Sorry, there was an error: ${errorMsg}`, 'assistant');
     }
   };
 
