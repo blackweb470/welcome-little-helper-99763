@@ -87,10 +87,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           console.log('Live chat session updated:', payload);
           if (payload.new) {
             const newSession = payload.new as any;
+            const oldSession = payload.old as any;
             setLiveChatSession(newSession);
             
-            // Notify visitor when agent accepts
-            if (newSession.status === 'active' && payload.eventType === 'UPDATE') {
+            // Notify visitor when agent accepts (status changes from queued to active)
+            if (newSession.status === 'active' && oldSession?.status === 'queued') {
               handleTranscript('An agent has joined the chat!', 'assistant');
             }
           }
@@ -197,7 +198,33 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
   const requestLiveAgent = async (reason: string) => {
     try {
-      const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
+      // Ensure we have a visitor ID
+      let visitorId = localStorage.getItem('visitor_id');
+      if (!visitorId) {
+        visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('visitor_id', visitorId);
+      }
+
+      // Create conversation first if it doesn't exist
+      let currentConvId = conversationId;
+      if (!currentConvId) {
+        const { data: convData, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            business_id: businessId,
+            visitor_id: visitorId,
+            started_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (convError) throw convError;
+        if (convData) {
+          currentConvId = convData.id;
+          setConversationId(convData.id);
+          console.log('Created conversation for live agent:', convData.id);
+        }
+      }
       
       const response = await fetch(
         `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/request-live-agent`,
@@ -209,7 +236,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           body: JSON.stringify({
             businessId: businessId,
             visitorId: visitorId,
-            conversationId: conversationId,
+            conversationId: currentConvId,
             reason: reason
           })
         }
@@ -222,12 +249,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       }
 
       const data = await response.json();
+      console.log('Live agent request response:', data);
       
       if (data.session) {
         setLiveChatSession(data.session);
-        if (data.conversationId && !conversationId) {
-          setConversationId(data.conversationId);
-        }
         handleTranscript('Your request has been sent to our team. An agent will join shortly.', 'assistant');
       } else {
         throw new Error('Failed to create live chat session');
