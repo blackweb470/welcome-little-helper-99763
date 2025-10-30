@@ -3,9 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, User, Clock, CheckCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, showBrowserNotification } from "@/utils/notifications";
+
+interface Message {
+  id: string;
+  role: string;
+  content: string;
+  created_at: string;
+}
 
 interface ChatSession {
   id: string;
@@ -26,6 +35,9 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [agentStatus, setAgentStatus] = useState<string>('offline');
   const [loading, setLoading] = useState(true);
+  const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messageInput, setMessageInput] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -203,8 +215,147 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     }
   };
 
+  const fetchMessages = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!messageInput.trim() || !selectedSession) return;
+
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: selectedSession.conversation_id,
+          role: 'assistant',
+          content: messageInput.trim()
+        });
+
+      if (error) throw error;
+
+      setMessageInput("");
+      fetchMessages(selectedSession.conversation_id);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleViewChat = (session: ChatSession) => {
+    setSelectedSession(session);
+    fetchMessages(session.conversation_id);
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel(`messages-${session.conversation_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${session.conversation_id}`
+        },
+        () => fetchMessages(session.conversation_id)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
   const queuedSessions = sessions.filter(s => s.status === 'queued');
   const activeSessions = sessions.filter(s => s.status === 'active');
+
+  // If viewing a chat, show the chat interface
+  if (selectedSession) {
+    return (
+      <Card className="h-[600px] flex flex-col">
+        <CardHeader className="border-b">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedSession(null)}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <MessageSquare className="w-5 h-5" />
+              Active Chat
+            </div>
+            <Button
+              onClick={() => {
+                endChat(selectedSession.id);
+                setSelectedSession(null);
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <CheckCircle className="w-4 h-4 mr-2" />
+              End Chat
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col p-0">
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      msg.role === 'user'
+                        ? 'bg-muted'
+                        : 'bg-primary text-primary-foreground'
+                    }`}
+                  >
+                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {new Date(msg.created_at).toLocaleTimeString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <div className="border-t p-4">
+            <div className="flex gap-2">
+              <Input
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                placeholder="Type your message..."
+                className="flex-1"
+              />
+              <Button onClick={sendMessage} disabled={!messageInput.trim()}>
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
 
   return (
     <Card>
@@ -286,15 +437,24 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                       </div>
                       <Badge className="bg-green-100 text-green-800">Active</Badge>
                     </div>
-                    <Button 
-                      onClick={() => endChat(session.id)}
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      End Chat
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleViewChat(session)}
+                        size="sm"
+                        className="flex-1"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        View Chat
+                      </Button>
+                      <Button 
+                        onClick={() => endChat(session.id)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        End
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
