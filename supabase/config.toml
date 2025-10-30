@@ -10,7 +10,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.ai-assist]
-verify_jwt = true
+verify_jwt = false
 
 [functions.conversation-memory]
 verify_jwt = false
@@ -33,8 +33,8 @@ verify_jwt = false
 [functions.learn-from-conversation]
 verify_jwt = false
 
-[functions.ai-assist]
+[functions.chat-message]
 verify_jwt = false
 
-[functions.chat-message]
+[functions.request-live-agent]
 verify_jwt = false

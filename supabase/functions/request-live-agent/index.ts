@@ -1,0 +1,88 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { businessId, visitorId, conversationId, reason } = await req.json();
+    console.log('Live agent request:', { businessId, visitorId, conversationId, reason });
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Create conversation if not exists
+    let finalConversationId = conversationId;
+    
+    if (!finalConversationId) {
+      const { data: conv, error: convError } = await supabase
+        .from('conversations')
+        .insert({ 
+          business_id: businessId,
+          visitor_id: visitorId,
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (convError) {
+        console.error('Error creating conversation:', convError);
+        throw convError;
+      }
+      
+      finalConversationId = conv.id;
+    }
+
+    // Create live chat session
+    const { data: session, error: sessionError } = await supabase
+      .from('live_chat_sessions')
+      .insert({
+        conversation_id: finalConversationId,
+        status: 'queued',
+        queued_at: new Date().toISOString(),
+        transfer_reason: reason
+      })
+      .select()
+      .single();
+
+    if (sessionError) {
+      console.error('Error creating live chat session:', sessionError);
+      throw sessionError;
+    }
+
+    // Send notification
+    await supabase.functions.invoke('send-notification', {
+      body: {
+        type: 'chat_transfer',
+        businessId: businessId,
+        data: {
+          conversationId: finalConversationId,
+          visitorId: visitorId,
+          message: reason,
+        },
+      },
+    });
+
+    console.log('Live agent request created successfully');
+
+    return new Response(
+      JSON.stringify({ session, conversationId: finalConversationId }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in request-live-agent function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

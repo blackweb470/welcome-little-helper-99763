@@ -92,57 +92,41 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
   const requestLiveAgent = async (reason: string) => {
     try {
-      // Create conversation if not exists
-      let convId = conversationId;
       const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
       
-      if (!convId) {
-        const { data: conv } = await supabase
-          .from('conversations')
-          .insert({ 
-            business_id: businessId,
-            visitor_id: visitorId,
-            started_at: new Date().toISOString()
+      const response = await fetch(
+        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/request-live-agent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            businessId: businessId,
+            visitorId: visitorId,
+            conversationId: conversationId,
+            reason: reason
           })
-          .select()
-          .single();
-        
-        if (conv) {
-          convId = conv.id;
-          setConversationId(convId);
         }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Live agent request error:', response.status, errorText);
+        throw new Error(`Service error: ${response.status}`);
       }
 
-      if (!convId) return;
-
-      const { data: session, error } = await supabase
-        .from('live_chat_sessions')
-        .insert({
-          conversation_id: convId,
-          status: 'queued',
-          queued_at: new Date().toISOString(),
-          transfer_reason: reason
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Send notification
-      await supabase.functions.invoke('send-notification', {
-        body: {
-          type: 'chat_transfer',
-          businessId: businessId,
-          data: {
-            conversationId: convId,
-            visitorId: visitorId,
-            message: reason,
-          },
-        },
-      });
-
-      setLiveChatSession(session);
-      handleTranscript('Your request has been sent to our team. An agent will join shortly.', 'assistant');
+      const data = await response.json();
+      
+      if (data.session) {
+        setLiveChatSession(data.session);
+        if (data.conversationId && !conversationId) {
+          setConversationId(data.conversationId);
+        }
+        handleTranscript('Your request has been sent to our team. An agent will join shortly.', 'assistant');
+      } else {
+        throw new Error('Failed to create live chat session');
+      }
     } catch (error) {
       console.error('Error requesting live agent:', error);
       handleTranscript('Sorry, unable to connect to a live agent right now. Please try again.', 'assistant');
