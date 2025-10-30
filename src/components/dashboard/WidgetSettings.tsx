@@ -77,29 +77,13 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 
       var iframe = document.createElement('iframe');
       iframe.src = '${appUrl}/embed/${id}';
-      iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:100%;height:100%;border:none;z-index:999999;pointer-events:none;';
+      iframe.style.cssText = 'position:fixed;bottom:0;right:0;width:450px;height:650px;border:none;z-index:999999;';
       iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
       iframe.setAttribute('allow', 'microphone');
       iframe.id = 'lyqn-chat-widget';
       iframe.title = 'LYQN Chat Widget';
       
-      // Allow interactions with the widget
-      iframe.onload = function() {
-        try {
-          iframe.contentWindow.postMessage({type: 'LYQN_WIDGET_READY'}, '${appUrl}');
-        } catch(e) {
-          console.error('LYQN Widget: Failed to send ready message', e);
-        }
-      };
-      
       document.body.appendChild(iframe);
-      
-      // Listen for widget interactions
-      window.addEventListener('message', function(e) {
-        if (e.origin === '${appUrl}' && e.data && e.data.type === 'WIDGET_INTERACTION') {
-          iframe.style.pointerEvents = 'auto';
-        }
-      });
     }
 
     // Initialize when DOM is ready
