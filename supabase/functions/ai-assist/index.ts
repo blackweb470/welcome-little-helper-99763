@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const requestBody = await req.json();
+    console.log('AI-assist request:', requestBody);
     
     // Handle both chat and analytics requests
     const { conversationId, message, businessId, action, context, lastMessage, sentiment, conversation } = requestBody;
@@ -26,8 +27,11 @@ serve(async (req) => {
 
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
       if (!LOVABLE_API_KEY) {
+        console.error('LOVABLE_API_KEY not configured');
         throw new Error('LOVABLE_API_KEY is not configured');
       }
+      
+      console.log('Fetching widget settings and documents...');
 
       // Fetch widget settings
       const { data: settings } = await supabase
@@ -122,13 +126,19 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('AI API error:', response.status, errorText);
-        throw new Error(`AI API error: ${errorText}`);
+        return new Response(
+          JSON.stringify({ error: `AI service error: ${response.status}` }),
+          { 
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
 
       const aiData = await response.json();
       const reply = aiData.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
 
-      console.log('AI response generated successfully');
+      console.log('AI response generated:', reply.substring(0, 50));
 
       return new Response(
         JSON.stringify({ reply }),
