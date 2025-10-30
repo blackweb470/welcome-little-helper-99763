@@ -19,6 +19,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [liveChatSession, setLiveChatSession] = useState<any>(null);
   const [textInput, setTextInput] = useState("");
   const [sendMessageFn, setSendMessageFn] = useState<((text: string) => Promise<void>) | null>(null);
+  const [isTextMode, setIsTextMode] = useState(true); // Default to text mode
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -29,11 +30,39 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         .single();
       
       if (data) setSettings(data);
+      
+      // Initialize text mode conversation
+      if (!conversationId) {
+        initializeTextConversation();
+      }
     };
 
     fetchSettings();
     checkProactiveRules();
   }, [businessId]);
+
+  const initializeTextConversation = async () => {
+    try {
+      const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
+      
+      const { data: convData, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          business_id: businessId,
+          visitor_id: visitorId,
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (convError) throw convError;
+      if (convData) {
+        setConversationId(convData.id);
+      }
+    } catch (error) {
+      console.error('Error initializing text conversation:', error);
+    }
+  };
 
   const checkProactiveRules = async () => {
     if (proactiveShown) return;
@@ -129,7 +158,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   };
 
   const handleSendText = async () => {
-    if (!textInput.trim() || !sendMessageFn) return;
+    if (!textInput.trim()) return;
 
     const message = textInput.trim();
     setTextInput("");
@@ -138,9 +167,51 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     handleTranscript(message, "user");
     
     try {
-      await sendMessageFn(message);
+      // If voice is being used and sendMessageFn exists, use it
+      if (sendMessageFn) {
+        await sendMessageFn(message);
+      } else {
+        // Text-only mode: save message and get AI response
+        if (!conversationId) {
+          await initializeTextConversation();
+        }
+        
+        if (conversationId) {
+          // Save user message
+          await supabase
+            .from('messages')
+            .insert({
+              conversation_id: conversationId,
+              role: 'user',
+              content: message
+            });
+
+          // Get AI response
+          const { data: aiResponse } = await supabase.functions.invoke('ai-assist', {
+            body: {
+              conversationId: conversationId,
+              message: message,
+              businessId: businessId
+            }
+          });
+
+          if (aiResponse?.reply) {
+            handleTranscript(aiResponse.reply, "assistant");
+            
+            // Save assistant message
+            await supabase
+              .from('messages')
+              .insert({
+                conversation_id: conversationId,
+                role: 'assistant',
+                content: aiResponse.reply
+              });
+          }
+        }
+      }
     } catch (error) {
       console.error('Error sending text message:', error);
+      handleTranscript('Sorry, there was an error processing your message.', 'assistant');
     }
   };
 
@@ -172,8 +243,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
       {!isMinimized ? (
-        <Card className="w-96 shadow-2xl animate-in slide-in-from-bottom-5">
-          <CardHeader className="border-b p-4" style={{ backgroundColor: `${primaryColor}10` }}>
+        <Card className="w-96 shadow-2xl animate-in slide-in-from-bottom-5 bg-background">
+          <CardHeader className="border-b p-4 bg-background" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div 
@@ -215,8 +286,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
             <div className="h-96 flex flex-col">
               {/* Welcome message */}
               {transcript.length === 0 && (
-                <div className="p-4 bg-muted/50">
-                  <div className="bg-white rounded-lg p-3 shadow-sm">
+                <div className="p-4">
+                  <div className="bg-muted/50 rounded-lg p-3 shadow-sm">
                     <p className="text-sm">{welcomeMessage}</p>
                   </div>
                 </div>
@@ -243,8 +314,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                 ))}
               </div>
 
-              {/* Voice and Text interface */}
-              <div className="border-t bg-muted/30">
+              {/* Text and Voice interface */}
+              <div className="border-t bg-background">
                 {liveChatSession?.status === 'queued' && (
                   <div className="m-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
                     <p className="font-medium text-yellow-800">Waiting for agent...</p>
@@ -256,18 +327,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                   </div>
                 )}
                 
-                {/* Voice Interface */}
-                <div className="p-4">
-                  <VoiceInterface
-                    businessId={businessId}
-                    onTranscript={handleTranscript}
-                    onConversationCreated={setConversationId}
-                    onChatReady={setSendMessageFn}
-                  />
-                </div>
-
-                {/* Text Input */}
-                <div className="px-4 pb-4">
+                {/* Text Input - Primary */}
+                <div className="px-4 pt-4 pb-2">
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -275,19 +336,30 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                       onChange={(e) => setTextInput(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Type a message..."
-                      disabled={!sendMessageFn}
-                      className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                     />
                     <Button
                       onClick={handleSendText}
-                      disabled={!textInput.trim() || !sendMessageFn}
+                      disabled={!textInput.trim()}
                       size="sm"
-                      style={{ backgroundColor: sendMessageFn ? primaryColor : undefined }}
+                      style={{ backgroundColor: textInput.trim() ? primaryColor : undefined }}
                     >
                       Send
                     </Button>
                   </div>
                 </div>
+
+                {/* Voice Interface - Optional */}
+                {settings?.voice_enabled && (
+                  <div className="px-4 pb-4">
+                    <VoiceInterface
+                      businessId={businessId}
+                      onTranscript={handleTranscript}
+                      onConversationCreated={setConversationId}
+                      onChatReady={setSendMessageFn}
+                    />
+                  </div>
+                )}
 
                 {!liveChatSession && (
                   <div className="px-4 pb-4">
