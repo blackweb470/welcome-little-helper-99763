@@ -59,7 +59,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         // Show agent joined message when status becomes active
         if (data.status === 'active' && liveChatSession?.status === 'queued') {
           console.log('Status changed from queued to active - agent joined!');
-          handleTranscript('An agent has joined the chat!', 'assistant');
+          handleTranscript('✅ You are now speaking with a live agent!', 'assistant');
         }
       }
     } catch (error) {
@@ -411,8 +411,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
       {!isMinimized ? (
-        <Card className="w-96 shadow-2xl animate-in slide-in-from-bottom-5 bg-background">
-          <CardHeader className="border-b p-4 bg-background" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
+        <Card className="w-96 shadow-2xl animate-in slide-in-from-bottom-5 bg-transparent backdrop-blur-sm">
+          <CardHeader className="border-b p-4 bg-transparent" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div 
