@@ -12,7 +12,7 @@ const WidgetEmbed = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-transparent">
+    <div className="fixed bottom-0 right-0 z-50 bg-transparent">
       <ChatWidget businessId={businessId} />
     </div>
   );
