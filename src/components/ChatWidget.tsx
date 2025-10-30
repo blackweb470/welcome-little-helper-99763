@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MessageCircle, X, Minimize2 } from "lucide-react";
 import VoiceInterface from "./VoiceInterface";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatWidgetProps {
   businessId: string;
@@ -21,6 +22,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [sendMessageFn, setSendMessageFn] = useState<((text: string) => Promise<void>) | null>(null);
   const [isTextMode, setIsTextMode] = useState(true); // Default to text mode
   const [showEscalateButton, setShowEscalateButton] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -236,6 +238,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     setTranscript(prev => [...prev, { text, role }]);
   };
 
+  // Auto-scroll to bottom when transcript changes
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [transcript]);
+
   const handleSendText = async () => {
     if (!textInput.trim()) return;
 
@@ -374,25 +381,28 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
               )}
 
               {/* Transcript */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {transcript.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-3">
+                  {transcript.map((item, idx) => (
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        item.role === "user"
-                          ? "text-white shadow-sm"
-                          : "bg-muted"
-                      }`}
-                      style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
+                      key={idx}
+                      className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="text-sm">{item.text}</p>
+                      <div
+                        className={`max-w-[80%] rounded-lg p-3 ${
+                          item.role === "user"
+                            ? "text-white shadow-sm"
+                            : "bg-muted"
+                        }`}
+                        style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
+                      >
+                        <p className="text-sm">{item.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
 
               {/* Text and Voice interface */}
               <div className="border-t bg-background">
