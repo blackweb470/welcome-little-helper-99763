@@ -21,6 +21,9 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     agent_name: 'AI Assistant',
     voice_enabled: true,
     system_prompt: 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.',
+    pre_chat_enabled: true,
+    pre_chat_required_fields: ['name', 'email'],
+    pre_chat_welcome_message: 'Please tell us a bit about yourself before we start the conversation.',
   });
   const [embedCode, setEmbedCode] = useState('');
 
@@ -44,9 +47,14 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
       return;
     }
 
-    if (data) {
-      setSettings(data);
-    } else {
+      if (data) {
+        setSettings({
+          ...data,
+          pre_chat_required_fields: Array.isArray(data.pre_chat_required_fields) 
+            ? (data.pre_chat_required_fields as string[])
+            : ['name', 'email']
+        });
+      } else {
       // Create default settings if none exist
       const { error: insertError } = await supabase
         .from('widget_settings')
@@ -236,6 +244,30 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
           />
           <Label htmlFor="voice_enabled">Enable Voice Chat</Label>
         </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="pre_chat_enabled"
+            checked={settings.pre_chat_enabled}
+            onCheckedChange={(checked) => setSettings({ ...settings, pre_chat_enabled: checked })}
+          />
+          <Label htmlFor="pre_chat_enabled">Enable Pre-Chat Form</Label>
+        </div>
+
+        {settings.pre_chat_enabled && (
+          <div className="space-y-2 pl-8 border-l-2">
+            <div className="space-y-2">
+              <Label htmlFor="pre_chat_welcome_message">Pre-Chat Welcome Message</Label>
+              <Textarea
+                id="pre_chat_welcome_message"
+                value={settings.pre_chat_welcome_message}
+                onChange={(e) => setSettings({ ...settings, pre_chat_welcome_message: e.target.value })}
+                rows={2}
+                className="text-sm"
+              />
+            </div>
+          </div>
+        )}
 
         <Button onClick={saveSettings}>Save Settings</Button>
       </Card>

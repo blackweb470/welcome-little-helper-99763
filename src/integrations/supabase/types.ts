@@ -265,8 +265,11 @@ export type Database = {
           id: string
           metadata: Json | null
           started_at: string | null
+          visitor_company: string | null
           visitor_email: string | null
           visitor_id: string | null
+          visitor_name: string | null
+          visitor_phone: string | null
         }
         Insert: {
           business_id: string
@@ -274,8 +277,11 @@ export type Database = {
           id?: string
           metadata?: Json | null
           started_at?: string | null
+          visitor_company?: string | null
           visitor_email?: string | null
           visitor_id?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
         }
         Update: {
           business_id?: string
@@ -283,8 +289,11 @@ export type Database = {
           id?: string
           metadata?: Json | null
           started_at?: string | null
+          visitor_company?: string | null
           visitor_email?: string | null
           visitor_id?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
         }
         Relationships: [
           {
@@ -752,6 +761,9 @@ export type Database = {
           business_id: string
           created_at: string | null
           id: string
+          pre_chat_enabled: boolean | null
+          pre_chat_required_fields: Json | null
+          pre_chat_welcome_message: string | null
           primary_color: string | null
           system_prompt: string | null
           updated_at: string | null
@@ -764,6 +776,9 @@ export type Database = {
           business_id: string
           created_at?: string | null
           id?: string
+          pre_chat_enabled?: boolean | null
+          pre_chat_required_fields?: Json | null
+          pre_chat_welcome_message?: string | null
           primary_color?: string | null
           system_prompt?: string | null
           updated_at?: string | null
@@ -776,6 +791,9 @@ export type Database = {
           business_id?: string
           created_at?: string | null
           id?: string
+          pre_chat_enabled?: boolean | null
+          pre_chat_required_fields?: Json | null
+          pre_chat_welcome_message?: string | null
           primary_color?: string | null
           system_prompt?: string | null
           updated_at?: string | null

@@ -11,7 +11,8 @@ import {
   Settings,
   BookOpen,
   LogOut,
-  FileText
+  FileText,
+  TrendingUp
 } from "lucide-react";
 import {
   Sidebar,
@@ -43,6 +44,7 @@ const businessItems = [
   { title: "Conversations", path: "conversations", icon: MessageSquare },
   { title: "Tickets", path: "tickets", icon: Ticket },
   { title: "Live Chat", path: "livechat", icon: Users },
+  { title: "Agent Performance", path: "agent-performance", icon: TrendingUp },
   { title: "Proactive", path: "proactive", icon: Zap },
   { title: "Products", path: "products", icon: Package },
   { title: "Documents", path: "documents", icon: FileText },

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { MessageCircle, X, Minimize2 } from "lucide-react";
 import VoiceInterface from "./VoiceInterface";
+import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -11,7 +12,7 @@ interface ChatWidgetProps {
 }
 
 export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
-  const [isOpen, setIsOpen] = useState(true); // Always open in embed mode
+  const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
@@ -20,12 +21,14 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [liveChatSession, setLiveChatSession] = useState<any>(null);
   const [textInput, setTextInput] = useState("");
   const [sendMessageFn, setSendMessageFn] = useState<((text: string) => Promise<void>) | null>(null);
-  const [isTextMode, setIsTextMode] = useState(true); // Default to text mode
+  const [isTextMode, setIsTextMode] = useState(true);
   const [showEscalateButton, setShowEscalateButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [visitorEmail, setVisitorEmail] = useState("");
   const [showEmailInput, setShowEmailInput] = useState(false);
+  const [showPreChatForm, setShowPreChatForm] = useState(false);
+  const [visitorInfo, setVisitorInfo] = useState<any>({});
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -35,7 +38,13 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         .eq("business_id", businessId)
         .single();
       
-      if (data) setSettings(data);
+      if (data) {
+        setSettings(data);
+        // Check if we should show pre-chat form
+        if (data.pre_chat_enabled && !conversationId) {
+          setShowPreChatForm(true);
+        }
+      }
     };
 
     fetchSettings();
@@ -186,7 +195,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     };
   }, [conversationId, transcript]);
 
-  const initializeTextConversation = async () => {
+  const initializeTextConversation = async (preChatData?: any) => {
     try {
       const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
       
@@ -195,7 +204,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         .insert({
           business_id: businessId,
           visitor_id: visitorId,
-          visitor_email: visitorEmail || null,
+          visitor_email: preChatData?.email || visitorEmail || null,
+          visitor_name: preChatData?.name,
+          visitor_phone: preChatData?.phone,
+          visitor_company: preChatData?.company,
           started_at: new Date().toISOString()
         })
         .select()
@@ -204,6 +216,13 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       if (convError) throw convError;
       if (convData) {
         setConversationId(convData.id);
+        
+        // If there's an initial message from pre-chat form, send it
+        if (preChatData?.message) {
+          setTimeout(() => {
+            handleSendText(preChatData.message);
+          }, 500);
+        }
       }
     } catch (error) {
       console.error('Error initializing text conversation:', error);
@@ -325,11 +344,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [transcript]);
 
-  const handleSendText = async () => {
-    if (!textInput.trim() || sendingMessage) return;
+  const handleSendText = async (messageOverride?: string) => {
+    const message = messageOverride || textInput.trim();
+    if (!message || sendingMessage) return;
 
-    const message = textInput.trim();
-    setTextInput("");
+    if (!messageOverride) setTextInput("");
     setSendingMessage(true);
     
     // Add to transcript immediately
@@ -430,151 +449,170 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 flex flex-col min-h-0">
-              {/* Welcome message */}
-              {transcript.length === 0 && (
+              {/* Pre-chat form */}
+              {showPreChatForm ? (
                 <div className="p-4">
-                  <div className="bg-muted/50 rounded-lg p-3 shadow-sm">
-                    <p className="text-sm">{welcomeMessage}</p>
-                  </div>
+                  <PreChatForm
+                    welcomeMessage={settings.pre_chat_welcome_message}
+                    requiredFields={settings.pre_chat_required_fields || ['name', 'email']}
+                    primaryColor={primaryColor}
+                    onSubmit={async (data) => {
+                      setVisitorInfo(data);
+                      setVisitorEmail(data.email);
+                      setShowPreChatForm(false);
+                      await initializeTextConversation(data);
+                    }}
+                  />
                 </div>
-              )}
-
-              {/* Transcript */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3">
-                  {transcript.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
-                          item.role === "user"
-                            ? "text-white shadow-sm"
-                            : "bg-muted"
-                        }`}
-                        style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
-                      >
-                        <p className="text-sm">{item.text}</p>
+              ) : (
+                <>
+                  {/* Welcome message */}
+                  {transcript.length === 0 && (
+                    <div className="p-4">
+                      <div className="bg-muted/50 rounded-lg p-3 shadow-sm">
+                        <p className="text-sm">{welcomeMessage}</p>
                       </div>
                     </div>
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+                  )}
 
-              {/* Text and Voice interface */}
-              <div className="border-t bg-background">
-                {liveChatSession?.status === 'queued' && liveChatSession?.status !== 'active' && (
-                  <div className="m-4 p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">⏳ Waiting for agent...</p>
-                    <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
-                  </div>
-                )}
-                {liveChatSession?.status === 'active' && (
-                  <div className="m-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
-                    <p className="font-medium text-green-800 dark:text-green-200">✅ You are speaking to an agent</p>
-                    <p className="text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
-                  </div>
-                )}
-                
-                {/* Email Input - Shows when requesting live agent */}
-                {showEmailInput && !visitorEmail && (
-                  <div className="px-4 pt-4 pb-2">
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="email"
-                        value={visitorEmail}
-                        onChange={(e) => setVisitorEmail(e.target.value)}
-                        placeholder="Enter your email..."
-                        className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                      />
-                      <Button
-                        onClick={() => {
-                          if (visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)) {
-                            setShowEmailInput(false);
-                            requestLiveAgent('User requested live agent');
-                          }
-                        }}
-                        disabled={!visitorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)}
-                        size="sm"
-                        style={{ backgroundColor: visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail) ? primaryColor : undefined }}
-                      >
-                        Submit Email
-                      </Button>
+                  {/* Transcript */}
+                  <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-3">
+                      {transcript.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[80%] rounded-lg p-3 ${
+                              item.role === "user"
+                                ? "text-white shadow-sm"
+                                : "bg-muted"
+                            }`}
+                            style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
+                          >
+                            <p className="text-sm">{item.text}</p>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={messagesEndRef} />
                     </div>
-                  </div>
-                )}
-                
-                {/* Text Input - Primary */}
-                <div className="px-4 pt-4 pb-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Type a message..."
-                      maxLength={150}
-                      className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                    />
-                    <Button
-                      onClick={handleSendText}
-                      disabled={!textInput.trim() || sendingMessage}
-                      size="sm"
-                      style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
-                    >
-                      {sendingMessage ? 'Sending...' : 'Send'}
-                    </Button>
-                  </div>
-                </div>
+                  </ScrollArea>
 
-                {/* Voice Interface - Optional */}
-                {settings?.voice_enabled && (
-                  <div className="px-4 pb-4">
-                    <VoiceInterface
-                      businessId={businessId}
-                      onTranscript={handleTranscript}
-                      onConversationCreated={setConversationId}
-                      onChatReady={setSendMessageFn}
-                    />
-                  </div>
-                )}
+                  {/* Text and Voice interface */}
+                  <div className="border-t bg-background">
+                    {liveChatSession?.status === 'queued' && liveChatSession?.status !== 'active' && (
+                      <div className="m-4 p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
+                        <p className="font-medium text-yellow-800 dark:text-yellow-200">⏳ Waiting for agent...</p>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
+                      </div>
+                    )}
+                    {liveChatSession?.status === 'active' && (
+                      <div className="m-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+                        <p className="font-medium text-green-800 dark:text-green-200">✅ You are speaking to an agent</p>
+                        <p className="text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
+                      </div>
+                    )}
+                    
+                    {/* Email Input */}
+                    {showEmailInput && !visitorEmail && (
+                      <div className="px-4 pt-4 pb-2">
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="email"
+                            value={visitorEmail}
+                            onChange={(e) => setVisitorEmail(e.target.value)}
+                            placeholder="Enter your email..."
+                            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          />
+                          <Button
+                            onClick={() => {
+                              if (visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)) {
+                                setShowEmailInput(false);
+                                requestLiveAgent('User requested live agent');
+                              }
+                            }}
+                            disabled={!visitorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)}
+                            size="sm"
+                            style={{ backgroundColor: visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail) ? primaryColor : undefined }}
+                          >
+                            Submit Email
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Voice Interface - MOVED BEFORE text input */}
+                    {settings?.voice_enabled && (
+                      <div className="px-4 pt-4 pb-2 border-b">
+                        <VoiceInterface
+                          businessId={businessId}
+                          onTranscript={handleTranscript}
+                          onConversationCreated={setConversationId}
+                          onChatReady={setSendMessageFn}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Text Input - MOVED AFTER voice interface */}
+                    <div className="px-4 pt-4 pb-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={textInput}
+                          onChange={(e) => setTextInput(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          placeholder="Type a message..."
+                          maxLength={150}
+                          className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                        />
+                        <Button
+                          onClick={() => handleSendText()}
+                          disabled={!textInput.trim() || sendingMessage}
+                          size="sm"
+                          style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
+                        >
+                          {sendingMessage ? 'Sending...' : 'Send'}
+                        </Button>
+                      </div>
+                    </div>
 
-                {!liveChatSession && !showEscalateButton && (
-                  <div className="px-4 pb-4">
-                    <Button
-                      onClick={() => {
-                        const msg = "I would like to speak to a live agent";
-                        setTextInput(msg);
-                        setTimeout(() => handleSendText(), 0);
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                    >
-                      Talk to Live Agent
-                    </Button>
+                    {!liveChatSession && !showEscalateButton && (
+                      <div className="px-4 pb-4">
+                        <Button
+                          onClick={() => {
+                            const msg = "I would like to speak to a live agent";
+                            setTextInput(msg);
+                            setTimeout(() => handleSendText(), 0);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                        >
+                          Talk to Live Agent
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {showEscalateButton && !liveChatSession && (
+                      <div className="px-4 pb-4">
+                        <Button
+                          onClick={() => {
+                            requestLiveAgent('AI determined escalation needed');
+                            setShowEscalateButton(false);
+                          }}
+                          variant="default"
+                          size="sm"
+                          className="w-full"
+                          style={{ backgroundColor: primaryColor }}
+                        >
+                          Connect to Live Agent Now
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-                
-                {showEscalateButton && !liveChatSession && (
-                  <div className="px-4 pb-4">
-                    <Button
-                      onClick={() => {
-                        requestLiveAgent('AI determined escalation needed');
-                        setShowEscalateButton(false);
-                      }}
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      Connect to Live Agent Now
-                    </Button>
-                  </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

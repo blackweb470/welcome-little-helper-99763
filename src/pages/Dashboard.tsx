@@ -15,6 +15,7 @@ import { TicketsList } from "@/components/dashboard/TicketsList";
 import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
+import AgentPerformance from "@/components/dashboard/AgentPerformance";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -77,10 +78,11 @@ const Dashboard = () => {
                    currentTab === 'tickets' ? 'Tickets' :
                    currentTab === 'livechat' ? 'Live Chat' :
                    currentTab === 'proactive' ? 'Proactive Chat' :
-                   currentTab === 'products' ? 'Products' :
-                   currentTab === 'documents' ? 'Business Documents' :
-                   currentTab === 'scoring' ? 'Behavioral Scoring' :
-                   currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
+                    currentTab === 'products' ? 'Products' :
+                    currentTab === 'documents' ? 'Business Documents' :
+                    currentTab === 'scoring' ? 'Behavioral Scoring' :
+                    currentTab === 'agent-performance' ? 'Agent Performance' :
+                    currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
                 </h1>
               </div>
             </div>
@@ -122,6 +124,10 @@ const Dashboard = () => {
 
                 {currentTab === 'livechat' && (
                   <LiveChatQueue businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'agent-performance' && (
+                  <AgentPerformance businessId={selectedBusinessId} />
                 )}
 
                 {currentTab === 'proactive' && (
