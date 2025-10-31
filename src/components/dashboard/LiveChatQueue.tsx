@@ -176,28 +176,47 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     try {
       setAcceptingChat(sessionId);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to accept chats",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      console.log('Accepting chat session:', sessionId);
-      const { error } = await supabase
+      console.log('Accepting chat session:', sessionId, 'User:', user.id);
+      
+      const { data, error } = await supabase
         .from('live_chat_sessions')
         .update({
           agent_id: user.id,
           status: 'active',
           accepted_at: new Date().toISOString()
         })
-        .eq('id', sessionId);
+        .eq('id', sessionId)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error accepting chat:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to accept chat",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      console.log('Chat session updated to active status');
+      console.log('Chat session updated successfully:', data);
 
       // Find the session and open it automatically
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
-        // Clear previous messages and open the chat
+        // Update local state
+        const updatedSession = { ...session, ...data };
         setMessages([]);
-        setSelectedSession(session);
+        setSelectedSession(updatedSession);
         fetchMessages(session.conversation_id);
       }
 
@@ -205,11 +224,14 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         title: "Chat accepted",
         description: "You can now respond to the customer"
       });
-    } catch (error) {
+      
+      // Refresh sessions list
+      await fetchSessions();
+    } catch (error: any) {
       console.error('Error accepting chat:', error);
       toast({
         title: "Error",
-        description: "Failed to accept chat",
+        description: error.message || "Failed to accept chat",
         variant: "destructive"
       });
     } finally {

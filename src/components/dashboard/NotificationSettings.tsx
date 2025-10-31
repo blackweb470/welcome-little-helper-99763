@@ -65,11 +65,17 @@ export function NotificationSettings({ businessId }: { businessId: string }) {
 
       const { error } = await supabase
         .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          business_id: businessId,
-          ...prefs,
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            business_id: businessId,
+            ...prefs,
+          },
+          {
+            onConflict: 'user_id,business_id',
+            ignoreDuplicates: false
+          }
+        );
 
       if (error) throw error;
     },
