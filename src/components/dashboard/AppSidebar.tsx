@@ -12,7 +12,8 @@ import {
   BookOpen,
   LogOut,
   FileText,
-  TrendingUp
+  TrendingUp,
+  FileStack
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const businessItems = [
   { title: "Conversations", path: "conversations", icon: MessageSquare },
   { title: "Tickets", path: "tickets", icon: Ticket },
   { title: "Live Chat", path: "livechat", icon: Users },
+  { title: "Canned Responses", path: "canned-responses", icon: FileStack },
   { title: "Agent Performance", path: "agent-performance", icon: TrendingUp },
   { title: "Proactive", path: "proactive", icon: Zap },
   { title: "Products", path: "products", icon: Package },

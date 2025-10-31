@@ -16,6 +16,7 @@ import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
 import AgentPerformance from "@/components/dashboard/AgentPerformance";
+import { CannedResponses } from "@/components/dashboard/CannedResponses";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -78,6 +79,7 @@ const Dashboard = () => {
                    currentTab === 'tickets' ? 'Tickets' :
                    currentTab === 'livechat' ? 'Live Chat' :
                    currentTab === 'proactive' ? 'Proactive Chat' :
+                   currentTab === 'canned-responses' ? 'Canned Responses' :
                     currentTab === 'products' ? 'Products' :
                     currentTab === 'documents' ? 'Business Documents' :
                     currentTab === 'scoring' ? 'Behavioral Scoring' :
@@ -124,6 +126,10 @@ const Dashboard = () => {
 
                 {currentTab === 'livechat' && (
                   <LiveChatQueue businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'canned-responses' && (
+                  <CannedResponses businessId={selectedBusinessId} />
                 )}
 
                 {currentTab === 'agent-performance' && (
