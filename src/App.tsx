@@ -11,6 +11,7 @@ import WidgetEmbed from "./pages/WidgetEmbed";
 import Documentation from "./pages/Documentation";
 import NewDocumentation from "./pages/NewDocumentation";
 import FeaturesList from "./pages/FeaturesList";
+import FeaturesTestingCenter from "./pages/FeaturesTestingCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/docs" element={<NewDocumentation />} />
           <Route path="/docs-old" element={<Documentation />} />
           <Route path="/features" element={<FeaturesList />} />
+          <Route path="/features-testing" element={<FeaturesTestingCenter />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -434,6 +434,7 @@ const Index = () => {
             </div>
             <div className="flex gap-8 text-sm text-muted-foreground">
               <Link to="/features" className="hover:text-foreground transition-colors">Features</Link>
+              <Link to="/features-testing" className="hover:text-foreground transition-colors">Testing Center</Link>
               <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
               <Link to="/auth" className="hover:text-foreground transition-colors">Login</Link>
             </div>

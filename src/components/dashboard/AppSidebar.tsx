@@ -16,6 +16,7 @@ import {
   FileStack,
   Bell,
   BellDot,
+  TestTube2,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +43,10 @@ interface AppSidebarProps {
 const mainItems = [
   { title: "Businesses", path: "businesses", icon: Building2 },
   { title: "Features", path: "features", icon: BookOpen },
+];
+
+const externalLinks = [
+  { title: "Testing Center", path: "/features-testing", icon: TestTube2 },
 ];
 
 const businessItems = [
@@ -103,6 +108,19 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut }: AppSidebarProps) 
                           ? "bg-primary/10 text-primary font-medium" 
                           : "hover:bg-muted/50"
                       }
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {open && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              {externalLinks.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={item.path}
+                      className="hover:bg-muted/50"
                     >
                       <item.icon className="w-4 h-4" />
                       {open && <span>{item.title}</span>}
