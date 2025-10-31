@@ -13,8 +13,12 @@ import {
   LogOut,
   FileText,
   TrendingUp,
-  FileStack
+  FileStack,
+  Bell,
+  BellDot,
 } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -46,18 +50,25 @@ const businessItems = [
   { title: "Tickets", path: "tickets", icon: Ticket },
   { title: "Live Chat", path: "livechat", icon: Users },
   { title: "Canned Responses", path: "canned-responses", icon: FileStack },
+  { title: "Notifications", path: "notifications", icon: Bell },
+  { title: "Notification Settings", path: "notification-settings", icon: Settings },
   { title: "Agent Performance", path: "agent-performance", icon: TrendingUp },
   { title: "Proactive", path: "proactive", icon: Zap },
   { title: "Products", path: "products", icon: Package },
   { title: "Documents", path: "documents", icon: FileText },
   { title: "Scoring", path: "scoring", icon: Target },
-  { title: "Settings", path: "settings", icon: Settings },
+  { title: "Widget Settings", path: "settings", icon: Settings },
 ];
 
 export function AppSidebar({ hasSelectedBusiness, onSignOut }: AppSidebarProps) {
   const { open } = useSidebar();
   const location = useLocation();
   const currentTab = new URLSearchParams(location.search).get('tab') || 'businesses';
+  
+  // Get business ID from URL if available
+  const searchParams = new URLSearchParams(location.search);
+  const businessId = hasSelectedBusiness ? searchParams.get('businessId') || undefined : undefined;
+  const { unreadCount } = useNotifications(businessId);
 
   const isActive = (path: string) => currentTab === path;
 
@@ -119,8 +130,21 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut }: AppSidebarProps) 
                             : "hover:bg-muted/50"
                         }
                       >
-                        <item.icon className="w-4 h-4" />
-                        {open && <span>{item.title}</span>}
+                        {item.path === "notifications" && unreadCount > 0 ? (
+                          <BellDot className="w-4 h-4" />
+                        ) : (
+                          <item.icon className="w-4 h-4" />
+                        )}
+                        {open && (
+                          <span className="flex items-center gap-2">
+                            {item.title}
+                            {item.path === "notifications" && unreadCount > 0 && (
+                              <Badge variant="destructive" className="h-5 min-w-5 px-1">
+                                {unreadCount}
+                              </Badge>
+                            )}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

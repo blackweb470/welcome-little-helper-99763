@@ -511,6 +511,169 @@ export type Database = {
           },
         ]
       }
+      notification_history: {
+        Row: {
+          business_id: string
+          clicked: boolean | null
+          clicked_at: string | null
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          notification_type: string
+          read: boolean | null
+          read_at: string | null
+          sent_browser: boolean | null
+          sent_email: boolean | null
+          sent_sound: boolean | null
+          ticket_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          clicked?: boolean | null
+          clicked_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          notification_type: string
+          read?: boolean | null
+          read_at?: string | null
+          sent_browser?: boolean | null
+          sent_email?: boolean | null
+          sent_sound?: boolean | null
+          ticket_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          clicked?: boolean | null
+          clicked_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notification_type?: string
+          read?: boolean | null
+          read_at?: string | null
+          sent_browser?: boolean | null
+          sent_email?: boolean | null
+          sent_sound?: boolean | null
+          ticket_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_history_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_history_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "notification_history_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          browser_enabled: boolean | null
+          business_id: string
+          created_at: string | null
+          email_enabled: boolean | null
+          group_notifications: boolean | null
+          id: string
+          notify_chat_transfer: boolean | null
+          notify_mention: boolean | null
+          notify_new_conversation: boolean | null
+          notify_new_message: boolean | null
+          notify_ticket_created: boolean | null
+          notify_ticket_resolved: boolean | null
+          only_when_online: boolean | null
+          quiet_hours_enabled: boolean | null
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          sound_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          browser_enabled?: boolean | null
+          business_id: string
+          created_at?: string | null
+          email_enabled?: boolean | null
+          group_notifications?: boolean | null
+          id?: string
+          notify_chat_transfer?: boolean | null
+          notify_mention?: boolean | null
+          notify_new_conversation?: boolean | null
+          notify_new_message?: boolean | null
+          notify_ticket_created?: boolean | null
+          notify_ticket_resolved?: boolean | null
+          only_when_online?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sound_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          browser_enabled?: boolean | null
+          business_id?: string
+          created_at?: string | null
+          email_enabled?: boolean | null
+          group_notifications?: boolean | null
+          id?: string
+          notify_chat_transfer?: boolean | null
+          notify_mention?: boolean | null
+          notify_new_conversation?: boolean | null
+          notify_new_message?: boolean | null
+          notify_ticket_created?: boolean | null
+          notify_ticket_resolved?: boolean | null
+          only_when_online?: boolean | null
+          quiet_hours_enabled?: boolean | null
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          sound_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proactive_chat_rules: {
         Row: {
           business_id: string
@@ -979,6 +1142,14 @@ export type Database = {
           visitor_name: string
           visitor_phone: string
         }[]
+      }
+      should_send_notification: {
+        Args: {
+          p_business_id: string
+          p_notification_type: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

@@ -61,6 +61,45 @@ export async function sendEmailNotification(
   }
 }
 
+export async function createNotificationHistory(
+  userId: string,
+  businessId: string,
+  notificationType: string,
+  title: string,
+  message: string,
+  metadata?: {
+    conversationId?: string;
+    ticketId?: string;
+    [key: string]: any;
+  }
+) {
+  try {
+    const { error } = await supabase.from("notification_history").insert({
+      user_id: userId,
+      business_id: businessId,
+      notification_type: notificationType,
+      title,
+      message,
+      conversation_id: metadata?.conversationId,
+      ticket_id: metadata?.ticketId,
+      metadata: metadata || {},
+      sent_browser: true,
+      sent_email: false,
+      sent_sound: true,
+    });
+
+    if (error) {
+      console.error("Error creating notification history:", error);
+      return { success: false, error };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error creating notification history:", error);
+    return { success: false, error };
+  }
+}
+
 export function notifyChatTransfer(
   businessId: string,
   conversationId: string,

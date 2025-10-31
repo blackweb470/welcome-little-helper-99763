@@ -17,6 +17,8 @@ import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
 import AgentPerformance from "@/components/dashboard/AgentPerformance";
 import { CannedResponses } from "@/components/dashboard/CannedResponses";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
+import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -80,6 +82,8 @@ const Dashboard = () => {
                    currentTab === 'livechat' ? 'Live Chat' :
                    currentTab === 'proactive' ? 'Proactive Chat' :
                    currentTab === 'canned-responses' ? 'Canned Responses' :
+                   currentTab === 'notifications' ? 'Notifications' :
+                   currentTab === 'notification-settings' ? 'Notification Settings' :
                     currentTab === 'products' ? 'Products' :
                     currentTab === 'documents' ? 'Business Documents' :
                     currentTab === 'scoring' ? 'Behavioral Scoring' :
@@ -130,6 +134,14 @@ const Dashboard = () => {
 
                 {currentTab === 'canned-responses' && (
                   <CannedResponses businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'notifications' && (
+                  <NotificationCenter />
+                )}
+
+                {currentTab === 'notification-settings' && (
+                  <NotificationSettings businessId={selectedBusinessId} />
                 )}
 
                 {currentTab === 'agent-performance' && (
