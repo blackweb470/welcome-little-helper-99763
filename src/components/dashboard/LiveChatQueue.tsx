@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, showBrowserNotification } from "@/utils/notifications";
 
@@ -14,6 +14,8 @@ interface Message {
   role: string;
   content: string;
   created_at: string;
+  read_at: string | null;
+  read_by: string | null;
 }
 
 interface ChatSession {
@@ -276,6 +278,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
   const fetchMessages = async (conversationId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -284,6 +288,17 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
       if (error) throw error;
       setMessages(data || []);
+      
+      // Mark all user messages as read by agent
+      if (user && data) {
+        const unreadUserMessages = data.filter(m => m.role === 'user' && !m.read_at);
+        if (unreadUserMessages.length > 0) {
+          await supabase
+            .from('messages')
+            .update({ read_at: new Date().toISOString(), read_by: user.id })
+            .in('id', unreadUserMessages.map(m => m.id));
+        }
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -294,6 +309,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
     try {
       setSendingMessage(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('messages')
         .insert({
@@ -305,7 +322,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       if (error) throw error;
 
       setMessageInput("");
-      fetchMessages(selectedSession.conversation_id);
+      await fetchMessages(selectedSession.conversation_id);
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -398,9 +415,18 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                     }`}
                   >
                     <p className="text-sm">{msg.content}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {new Date(msg.created_at).toLocaleTimeString()}
-                    </p>
+                    <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
+                      <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
+                      {msg.role === 'assistant' && (
+                        <span className="flex items-center gap-1">
+                          {msg.read_at ? (
+                            <CheckCheck className="w-3 h-3" />
+                          ) : (
+                            <Check className="w-3 h-3" />
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

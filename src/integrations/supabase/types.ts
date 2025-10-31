@@ -466,6 +466,8 @@ export type Database = {
           created_at: string | null
           emotion_tags: string[] | null
           id: string
+          read_at: string | null
+          read_by: string | null
           role: string
           sentiment: string | null
           sentiment_score: number | null
@@ -478,6 +480,8 @@ export type Database = {
           created_at?: string | null
           emotion_tags?: string[] | null
           id?: string
+          read_at?: string | null
+          read_by?: string | null
           role: string
           sentiment?: string | null
           sentiment_score?: number | null
@@ -490,6 +494,8 @@ export type Database = {
           created_at?: string | null
           emotion_tags?: string[] | null
           id?: string
+          read_at?: string | null
+          read_by?: string | null
           role?: string
           sentiment?: string | null
           sentiment_score?: number | null

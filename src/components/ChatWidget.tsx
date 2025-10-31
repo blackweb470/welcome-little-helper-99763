@@ -173,17 +173,24 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           table: 'messages',
           filter: `conversation_id=eq.${conversationId}`
         },
-        (payload) => {
+        async (payload) => {
           console.log('New message received:', payload);
-          // Only show messages from assistant that we haven't sent ourselves
           const newMessage = payload.new as any;
-          if (newMessage.role === 'assistant') {
-            // Check if this message is already in transcript to avoid duplicates
-            const isDuplicate = transcript.some(
-              msg => msg.text === newMessage.content && msg.role === 'assistant'
-            );
-            if (!isDuplicate) {
-              handleTranscript(newMessage.content, 'assistant');
+          
+          // Check if this message is already in transcript to avoid duplicates
+          const isDuplicate = transcript.some(
+            msg => msg.text === newMessage.content && msg.role === newMessage.role
+          );
+          
+          if (!isDuplicate) {
+            handleTranscript(newMessage.content, newMessage.role);
+            
+            // Mark message as read by visitor when received
+            if (newMessage.role === 'assistant') {
+              await supabase
+                .from('messages')
+                .update({ read_at: new Date().toISOString() })
+                .eq('id', newMessage.id);
             }
           }
         }
