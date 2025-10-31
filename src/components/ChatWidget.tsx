@@ -411,39 +411,19 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       {!isMinimized ? (
         <Card className="w-full h-full shadow-2xl flex flex-col">
           <CardHeader className="border-b p-4 bg-transparent" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  {agentName.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-semibold">{agentName}</h3>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-muted-foreground">Online</span>
-                  </div>
-                </div>
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {agentName.charAt(0)}
               </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsMinimized(true)}
-                  className="h-8 w-8"
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+              <div>
+                <h3 className="font-semibold">{agentName}</h3>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-xs text-muted-foreground">Online</span>
+                </div>
               </div>
             </div>
           </CardHeader>
