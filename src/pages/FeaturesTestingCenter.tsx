@@ -42,11 +42,45 @@ export default function FeaturesTestingCenter() {
       icon: Brain,
       testFunction: async () => {
         try {
-          const { data, error } = await supabase.functions.invoke('chat-message', {
-            body: { message: "test", conversationId: "test" }
-          });
-          if (error) throw error;
-          return { status: "working", message: "AI chat is responding correctly" };
+          // Get the first business for testing
+          const { data: businesses } = await supabase
+            .from('businesses')
+            .select('id')
+            .limit(1)
+            .single();
+          
+          if (!businesses) {
+            return { status: "warning", message: "Create a business first to test AI chat" };
+          }
+
+          const testVisitorId = `test_visitor_${Date.now()}`;
+          
+          const response = await fetch(
+            `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/chat-message`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                businessId: businesses.id,
+                visitorId: testVisitorId,
+                message: "Hello, this is a test message"
+              })
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Chat message failed');
+          }
+
+          const data = await response.json();
+          if (data.reply) {
+            return { status: "working", message: "AI chat is responding correctly" };
+          }
+          
+          throw new Error('No reply received from AI');
         } catch (err) {
           return { status: "error", message: "AI chat failed: " + (err as Error).message };
         }
@@ -105,10 +139,60 @@ export default function FeaturesTestingCenter() {
       icon: Activity,
       testFunction: async () => {
         try {
-          const { data, error } = await supabase.functions.invoke('analyze-sentiment', {
-            body: { text: "I love this product!" }
-          });
-          if (error) throw error;
+          // Create a test message to analyze
+          const { data: businesses } = await supabase
+            .from('businesses')
+            .select('id')
+            .limit(1)
+            .single();
+          
+          if (!businesses) {
+            return { status: "warning", message: "Create a business first" };
+          }
+
+          // Create a test conversation and message
+          const { data: conv } = await supabase
+            .from('conversations')
+            .insert({
+              business_id: businesses.id,
+              visitor_id: `test_${Date.now()}`
+            })
+            .select()
+            .single();
+
+          if (!conv) throw new Error('Failed to create test conversation');
+
+          const { data: msg } = await supabase
+            .from('messages')
+            .insert({
+              conversation_id: conv.id,
+              role: 'user',
+              content: 'I love this product!'
+            })
+            .select()
+            .single();
+
+          if (!msg) throw new Error('Failed to create test message');
+
+          // Call sentiment analysis
+          const response = await fetch(
+            `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/analyze-sentiment`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messageId: msg.id,
+                content: msg.content
+              })
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error('Sentiment analysis request failed');
+          }
+
           return { status: "working", message: "Sentiment analysis is functioning correctly" };
         } catch (err) {
           return { status: "error", message: "Sentiment analysis failed: " + (err as Error).message };
