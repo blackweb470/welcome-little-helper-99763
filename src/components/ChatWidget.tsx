@@ -11,7 +11,7 @@ interface ChatWidgetProps {
 }
 
 export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true); // Always open in embed mode
   const [isMinimized, setIsMinimized] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
@@ -406,24 +406,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const agentName = settings?.agent_name || "AI Assistant";
   const welcomeMessage = settings?.welcome_message || "Hi! How can I help you today?";
 
-  if (!isOpen) {
-    return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="rounded-full w-16 h-16 shadow-lg hover:scale-110 transition-transform"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <MessageCircle className="w-6 h-6 text-white" />
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+    <div className="w-full h-full flex flex-col">
       {!isMinimized ? (
-        <Card className="w-96 shadow-2xl animate-in slide-in-from-bottom-5 bg-transparent backdrop-blur-sm">
+        <Card className="w-full h-full shadow-2xl flex flex-col">
           <CardHeader className="border-b p-4 bg-transparent" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
