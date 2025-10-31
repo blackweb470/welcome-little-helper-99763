@@ -428,8 +428,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0">
-            <div className="h-96 flex flex-col">
+          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0">
               {/* Welcome message */}
               {transcript.length === 0 && (
                 <div className="p-4">
