@@ -264,7 +264,9 @@ export type Database = {
           ended_at: string | null
           id: string
           metadata: Json | null
+          search_vector: unknown
           started_at: string | null
+          status: string | null
           visitor_company: string | null
           visitor_email: string | null
           visitor_id: string | null
@@ -276,7 +278,9 @@ export type Database = {
           ended_at?: string | null
           id?: string
           metadata?: Json | null
+          search_vector?: unknown
           started_at?: string | null
+          status?: string | null
           visitor_company?: string | null
           visitor_email?: string | null
           visitor_id?: string | null
@@ -288,7 +292,9 @@ export type Database = {
           ended_at?: string | null
           id?: string
           metadata?: Json | null
+          search_vector?: unknown
           started_at?: string | null
+          status?: string | null
           visitor_company?: string | null
           visitor_email?: string | null
           visitor_id?: string | null
@@ -854,6 +860,30 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      search_conversations: {
+        Args: {
+          p_business_id: string
+          p_end_date?: string
+          p_search_query?: string
+          p_sentiment?: string
+          p_start_date?: string
+          p_status?: string
+        }
+        Returns: {
+          business_id: string
+          ended_at: string
+          id: string
+          metadata: Json
+          search_rank: number
+          started_at: string
+          status: string
+          visitor_company: string
+          visitor_email: string
+          visitor_id: string
+          visitor_name: string
+          visitor_phone: string
+        }[]
       }
     }
     Enums: {
