@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { requestNotificationPermission, showBrowserNotification } from "@/utils/notifications";
+import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 
 interface Message {
   id: string;
@@ -70,12 +70,14 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         },
         (payload) => {
           fetchSessions();
-          // Show browser notification for new chat requests
-          if (payload.new.status === 'queued') {
-            showBrowserNotification('New Chat Transfer Request', {
-              body: payload.new.transfer_reason || 'A visitor wants to speak with a live agent',
-              tag: `chat-${payload.new.id}`,
-            });
+          const session = payload.new as any;
+          // Trigger notification when a new chat request comes in
+          if (session.status === 'queued' && session.conversation_id) {
+            notifyNewMessage(
+              businessId, 
+              session.conversation_id, 
+              session.transfer_reason || 'A visitor wants to speak with a live agent'
+            );
           }
         }
       )
@@ -356,7 +358,15 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           table: 'messages',
           filter: `conversation_id=eq.${selectedSession.conversation_id}`
         },
-        () => fetchMessages(selectedSession.conversation_id)
+        async (payload) => {
+          await fetchMessages(selectedSession.conversation_id);
+          const newMessage = payload.new as Message;
+          
+          // Trigger notification for new user messages
+          if (newMessage.role === 'user') {
+            notifyNewMessage(businessId, selectedSession.conversation_id, newMessage.content);
+          }
+        }
       )
       .subscribe();
 

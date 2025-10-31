@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { showBrowserNotification } from "@/utils/notifications";
+import { showBrowserNotification, requestNotificationPermission } from "@/utils/notifications";
 
 export function useNotifications(businessId?: string) {
   const queryClient = useQueryClient();
@@ -33,6 +33,13 @@ export function useNotifications(businessId?: string) {
 
   // Subscribe to real-time notifications
   useEffect(() => {
+    // Request notification permission on mount
+    requestNotificationPermission().then((permission) => {
+      if (permission === "denied") {
+        console.warn("Browser notifications are blocked. Please enable them in your browser settings.");
+      }
+    });
+
     const channel = supabase
       .channel("notification_realtime")
       .on(
