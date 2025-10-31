@@ -85,19 +85,81 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     }
   }, [conversationId]);
 
-  // Poll for status updates when in queued state
+  // Subscribe to new messages in realtime
   useEffect(() => {
-    if (!conversationId || liveChatSession?.status !== 'queued') return;
+    if (!conversationId) return;
 
-    console.log('Starting polling for queued session');
-    const pollInterval = setInterval(() => {
-      console.log('Polling for session status update');
-      fetchLiveChatSession(conversationId);
-    }, 2000); // Poll every 2 seconds
+    console.log('Setting up realtime subscription for new messages');
+    const channel = supabase
+      .channel(`messages-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        async (payload) => {
+          console.log('New message received:', payload);
+          const newMessage = payload.new as any;
+          
+          // Only show assistant messages (from agent) in the transcript
+          if (newMessage.role === 'assistant') {
+            handleTranscript(newMessage.content, 'assistant');
+            
+            // Mark message as read by visitor
+            await supabase
+              .from('messages')
+              .update({ 
+                read_at: new Date().toISOString(),
+                read_by: 'visitor'
+              })
+              .eq('id', newMessage.id);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
-      console.log('Stopping polling');
-      clearInterval(pollInterval);
+      console.log('Cleaning up messages subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId]);
+
+  // Subscribe to live chat session updates in realtime
+  useEffect(() => {
+    if (!conversationId) return;
+
+    console.log('Setting up realtime subscription for session updates');
+    const channel = supabase
+      .channel(`live-chat-session-${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'live_chat_sessions',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('Live chat session updated:', payload);
+          const updatedSession = payload.new as any;
+          
+          // Check if agent just joined (status changed to active)
+          if (updatedSession.status === 'active' && liveChatSession?.status !== 'active') {
+            console.log('Agent joined the chat!');
+            handleTranscript('🎉 A human agent has joined the chat!', 'assistant');
+          }
+          
+          setLiveChatSession(updatedSession);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
     };
   }, [conversationId, liveChatSession?.status]);
 
