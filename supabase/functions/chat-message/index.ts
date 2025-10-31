@@ -1,9 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const requestSchema = z.object({
+  businessId: z.string().uuid('Invalid business ID format'),
+  visitorId: z.string().min(1, 'Visitor ID required').max(200, 'Visitor ID too long'),
+  message: z.string().min(1, 'Message cannot be empty').max(5000, 'Message too long (max 5000 characters)')
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +18,22 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { businessId, visitorId, message } = await req.json();
+    // Validate input
+    const body = await req.json();
+    const validationResult = requestSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      console.error('Validation error:', validationResult.error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validationResult.error.errors 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { businessId, visitorId, message } = validationResult.data;
     console.log('Chat message received:', { businessId, visitorId, message });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
