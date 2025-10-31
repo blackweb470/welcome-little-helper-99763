@@ -64,6 +64,34 @@ Deno.serve(async (req) => {
       throw sessionError;
     }
 
+    // Get business owner user_id
+    const { data: business } = await supabase
+      .from('businesses')
+      .select('user_id')
+      .eq('id', businessId)
+      .single();
+
+    // Create notification history for browser notification
+    if (business?.user_id) {
+      await supabase
+        .from('notification_history')
+        .insert({
+          user_id: business.user_id,
+          business_id: businessId,
+          notification_type: 'chat_transfer',
+          title: 'Live Chat Transfer Request',
+          message: reason || 'A visitor wants to speak with a live agent',
+          conversation_id: finalConversationId,
+          metadata: {
+            visitorId: visitorId,
+            visitorEmail: visitorEmail,
+          },
+          sent_browser: true,
+          sent_email: false,
+          sent_sound: true,
+        });
+    }
+
     // Send notification to business owner
     await supabase.functions.invoke('send-notification', {
       body: {
