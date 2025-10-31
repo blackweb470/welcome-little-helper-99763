@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
       .from('business_documents')
       .select('content_text, file_name')
       .eq('business_id', businessId)
-      .eq('status', 'completed');
+      .eq('status', 'ready');
 
     const { data: learnings } = await supabase
       .from('business_learnings')

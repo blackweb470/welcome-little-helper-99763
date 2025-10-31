@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import WidgetDemo from "./pages/WidgetDemo";
 import WidgetEmbed from "./pages/WidgetEmbed";
 import Documentation from "./pages/Documentation";
+import NewDocumentation from "./pages/NewDocumentation";
 import FeaturesList from "./pages/FeaturesList";
 import NotFound from "./pages/NotFound";
 
@@ -26,7 +27,8 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/widget/:businessId" element={<WidgetDemo />} />
           <Route path="/embed/:businessId" element={<WidgetEmbed />} />
-          <Route path="/docs" element={<Documentation />} />
+          <Route path="/docs" element={<NewDocumentation />} />
+          <Route path="/docs-old" element={<Documentation />} />
           <Route path="/features" element={<FeaturesList />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

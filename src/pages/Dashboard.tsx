@@ -70,10 +70,10 @@ const Dashboard = () => {
         
         <main className="flex-1 overflow-auto">
           <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-16 items-center gap-4 px-6">
+            <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-4 px-4 sm:px-6">
               <SidebarTrigger />
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
                   {currentTab === 'businesses' ? 'Businesses' :
                    currentTab === 'features' ? 'Features' :
                    currentTab === 'analytics' ? 'Analytics' :
@@ -94,7 +94,7 @@ const Dashboard = () => {
             </div>
           </header>
 
-          <div className="p-6 animate-fade-in">
+          <div className="p-4 sm:p-6 animate-fade-in">
             {currentTab === 'businesses' && (
               <Card className="p-6">
                 <BusinessList 

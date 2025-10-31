@@ -132,10 +132,10 @@ export function NotificationSettings({ businessId }: { businessId: string }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <div>
-        <h2 className="text-2xl font-bold">Notification Settings</h2>
-        <p className="text-muted-foreground">
+        <h2 className="text-xl sm:text-2xl font-bold">Notification Settings</h2>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Manage how you receive notifications
         </p>
       </div>
@@ -152,15 +152,16 @@ export function NotificationSettings({ businessId }: { businessId: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-muted-foreground" />
-              <Label htmlFor="browser">Browser Notifications</Label>
+              <Label htmlFor="browser" className="text-sm">Browser Notifications</Label>
               {browserPermission !== "granted" && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleRequestBrowserPermission}
+                  className="ml-auto sm:ml-2"
                 >
                   Enable
                 </Button>
