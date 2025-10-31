@@ -89,10 +89,12 @@ export class RealtimeChat {
   async init() {
     try {
       this.onStatusChange('connecting');
+      console.log('RealtimeChat.init() called with businessId:', this.businessId);
       
       // Retrieve conversation memory if visitor is returning
       if (this.visitorId && this.businessId) {
         try {
+          console.log('Retrieving conversation memory for visitor:', this.visitorId);
           const { data: memoryData } = await supabase.functions.invoke('conversation-memory', {
             body: {
               action: 'retrieve_context',
@@ -109,6 +111,7 @@ export class RealtimeChat {
       }
       
       // Get ephemeral token from our Supabase Edge Function
+      console.log('Invoking realtime-session edge function...');
       const { data, error } = await supabase.functions.invoke("realtime-session", {
         body: { 
           businessId: this.businessId,
@@ -118,8 +121,9 @@ export class RealtimeChat {
       });
 
       if (error) {
-        console.error("Error from realtime-session:", error);
-        throw error;
+        console.error("Error from realtime-session edge function:", error);
+        console.error("Error details:", JSON.stringify(error, null, 2));
+        throw new Error(`Failed to create realtime session: ${error.message || JSON.stringify(error)}`);
       }
       
       if (!data?.client_secret?.value) {

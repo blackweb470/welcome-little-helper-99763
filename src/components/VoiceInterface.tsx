@@ -123,10 +123,15 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
 
   const startConversation = async () => {
     try {
+      console.log('Starting conversation with businessId:', businessId);
+      
       // Request microphone permission first
+      console.log('Requesting microphone permission...');
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('Microphone permission granted');
       
       // Create conversation record
+      console.log('Creating conversation record...');
       const { data: convData, error: convError } = await supabase
         .from('conversations')
         .insert({
@@ -136,21 +141,28 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
         .select()
         .single();
       
-      if (convError) throw convError;
+      if (convError) {
+        console.error('Conversation creation error:', convError);
+        throw convError;
+      }
       
+      console.log('Conversation created:', convData.id);
       setConversationId(convData.id);
       onConversationCreated?.(convData.id);
       
       // Link conversation to visitor session
       if (trackerRef.current) {
+        console.log('Linking conversation to visitor session...');
         await trackerRef.current.linkConversation(convData.id);
       }
       
       trackerRef.current?.trackEvent('conversation_started', { conversationId: convData.id });
       
       const visitorId = trackerRef.current?.['visitorId'] || null;
+      console.log('Initializing RealtimeChat with visitorId:', visitorId);
       chatRef.current = new RealtimeChat(businessId, handleMessage, handleStatusChange, visitorId);
       await chatRef.current.init();
+      console.log('RealtimeChat initialized successfully');
       
       // Provide sendMessage function to parent
       if (onChatReady && chatRef.current) {
@@ -162,7 +174,9 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
         description: "Voice interface is ready. Start speaking!",
       });
     } catch (error) {
-      console.error('Error starting conversation:', error);
+      console.error('Error starting conversation - Full error:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
       setStatus('error');
       toast({
         title: "Error",
