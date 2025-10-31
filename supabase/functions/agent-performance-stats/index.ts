@@ -55,23 +55,29 @@ serve(async (req) => {
       );
     }
 
-    // Get live chat sessions with agent info
+    // Get live chat sessions
     const { data: sessions, error: sessionsError } = await supabaseClient
       .from('live_chat_sessions')
-      .select(`
-        id,
-        conversation_id,
-        agent_id,
-        status,
-        queued_at,
-        accepted_at,
-        ended_at,
-        profiles:agent_id (full_name, email)
-      `)
+      .select('id, conversation_id, agent_id, status, queued_at, accepted_at, ended_at')
       .in('conversation_id', conversationIds)
       .not('agent_id', 'is', null);
 
     if (sessionsError) throw sessionsError;
+
+    // Get agent profiles separately
+    const agentIds = [...new Set(sessions?.map(s => s.agent_id).filter(Boolean) || [])];
+    const { data: profiles, error: profilesError } = await supabaseClient
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', agentIds);
+
+    if (profilesError) throw profilesError;
+
+    // Create a map of agent profiles
+    const profileMap = new Map();
+    profiles?.forEach((profile: any) => {
+      profileMap.set(profile.id, profile);
+    });
 
     // Get all messages for sentiment analysis
     const { data: messages, error: messagesError } = await supabaseClient
@@ -97,7 +103,8 @@ serve(async (req) => {
       if (!session.agent_id) return;
 
       const agentId = session.agent_id;
-      const agentName = session.profiles?.full_name || session.profiles?.email || 'Unknown Agent';
+      const profile = profileMap.get(agentId);
+      const agentName = profile?.full_name || profile?.email || 'Unknown Agent';
 
       if (!agentMetrics.has(agentId)) {
         agentMetrics.set(agentId, {
