@@ -37,13 +37,13 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
           p_sentiment: sentimentFilter !== 'all' ? sentimentFilter : null,
           p_start_date: null,
           p_end_date: null
-        });
+        }) as { data: any[] | null; error: any };
 
         if (error) throw error;
 
         // Fetch messages for each conversation
         const conversationsWithMessages = await Promise.all(
-          data.map(async (conv: any) => {
+          (data || []).map(async (conv: any) => {
             const { data: messages, error: msgError } = await supabase
               .from('messages')
               .select('id, content, role, created_at, sentiment, sentiment_score, emotion_tags')
