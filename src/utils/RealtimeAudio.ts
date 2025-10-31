@@ -113,11 +113,14 @@ export class RealtimeChat {
         body: { 
           businessId: this.businessId,
           memory: this.conversationMemory,
-          visitorId: this.visitorId
+          visitorId: this.visitorId || undefined
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error from realtime-session:", error);
+        throw error;
+      }
       
       if (!data?.client_secret?.value) {
         throw new Error("Failed to get ephemeral token");

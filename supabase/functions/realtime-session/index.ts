@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const requestSchema = z.object({
   businessId: z.string().uuid({ message: "Invalid businessId format" }),
-  visitorId: z.string().min(1).max(200),
+  visitorId: z.string().min(1).max(200).nullable().optional(),
   memory: z.object({
     summary: z.string().optional(),
     key_facts: z.array(z.string()).optional(),
