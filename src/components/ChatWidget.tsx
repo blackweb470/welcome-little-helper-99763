@@ -198,6 +198,12 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           console.log('New message received:', payload);
           const newMessage = payload.new as any;
           
+          // Only process assistant messages via realtime (user messages are added immediately)
+          if (newMessage.role !== 'assistant') {
+            console.log('Skipping user message in realtime (already added)');
+            return;
+          }
+          
           // Check if we've already processed this message ID
           if (processedMessageIdsRef.current.has(newMessage.id)) {
             console.log('Duplicate message detected, skipping:', newMessage.id);
@@ -208,12 +214,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           handleTranscript(newMessage.content, newMessage.role);
           
           // Mark message as read by visitor when received
-          if (newMessage.role === 'assistant') {
-            await supabase
-              .from('messages')
-              .update({ read_at: new Date().toISOString() })
-              .eq('id', newMessage.id);
-          }
+          await supabase
+            .from('messages')
+            .update({ read_at: new Date().toISOString() })
+            .eq('id', newMessage.id);
         }
       )
       .subscribe();
@@ -379,7 +383,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     if (!messageOverride) setTextInput("");
     setSendingMessage(true);
     
-    // Don't add to transcript here - let realtime subscription handle it to avoid duplicates
+    // Add user message to transcript immediately for instant feedback
+    handleTranscript(message, "user");
     
     try {
       const visitorId = localStorage.getItem('visitor_id') || `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
