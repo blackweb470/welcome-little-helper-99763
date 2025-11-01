@@ -467,8 +467,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         return;
       }
 
-      // Don't add AI response here - let the realtime subscription handle it
-      // This prevents duplicate messages
+      // Show AI response immediately (realtime subscription will filter duplicates)
+      if (data.reply) {
+        handleTranscript(data.reply, 'assistant');
+      }
+      
       if (data.shouldEscalate) {
         setShowEscalateButton(true);
       }
