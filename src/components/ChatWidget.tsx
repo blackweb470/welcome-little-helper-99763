@@ -466,13 +466,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         return;
       }
 
-      if (data.reply) {
-        handleTranscript(data.reply, "assistant");
-        if (data.shouldEscalate) {
-          setShowEscalateButton(true);
-        }
-      } else if (!data.humanAgentActive) {
-        throw new Error('No reply from AI');
+      // Don't add AI response here - let the realtime subscription handle it
+      // This prevents duplicate messages
+      if (data.shouldEscalate) {
+        setShowEscalateButton(true);
       }
     } catch (error) {
       console.error('Error sending text message:', error);
