@@ -29,6 +29,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [showPreChatForm, setShowPreChatForm] = useState(false);
   const [visitorInfo, setVisitorInfo] = useState<any>({});
+  const processedMessageIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -83,48 +84,6 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     if (conversationId) {
       fetchLiveChatSession(conversationId);
     }
-  }, [conversationId]);
-
-  // Subscribe to new messages in realtime
-  useEffect(() => {
-    if (!conversationId) return;
-
-    console.log('Setting up realtime subscription for new messages');
-    const channel = supabase
-      .channel(`messages-${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        async (payload) => {
-          console.log('New message received:', payload);
-          const newMessage = payload.new as any;
-          
-          // Only show assistant messages (from agent) in the transcript
-          if (newMessage.role === 'assistant') {
-            handleTranscript(newMessage.content, 'assistant');
-            
-            // Mark message as read by visitor
-            await supabase
-              .from('messages')
-              .update({ 
-                read_at: new Date().toISOString(),
-                read_by: 'visitor'
-              })
-              .eq('id', newMessage.id);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up messages subscription');
-      supabase.removeChannel(channel);
-    };
   }, [conversationId]);
 
   // Subscribe to live chat session updates in realtime
@@ -225,8 +184,6 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   useEffect(() => {
     if (!conversationId) return;
 
-    const processedMessageIds = new Set<string>();
-
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -242,12 +199,12 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           const newMessage = payload.new as any;
           
           // Check if we've already processed this message ID
-          if (processedMessageIds.has(newMessage.id)) {
+          if (processedMessageIdsRef.current.has(newMessage.id)) {
             console.log('Duplicate message detected, skipping:', newMessage.id);
             return;
           }
           
-          processedMessageIds.add(newMessage.id);
+          processedMessageIdsRef.current.add(newMessage.id);
           handleTranscript(newMessage.content, newMessage.role);
           
           // Mark message as read by visitor when received
