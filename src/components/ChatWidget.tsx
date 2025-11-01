@@ -379,8 +379,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     if (!messageOverride) setTextInput("");
     setSendingMessage(true);
     
-    // Add to transcript immediately
-    handleTranscript(message, "user");
+    // Don't add to transcript here - let realtime subscription handle it to avoid duplicates
     
     try {
       const visitorId = localStorage.getItem('visitor_id') || `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
