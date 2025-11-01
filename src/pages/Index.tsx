@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,15 +16,11 @@ import {
   Mic,
   Bot,
   FileText,
-  Home,
-  Menu,
-  X
+  Home
 } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const features = [
     {
@@ -126,23 +121,21 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background scroll-smooth">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-                <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-primary rounded-full animate-pulse" />
+                <Bot className="w-8 h-8 text-primary" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse" />
               </div>
-              <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 LYQN AI
               </span>
             </div>
-            
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-4">
+            <nav className="flex items-center gap-4">
               <Button asChild variant="ghost" size="sm">
                 <Link to="/features">Features</Link>
               </Button>
@@ -153,42 +146,6 @@ const Index = () => {
                 <Link to="/auth">Start Free Trial</Link>
               </Button>
             </nav>
-
-            {/* Mobile Navigation */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[350px]">
-                <nav className="flex flex-col gap-4 mt-8">
-                  <Button 
-                    asChild 
-                    variant="ghost" 
-                    className="justify-start text-lg"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link to="/features">Features</Link>
-                  </Button>
-                  <Button 
-                    asChild 
-                    variant="ghost" 
-                    className="justify-start text-lg"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link to="/docs">Docs</Link>
-                  </Button>
-                  <Button 
-                    asChild 
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 text-lg"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Link to="/auth">Start Free Trial</Link>
-                  </Button>
-                </nav>
-              </SheetContent>
-            </Sheet>
           </div>
         </div>
       </header>
