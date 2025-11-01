@@ -17,6 +17,7 @@ import {
   Bell,
   BellDot,
   TestTube2,
+  Lock,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -34,10 +35,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { FeatureName } from "@/hooks/useFeatureAccess";
 
 interface AppSidebarProps {
   hasSelectedBusiness: boolean;
   onSignOut: () => void;
+  hasAccess: (feature: FeatureName) => boolean;
+  onFeatureClick: (feature: string, featureName: string, tab: string) => boolean;
 }
 
 const mainItems = [
@@ -50,22 +54,22 @@ const externalLinks = [
 ];
 
 const businessItems = [
-  { title: "Analytics", path: "analytics", icon: BarChart3 },
+  { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics" },
   { title: "Conversations", path: "conversations", icon: MessageSquare },
   { title: "Tickets", path: "tickets", icon: Ticket },
-  { title: "Live Chat", path: "livechat", icon: Users },
-  { title: "Canned Responses", path: "canned-responses", icon: FileStack },
+  { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent" },
+  { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses" },
   { title: "Notifications", path: "notifications", icon: Bell },
   { title: "Notification Settings", path: "notification-settings", icon: Settings },
-  { title: "Agent Performance", path: "agent-performance", icon: TrendingUp },
-  { title: "Proactive", path: "proactive", icon: Zap },
-  { title: "Products", path: "products", icon: Package },
-  { title: "Documents", path: "documents", icon: FileText },
-  { title: "Scoring", path: "scoring", icon: Target },
+  { title: "Agent Performance", path: "agent-performance", icon: TrendingUp, feature: "advanced_analytics" },
+  { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat" },
+  { title: "Products", path: "products", icon: Package, feature: "product_catalog" },
+  { title: "Documents", path: "documents", icon: FileText, feature: "business_documents" },
+  { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking" },
   { title: "Widget Settings", path: "settings", icon: Settings },
 ];
 
-export function AppSidebar({ hasSelectedBusiness, onSignOut }: AppSidebarProps) {
+export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatureClick }: AppSidebarProps) {
   const { open } = useSidebar();
   const location = useLocation();
   const currentTab = new URLSearchParams(location.search).get('tab') || 'businesses';
@@ -137,36 +141,61 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut }: AppSidebarProps) 
             <SidebarGroupLabel>Business Tools</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {businessItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.path)}>
-                      <NavLink 
-                        to={`/dashboard?tab=${item.path}`}
-                        className={({ isActive }) => 
-                          isActive 
-                            ? "bg-primary/10 text-primary font-medium" 
-                            : "hover:bg-muted/50"
-                        }
+                {businessItems.map((item) => {
+                  const isLocked = item.feature && !hasAccess(item.feature as FeatureName);
+                  
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild={!isLocked} 
+                        isActive={isActive(item.path)}
+                        onClick={(e) => {
+                          if (isLocked && item.feature) {
+                            e.preventDefault();
+                            onFeatureClick(item.feature, item.title, item.path);
+                          }
+                        }}
                       >
-                        {item.path === "notifications" && unreadCount > 0 ? (
-                          <BellDot className="w-4 h-4" />
-                        ) : (
-                          <item.icon className="w-4 h-4" />
-                        )}
-                        {open && (
-                          <span className="flex items-center gap-2">
-                            {item.title}
-                            {item.path === "notifications" && unreadCount > 0 && (
-                              <Badge variant="destructive" className="h-5 min-w-5 px-1">
-                                {unreadCount}
-                              </Badge>
+                        {isLocked ? (
+                          <div className="flex items-center gap-2 opacity-60 cursor-pointer hover:opacity-80">
+                            {item.icon && <item.icon className="w-4 h-4" />}
+                            {open && (
+                              <>
+                                <span>{item.title}</span>
+                                <Lock className="w-3 h-3 ml-auto" />
+                              </>
                             )}
-                          </span>
+                          </div>
+                        ) : (
+                          <NavLink 
+                            to={`/dashboard?tab=${item.path}`}
+                            className={({ isActive }) => 
+                              isActive 
+                                ? "bg-primary/10 text-primary font-medium" 
+                                : "hover:bg-muted/50"
+                            }
+                          >
+                            {item.path === "notifications" && unreadCount > 0 ? (
+                              <BellDot className="w-4 h-4" />
+                            ) : (
+                              <item.icon className="w-4 h-4" />
+                            )}
+                            {open && (
+                              <span className="flex items-center gap-2">
+                                {item.title}
+                                {item.path === "notifications" && unreadCount > 0 && (
+                                  <Badge variant="destructive" className="h-5 min-w-5 px-1">
+                                    {unreadCount}
+                                  </Badge>
+                                )}
+                              </span>
+                            )}
+                          </NavLink>
                         )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

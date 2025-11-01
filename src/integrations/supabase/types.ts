@@ -1188,6 +1188,10 @@ export type Database = {
           plan_name: string
         }[]
       }
+      has_feature_access: {
+        Args: { p_feature: string; p_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -19,6 +19,8 @@ import AgentPerformance from "@/components/dashboard/AgentPerformance";
 import { CannedResponses } from "@/components/dashboard/CannedResponses";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,6 +28,12 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const currentTab = searchParams.get('tab') || 'businesses';
+  const { hasAccess, getRequiredPlan, planName } = useFeatureAccess(user?.id);
+  const [upgradePrompt, setUpgradePrompt] = useState<{
+    open: boolean;
+    featureName: string;
+    requiredPlan: string;
+  }>({ open: false, featureName: '', requiredPlan: '' });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,6 +66,19 @@ const Dashboard = () => {
     setSearchParams({ tab });
   };
 
+  const checkFeatureAccess = (feature: string, featureName: string, tab: string) => {
+    if (!hasAccess(feature as any)) {
+      setUpgradePrompt({
+        open: true,
+        featureName,
+        requiredPlan: getRequiredPlan(feature as any),
+      });
+      return false;
+    }
+    setActiveTab(tab);
+    return true;
+  };
+
   if (!user) return null;
 
   return (
@@ -66,6 +87,8 @@ const Dashboard = () => {
         <AppSidebar 
           hasSelectedBusiness={!!selectedBusinessId} 
           onSignOut={handleSignOut}
+          hasAccess={hasAccess}
+          onFeatureClick={checkFeatureAccess}
         />
         
         <main className="flex-1 overflow-auto">
@@ -128,11 +151,11 @@ const Dashboard = () => {
                   <TicketsList businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'livechat' && (
+                {currentTab === 'livechat' && hasAccess('live_agent') && (
                   <LiveChatQueue businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'canned-responses' && (
+                {currentTab === 'canned-responses' && hasAccess('canned_responses') && (
                   <CannedResponses businessId={selectedBusinessId} />
                 )}
 
@@ -148,21 +171,21 @@ const Dashboard = () => {
                   <AgentPerformance businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'proactive' && (
+                {currentTab === 'proactive' && hasAccess('proactive_chat') && (
                   <ProactiveChatRules businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'products' && (
+                {currentTab === 'products' && hasAccess('product_catalog') && (
                   <Card className="p-6">
                     <ProductCatalog businessId={selectedBusinessId} />
                   </Card>
                 )}
 
-                {currentTab === 'scoring' && (
+                {currentTab === 'scoring' && hasAccess('visitor_tracking') && (
                   <BehavioralScoring businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'documents' && (
+                {currentTab === 'documents' && hasAccess('business_documents') && (
                   <BusinessDocuments businessId={selectedBusinessId} />
                 )}
 
@@ -176,6 +199,14 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+
+      <UpgradePrompt
+        open={upgradePrompt.open}
+        onClose={() => setUpgradePrompt({ open: false, featureName: '', requiredPlan: '' })}
+        featureName={upgradePrompt.featureName}
+        requiredPlan={upgradePrompt.requiredPlan}
+        currentPlan={planName}
+      />
     </SidebarProvider>
   );
 };
