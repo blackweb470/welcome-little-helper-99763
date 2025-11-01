@@ -801,6 +801,36 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          business_limit: number
+          created_at: string | null
+          features: Json | null
+          id: string
+          name: string
+          price_monthly: number
+          updated_at: string | null
+        }
+        Insert: {
+          business_limit: number
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          name: string
+          price_monthly?: number
+          updated_at?: string | null
+        }
+        Update: {
+          business_limit?: number
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          name?: string
+          price_monthly?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           assigned_to: string | null
@@ -891,6 +921,36 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          plan_name: string
+          started_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_name: string
+          started_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_name?: string
+          started_at?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1117,6 +1177,16 @@ export type Database = {
           p_total_time_seconds: number
         }
         Returns: number
+      }
+      can_create_business: { Args: { p_user_id: string }; Returns: boolean }
+      get_user_plan_info: {
+        Args: { p_user_id: string }
+        Returns: {
+          business_limit: number
+          can_create_more: boolean
+          current_businesses: number
+          plan_name: string
+        }[]
       }
       has_role: {
         Args: {

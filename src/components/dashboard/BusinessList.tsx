@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Building2, ExternalLink, Copy, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Building2, ExternalLink, Copy, Trash2, Crown } from "lucide-react";
 
 interface Business {
   id: string;
@@ -20,11 +21,19 @@ interface BusinessListProps {
   selectedBusinessId: string | null;
 }
 
+interface PlanInfo {
+  plan_name: string;
+  business_limit: number;
+  current_businesses: number;
+  can_create_more: boolean;
+}
+
 const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: BusinessListProps) => {
   const { toast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newBusiness, setNewBusiness] = useState({ name: '', domain: '' });
+  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
 
   const fetchBusinesses = async () => {
     const { data, error } = await supabase
@@ -48,8 +57,23 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
     }
   };
 
+  const fetchPlanInfo = async () => {
+    const { data, error } = await supabase
+      .rpc('get_user_plan_info', { p_user_id: userId });
+
+    if (error) {
+      console.error('Error fetching plan info:', error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      setPlanInfo(data[0]);
+    }
+  };
+
   useEffect(() => {
     fetchBusinesses();
+    fetchPlanInfo();
   }, [userId]);
 
   const createBusiness = async () => {
@@ -57,6 +81,16 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
       toast({
         title: "Error",
         description: "Business name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check plan limits
+    if (planInfo && !planInfo.can_create_more) {
+      toast({
+        title: "Plan Limit Reached",
+        description: `You've reached the limit of ${planInfo.business_limit} business${planInfo.business_limit === 1 ? '' : 'es'} for your ${planInfo.plan_name} plan. Please upgrade to create more businesses.`,
         variant: "destructive",
       });
       return;
@@ -112,6 +146,7 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
     setIsCreating(false);
     setNewBusiness({ name: '', domain: '' });
     fetchBusinesses();
+    fetchPlanInfo();
   };
 
   const deleteBusiness = async (id: string) => {
@@ -139,13 +174,50 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
     }
     
     fetchBusinesses();
+    fetchPlanInfo();
+  };
+
+  const getPlanDisplayName = (plan: string) => {
+    return plan.charAt(0).toUpperCase() + plan.slice(1);
   };
 
   return (
     <div className="space-y-4">
+      {planInfo && (
+        <Card className="p-4 bg-muted/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-primary" />
+              <div>
+                <p className="font-semibold">{getPlanDisplayName(planInfo.plan_name)} Plan</p>
+                <p className="text-sm text-muted-foreground">
+                  {planInfo.current_businesses} of {planInfo.business_limit === -1 ? 'unlimited' : planInfo.business_limit} business{planInfo.business_limit === 1 ? '' : 'es'} created
+                </p>
+              </div>
+            </div>
+            {planInfo.plan_name === 'free' && (
+              <Badge variant="outline">Free</Badge>
+            )}
+          </div>
+        </Card>
+      )}
+
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Your Businesses</h2>
-        <Button onClick={() => setIsCreating(!isCreating)}>
+        <Button 
+          onClick={() => {
+            if (planInfo && !planInfo.can_create_more) {
+              toast({
+                title: "Plan Limit Reached",
+                description: `You've reached the limit of ${planInfo.business_limit} business${planInfo.business_limit === 1 ? '' : 'es'} for your ${planInfo.plan_name} plan.`,
+                variant: "destructive",
+              });
+            } else {
+              setIsCreating(!isCreating);
+            }
+          }}
+          disabled={planInfo && !planInfo.can_create_more}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Business
         </Button>
