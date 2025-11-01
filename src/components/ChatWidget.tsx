@@ -32,9 +32,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
   useEffect(() => {
     const fetchSettings = async () => {
+      // Only fetch public-safe fields (exclude system_prompt)
       const { data } = await supabase
         .from("widget_settings")
-        .select("*")
+        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, voice_enabled, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields")
         .eq("business_id", businessId)
         .single();
       
