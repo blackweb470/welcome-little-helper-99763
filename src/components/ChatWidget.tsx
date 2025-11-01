@@ -494,30 +494,30 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   return (
     <div className="w-full h-full flex flex-col">
       {!isMinimized ? (
-        <Card className="w-full h-full shadow-2xl flex flex-col">
-          <CardHeader className="border-b p-3 sm:p-4 bg-transparent" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
+        <Card className="w-full h-full shadow-2xl flex flex-col overflow-hidden">
+          <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center gap-2 sm:gap-3">
               <div 
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-base shrink-0"
                 style={{ backgroundColor: primaryColor }}
               >
                 {agentName.charAt(0)}
               </div>
-              <div>
-                <h3 className="font-semibold text-sm sm:text-base">{agentName}</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-xs sm:text-base truncate">{agentName}</h3>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-xs text-muted-foreground">Online</span>
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
                 </div>
               </div>
             </div>
           </CardHeader>
 
-          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 flex flex-col min-h-0">
+          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Pre-chat form */}
               {showPreChatForm ? (
-                <div className="p-3 sm:p-4">
+                <div className="p-2 sm:p-3 md:p-4 overflow-y-auto">
                   <PreChatForm
                     welcomeMessage={settings.pre_chat_welcome_message}
                     requiredFields={settings.pre_chat_required_fields || ['name', 'email']}
@@ -534,15 +534,15 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                 <>
                   {/* Welcome message */}
                   {transcript.length === 0 && (
-                    <div className="p-3 sm:p-4">
-                      <div className="bg-muted/50 rounded-lg p-3 shadow-sm">
-                        <p className="text-sm">{welcomeMessage}</p>
+                    <div className="p-2 sm:p-3 md:p-4 shrink-0">
+                      <div className="bg-muted/50 rounded-lg p-2 sm:p-3 shadow-sm">
+                        <p className="text-xs sm:text-sm">{welcomeMessage}</p>
                       </div>
                     </div>
                   )}
 
                   {/* Transcript */}
-                  <ScrollArea className="flex-1 p-3 sm:p-4">
+                  <ScrollArea className="flex-1 p-2 sm:p-3 md:p-4 overflow-y-auto scroll-smooth">
                     <div className="space-y-2 sm:space-y-3">
                       {transcript.map((item, idx) => (
                         <div
@@ -550,14 +550,14 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                           className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[85%] sm:max-w-[80%] rounded-lg p-2.5 sm:p-3 ${
+                            className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-lg p-2 sm:p-2.5 md:p-3 ${
                               item.role === "user"
                                 ? "text-white shadow-sm"
                                 : "bg-muted"
                             }`}
                             style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
                           >
-                            <p className="text-sm leading-relaxed break-words">{item.text}</p>
+                            <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{item.text}</p>
                           </div>
                         </div>
                       ))}
@@ -566,30 +566,30 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                   </ScrollArea>
 
                   {/* Text and Voice interface */}
-                  <div className="border-t bg-background">
+                  <div className="border-t bg-background shrink-0">
                     {liveChatSession?.status === 'queued' && liveChatSession?.status !== 'active' && (
-                      <div className="m-3 sm:m-4 p-2.5 sm:p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg text-sm">
-                        <p className="font-medium text-yellow-800 dark:text-yellow-200">⏳ Waiting for agent...</p>
-                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
+                      <div className="m-2 sm:m-3 md:m-4 p-2 sm:p-2.5 md:p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">⏳ Waiting for agent...</p>
+                        <p className="text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
                       </div>
                     )}
                     {liveChatSession?.status === 'active' && (
-                      <div className="m-3 sm:m-4 p-2.5 sm:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
-                        <p className="font-medium text-green-800 dark:text-green-200">✅ You are speaking to an agent</p>
-                        <p className="text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
+                      <div className="m-2 sm:m-3 md:m-4 p-2 sm:p-2.5 md:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                        <p className="font-medium text-green-800 dark:text-green-200 text-xs sm:text-sm">✅ You are speaking to an agent</p>
+                        <p className="text-[10px] sm:text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
                       </div>
                     )}
                     
                     {/* Email Input */}
                     {showEmailInput && !visitorEmail && (
-                      <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
+                      <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2">
                         <div className="flex flex-col gap-2">
                           <input
                             type="email"
                             value={visitorEmail}
                             onChange={(e) => setVisitorEmail(e.target.value)}
                             placeholder="Enter your email..."
-                            className="flex-1 px-3 py-2.5 sm:py-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                            className="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                           />
                           <Button
                             onClick={() => {
@@ -600,7 +600,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                             }}
                             disabled={!visitorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)}
                             size="sm"
-                            className="h-10 sm:h-9"
+                            className="h-9 sm:h-10 text-xs sm:text-sm"
                             style={{ backgroundColor: visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail) ? primaryColor : undefined }}
                           >
                             Submit Email
@@ -611,7 +611,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                     
                     {/* Voice Interface - MOVED BEFORE text input */}
                     {settings?.voice_enabled && (
-                      <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 border-b">
+                      <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2 border-b">
                         <VoiceInterface
                           businessId={businessId}
                           onTranscript={handleTranscript}
@@ -622,8 +622,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                     )}
                     
                     {/* Text Input - MOVED AFTER voice interface */}
-                    <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2">
-                      <div className="flex gap-2">
+                    <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2">
+                      <div className="flex gap-1.5 sm:gap-2">
                         <input
                           type="text"
                           value={textInput}
@@ -631,13 +631,13 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                           onKeyPress={handleKeyPress}
                           placeholder="Type a message..."
                           maxLength={150}
-                          className="flex-1 px-3 py-2.5 sm:py-2 text-base sm:text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          className="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background min-w-0"
                         />
                         <Button
                           onClick={() => handleSendText()}
                           disabled={!textInput.trim() || sendingMessage}
                           size="sm"
-                          className="h-10 sm:h-9 px-3 sm:px-4"
+                          className="h-9 sm:h-10 px-2 sm:px-3 md:px-4 text-xs sm:text-sm shrink-0"
                           style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
                         >
                           {sendingMessage ? 'Sending...' : 'Send'}
@@ -646,7 +646,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                     </div>
 
                     {!liveChatSession && !showEscalateButton && (
-                      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+                      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
                         <Button
                           onClick={() => {
                             const msg = "I would like to speak to a live agent";
@@ -655,7 +655,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                           }}
                           variant="outline"
                           size="sm"
-                          className="w-full h-10 sm:h-9"
+                          className="w-full h-8 sm:h-9 text-[10px] sm:text-xs"
                         >
                           Talk to Live Agent
                         </Button>
@@ -663,7 +663,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                     )}
                     
                     {showEscalateButton && !liveChatSession && (
-                      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
+                      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
                         <Button
                           onClick={() => {
                             requestLiveAgent('AI determined escalation needed');
@@ -671,7 +671,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                           }}
                           variant="default"
                           size="sm"
-                          className="w-full h-10 sm:h-9"
+                          className="w-full h-8 sm:h-9 text-[10px] sm:text-xs"
                           style={{ backgroundColor: primaryColor }}
                         >
                           Connect to Live Agent Now
