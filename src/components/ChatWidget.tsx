@@ -649,9 +649,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                       <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
                         <Button
                           onClick={() => {
-                            const msg = "I would like to speak to a live agent";
-                            setTextInput(msg);
-                            setTimeout(() => handleSendText(), 0);
+                            requestLiveAgent('User requested live agent support');
                           }}
                           variant="outline"
                           size="sm"
