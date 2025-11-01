@@ -30,6 +30,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [showPreChatForm, setShowPreChatForm] = useState(false);
   const [visitorInfo, setVisitorInfo] = useState<any>({});
   const [agentTyping, setAgentTyping] = useState(false);
+  const [requestingAgent, setRequestingAgent] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -332,6 +333,9 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   };
 
   const requestLiveAgent = async (reason: string) => {
+    // Prevent multiple simultaneous requests
+    if (requestingAgent) return;
+    
     try {
       // Show email input if not provided
       if (!visitorEmail) {
@@ -339,6 +343,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         handleTranscript('Please provide your email so we can notify you when an agent joins.', 'assistant');
         return;
       }
+
+      setRequestingAgent(true);
 
       // Ensure we have a visitor ID
       let visitorId = localStorage.getItem('visitor_id');
@@ -404,6 +410,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     } catch (error) {
       console.error('Error requesting live agent:', error);
       handleTranscript('Sorry, unable to connect to a live agent right now. Please try again.', 'assistant');
+    } finally {
+      setRequestingAgent(false);
     }
   };
 
@@ -671,11 +679,12 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                           onClick={() => {
                             requestLiveAgent('User requested live agent support');
                           }}
+                          disabled={requestingAgent}
                           variant="outline"
                           size="sm"
                           className="w-full h-8 sm:h-9 text-[10px] sm:text-xs"
                         >
-                          Talk to Live Agent
+                          {requestingAgent ? 'Requesting...' : 'Talk to Live Agent'}
                         </Button>
                       </div>
                     )}
@@ -687,12 +696,13 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                             requestLiveAgent('AI determined escalation needed');
                             setShowEscalateButton(false);
                           }}
+                          disabled={requestingAgent}
                           variant="default"
                           size="sm"
                           className="w-full h-8 sm:h-9 text-[10px] sm:text-xs"
                           style={{ backgroundColor: primaryColor }}
                         >
-                          Connect to Live Agent Now
+                          {requestingAgent ? 'Connecting...' : 'Connect to Live Agent Now'}
                         </Button>
                       </div>
                     )}
