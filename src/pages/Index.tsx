@@ -19,7 +19,9 @@ import {
   FileText,
   Home,
   Menu,
-  X
+  X,
+  Check,
+  Crown
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -424,6 +426,205 @@ const Index = () => {
               </div>
             </div>
           </Card>
+        </section>
+
+        {/* Pricing Section */}
+        <section className="py-24">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-6 text-sm">
+              <Crown className="w-4 h-4 mr-2" />
+              Simple, Transparent Pricing
+            </Badge>
+            <h3 className="text-4xl md:text-5xl font-bold mb-6">
+              Choose Your Plan
+            </h3>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Start free and scale as you grow. All plans include our revolutionary self-learning AI.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+            {/* Free Plan */}
+            <Card className="p-8 hover:shadow-xl transition-all relative">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-2xl font-bold mb-2">Free</h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">$0</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">Perfect for trying out</p>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">1 Business</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Basic AI Chat</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Widget Customization</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Email Support</span>
+                  </li>
+                </ul>
+
+                <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
+                  Get Started
+                </Button>
+              </div>
+            </Card>
+
+            {/* Basic Plan */}
+            <Card className="p-8 hover:shadow-xl transition-all relative">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-2xl font-bold mb-2">Basic</h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">$9.99</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">For growing businesses</p>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">3 Businesses</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Pre-Chat Forms</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Canned Responses</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Basic Analytics</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Email Notifications</span>
+                  </li>
+                </ul>
+
+                <Button className="w-full" onClick={() => navigate("/auth")}>
+                  Get Started
+                </Button>
+              </div>
+            </Card>
+
+            {/* Pro Plan */}
+            <Card className="p-8 hover:shadow-xl transition-all relative border-2 border-primary">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                Most Popular
+              </Badge>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-2xl font-bold mb-2">Pro</h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">$29.99</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">For professional teams</p>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">10 Businesses</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Live Agent Transfer</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Advanced Analytics</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Sentiment Analysis</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Voice Chat</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Product Catalog</span>
+                  </li>
+                </ul>
+
+                <Button className="w-full" onClick={() => navigate("/auth")}>
+                  Get Started
+                </Button>
+              </div>
+            </Card>
+
+            {/* Business Plan */}
+            <Card className="p-8 hover:shadow-xl transition-all relative bg-gradient-to-br from-primary/5 to-secondary/5">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-primary/60">
+                <Crown className="w-3 h-3 mr-1" />
+                Enterprise
+              </Badge>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-2xl font-bold mb-2">Business</h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">$99.99</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">For enterprises</p>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm font-semibold">Unlimited Businesses</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">AI Learning & Documents</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Advanced Visitor Tracking</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Custom Integrations</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">API Access</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">24/7 Priority Support</span>
+                  </li>
+                </ul>
+
+                <Button className="w-full bg-gradient-to-r from-primary to-primary/80" onClick={() => navigate("/auth")}>
+                  Contact Sales
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          <div className="text-center mt-12">
+            <p className="text-muted-foreground">
+              All plans include self-learning AI, conversation memory, and automatic improvements
+            </p>
+          </div>
         </section>
 
         {/* CTA Section */}
