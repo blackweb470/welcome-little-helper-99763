@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useQuery } from "@tanstack/react-query";
 
 interface Message {
   id: string;
@@ -44,8 +46,24 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [acceptingChat, setAcceptingChat] = useState<string | null>(null);
   const [endingChat, setEndingChat] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [cannedResponsesOpen, setCannedResponsesOpen] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Fetch canned responses
+  const { data: cannedResponses } = useQuery({
+    queryKey: ['canned-responses', businessId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('canned_responses')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('usage_count', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -321,15 +339,23 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           content: messageInput.trim()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting message:', error);
+        throw error;
+      }
 
       setMessageInput("");
       await fetchMessages(selectedSession.conversation_id);
+      
+      toast({
+        title: "Message sent",
+        description: "Your message has been delivered"
+      });
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: "Failed to send message. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -444,16 +470,74 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
             </div>
           </ScrollArea>
           <div className="border-t p-4 flex-shrink-0 bg-background">
+            {sendingMessage && (
+              <div className="mb-2 flex justify-end">
+                <div className="bg-muted rounded-lg px-3 py-1">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2">
+              <Popover open={cannedResponsesOpen} onOpenChange={setCannedResponsesOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    type="button"
+                    disabled={sendingMessage}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Canned Responses</h4>
+                    <ScrollArea className="h-[200px]">
+                      {cannedResponses?.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No canned responses yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {cannedResponses?.map((response: any) => (
+                            <button
+                              key={response.id}
+                              onClick={async () => {
+                                setMessageInput(response.content);
+                                setCannedResponsesOpen(false);
+                                
+                                // Increment usage count
+                                await supabase
+                                  .from('canned_responses')
+                                  .update({ usage_count: response.usage_count + 1 })
+                                  .eq('id', response.id);
+                              }}
+                              className="w-full text-left p-2 rounded hover:bg-accent transition-colors"
+                            >
+                              <div className="font-medium text-sm">{response.title}</div>
+                              <div className="text-xs text-muted-foreground line-clamp-1">
+                                {response.content}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Input
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                onKeyPress={(e) => e.key === 'Enter' && !sendingMessage && sendMessage()}
                 placeholder="Type your message..."
                 className="flex-1"
+                disabled={sendingMessage}
               />
               <Button onClick={sendMessage} disabled={!messageInput.trim() || sendingMessage}>
-                <Send className="w-4 h-4" />
+                {sendingMessage ? 'Sending...' : <Send className="w-4 h-4" />}
               </Button>
             </div>
           </div>

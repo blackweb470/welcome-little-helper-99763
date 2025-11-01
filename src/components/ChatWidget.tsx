@@ -29,6 +29,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [showPreChatForm, setShowPreChatForm] = useState(false);
   const [visitorInfo, setVisitorInfo] = useState<any>({});
+  const [agentTyping, setAgentTyping] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -107,6 +108,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           
           // Only show assistant messages (from agent) in the transcript
           if (newMessage.role === 'assistant') {
+            setAgentTyping(false); // Clear typing indicator
             handleTranscript(newMessage.content, 'assistant');
             
             // Mark message as read by visitor
@@ -566,8 +568,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                         </div>
                       ))}
                       
-                      {/* Typing indicator */}
-                      {sendingMessage && (
+                      {/* Typing indicator - for both sending message and agent typing */}
+                      {(sendingMessage || agentTyping) && (
                         <div className="flex justify-start">
                           <div className="bg-muted rounded-lg p-2 sm:p-2.5 md:p-3">
                             <div className="flex items-center gap-1">
