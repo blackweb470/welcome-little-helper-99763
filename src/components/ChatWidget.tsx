@@ -565,6 +565,20 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Typing indicator */}
+                      {sendingMessage && (
+                        <div className="flex justify-start">
+                          <div className="bg-muted rounded-lg p-2 sm:p-2.5 md:p-3">
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div ref={messagesEndRef} />
                     </div>
                   </ScrollArea>
