@@ -189,8 +189,9 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
     console.log('Setting up message subscription for conversation:', conversationId);
     
-    // Fetch any existing messages that might have been missed
-    const fetchExistingMessages = async () => {
+    // Setup subscription with existing message fetch
+    const setupSubscription = async () => {
+      // First, fetch any existing messages that might have been missed
       console.log('Fetching existing messages for conversation:', conversationId);
       const { data, error } = await supabase
         .from('messages')
@@ -200,67 +201,72 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       
       if (error) {
         console.error('Error fetching existing messages:', error);
-        return;
-      }
-      
-      console.log('Existing messages found:', data);
-      if (data && data.length > 0) {
-        data.forEach((msg: any) => {
-          if (!processedMessageIdsRef.current.has(msg.id) && msg.role === 'assistant') {
-            console.log('Adding missed assistant message:', msg.content);
-            processedMessageIdsRef.current.add(msg.id);
-            handleTranscript(msg.content, msg.role);
-          }
-        });
-      }
-    };
-    
-    fetchExistingMessages();
-
-    const channel = supabase
-      .channel(`messages-${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        async (payload) => {
-          console.log('New message received via realtime:', payload);
-          const newMessage = payload.new as any;
-          
-          // Only process assistant messages via realtime (user messages are added immediately)
-          if (newMessage.role !== 'assistant') {
-            console.log('Skipping user message in realtime (already added)');
-            return;
-          }
-          
-          // Check if we've already processed this message ID
-          if (processedMessageIdsRef.current.has(newMessage.id)) {
-            console.log('Duplicate message detected, skipping:', newMessage.id);
-            return;
-          }
-          
-          console.log('Processing new assistant message:', newMessage.content);
-          processedMessageIdsRef.current.add(newMessage.id);
-          handleTranscript(newMessage.content, newMessage.role);
-          
-          // Mark message as read by visitor when received
-          await supabase
-            .from('messages')
-            .update({ read_at: new Date().toISOString() })
-            .eq('id', newMessage.id);
+      } else {
+        console.log('Existing messages found:', data);
+        if (data && data.length > 0) {
+          data.forEach((msg: any) => {
+            if (!processedMessageIdsRef.current.has(msg.id) && msg.role === 'assistant') {
+              console.log('Adding missed assistant message:', msg.content);
+              processedMessageIdsRef.current.add(msg.id);
+              handleTranscript(msg.content, msg.role);
+            }
+          });
         }
-      )
-      .subscribe((status) => {
-        console.log('Message subscription status:', status);
-      });
+      }
+
+      // Then setup the realtime subscription
+      const channel = supabase
+        .channel(`messages-${conversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${conversationId}`
+          },
+          async (payload) => {
+            console.log('New message received via realtime:', payload);
+            const newMessage = payload.new as any;
+            
+            // Only process assistant messages via realtime (user messages are added immediately)
+            if (newMessage.role !== 'assistant') {
+              console.log('Skipping user message in realtime (already added)');
+              return;
+            }
+            
+            // Check if we've already processed this message ID
+            if (processedMessageIdsRef.current.has(newMessage.id)) {
+              console.log('Duplicate message detected, skipping:', newMessage.id);
+              return;
+            }
+            
+            console.log('Processing new assistant message:', newMessage.content);
+            processedMessageIdsRef.current.add(newMessage.id);
+            handleTranscript(newMessage.content, newMessage.role);
+            
+            // Mark message as read by visitor when received
+            await supabase
+              .from('messages')
+              .update({ read_at: new Date().toISOString() })
+              .eq('id', newMessage.id);
+          }
+        )
+        .subscribe((status) => {
+          console.log('Message subscription status:', status);
+        });
+
+      return channel;
+    };
+
+    let channel: any;
+    setupSubscription().then(ch => { channel = ch; });
 
     return () => {
-      console.log('Cleaning up message subscription');
-      supabase.removeChannel(channel);
+      if (channel) {
+        console.log('Cleaning up message subscription');
+        supabase.removeChannel(channel);
+      }
     };
   }, [conversationId]);
 
