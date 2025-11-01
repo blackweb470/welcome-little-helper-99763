@@ -625,7 +625,7 @@ const Index = () => {
                 </ul>
 
                 <Button className="w-full bg-gradient-to-r from-primary to-primary/80" onClick={() => navigate("/auth")}>
-                  Contact Sales
+                  Get Started
                 </Button>
               </div>
             </Card>

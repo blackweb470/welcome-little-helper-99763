@@ -71,7 +71,7 @@ const Pricing = () => {
         "Dedicated Account Manager",
         "Custom Training",
       ],
-      cta: "Contact Sales",
+      cta: "Get Started",
       popular: false,
       gradient: true,
     },
