@@ -149,6 +149,9 @@ const Index = () => {
                 <Link to="/features">Features</Link>
               </Button>
               <Button asChild variant="ghost" size="sm">
+                <Link to="/pricing">Pricing</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
                 <Link to="/docs">Docs</Link>
               </Button>
               <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -172,6 +175,14 @@ const Index = () => {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Link to="/features">Features</Link>
+                  </Button>
+                  <Button 
+                    asChild 
+                    variant="ghost" 
+                    className="justify-start text-lg"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Link to="/pricing">Pricing</Link>
                   </Button>
                   <Button 
                     asChild 
@@ -678,6 +689,7 @@ const Index = () => {
             </div>
             <div className="flex gap-8 text-sm text-muted-foreground">
               <Link to="/features" className="hover:text-foreground transition-colors">Features</Link>
+              <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
               <Link to="/features-testing" className="hover:text-foreground transition-colors">Testing Center</Link>
               <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
               <Link to="/auth" className="hover:text-foreground transition-colors">Login</Link>
