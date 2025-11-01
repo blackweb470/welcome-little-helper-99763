@@ -64,19 +64,19 @@ Deno.serve(async (req) => {
       throw sessionError;
     }
 
-    // Get business owner user_id
+    // Get business owner owner_id
     const { data: business } = await supabase
       .from('businesses')
-      .select('user_id')
+      .select('owner_id')
       .eq('id', businessId)
       .single();
 
     // Create notification history for browser notification
-    if (business?.user_id) {
-      await supabase
+    if (business?.owner_id) {
+      const { error: notifError } = await supabase
         .from('notification_history')
         .insert({
-          user_id: business.user_id,
+          user_id: business.owner_id,
           business_id: businessId,
           notification_type: 'chat_transfer',
           title: 'Live Chat Transfer Request',
@@ -90,6 +90,12 @@ Deno.serve(async (req) => {
           sent_email: false,
           sent_sound: true,
         });
+      
+      if (notifError) {
+        console.error('Error creating notification history:', notifError);
+      } else {
+        console.log('Notification history created successfully');
+      }
     }
 
     // Send notification to business owner
