@@ -225,6 +225,8 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   useEffect(() => {
     if (!conversationId) return;
 
+    const processedMessageIds = new Set<string>();
+
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -239,21 +241,21 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           console.log('New message received:', payload);
           const newMessage = payload.new as any;
           
-          // Check if this message is already in transcript to avoid duplicates
-          const isDuplicate = transcript.some(
-            msg => msg.text === newMessage.content && msg.role === newMessage.role
-          );
+          // Check if we've already processed this message ID
+          if (processedMessageIds.has(newMessage.id)) {
+            console.log('Duplicate message detected, skipping:', newMessage.id);
+            return;
+          }
           
-          if (!isDuplicate) {
-            handleTranscript(newMessage.content, newMessage.role);
-            
-            // Mark message as read by visitor when received
-            if (newMessage.role === 'assistant') {
-              await supabase
-                .from('messages')
-                .update({ read_at: new Date().toISOString() })
-                .eq('id', newMessage.id);
-            }
+          processedMessageIds.add(newMessage.id);
+          handleTranscript(newMessage.content, newMessage.role);
+          
+          // Mark message as read by visitor when received
+          if (newMessage.role === 'assistant') {
+            await supabase
+              .from('messages')
+              .update({ read_at: new Date().toISOString() })
+              .eq('id', newMessage.id);
           }
         }
       )
@@ -262,7 +264,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, transcript]);
+  }, [conversationId]);
 
   const initializeTextConversation = async (preChatData?: any) => {
     try {
