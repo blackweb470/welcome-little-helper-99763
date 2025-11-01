@@ -182,7 +182,40 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
   // Real-time subscription for new messages
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId) {
+      console.log('No conversationId yet, skipping message subscription');
+      return;
+    }
+
+    console.log('Setting up message subscription for conversation:', conversationId);
+    
+    // Fetch any existing messages that might have been missed
+    const fetchExistingMessages = async () => {
+      console.log('Fetching existing messages for conversation:', conversationId);
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching existing messages:', error);
+        return;
+      }
+      
+      console.log('Existing messages found:', data);
+      if (data && data.length > 0) {
+        data.forEach((msg: any) => {
+          if (!processedMessageIdsRef.current.has(msg.id) && msg.role === 'assistant') {
+            console.log('Adding missed assistant message:', msg.content);
+            processedMessageIdsRef.current.add(msg.id);
+            handleTranscript(msg.content, msg.role);
+          }
+        });
+      }
+    };
+    
+    fetchExistingMessages();
 
     const channel = supabase
       .channel(`messages-${conversationId}`)
@@ -195,7 +228,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           filter: `conversation_id=eq.${conversationId}`
         },
         async (payload) => {
-          console.log('New message received:', payload);
+          console.log('New message received via realtime:', payload);
           const newMessage = payload.new as any;
           
           // Only process assistant messages via realtime (user messages are added immediately)
@@ -210,6 +243,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
             return;
           }
           
+          console.log('Processing new assistant message:', newMessage.content);
           processedMessageIdsRef.current.add(newMessage.id);
           handleTranscript(newMessage.content, newMessage.role);
           
@@ -220,9 +254,12 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
             .eq('id', newMessage.id);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Message subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up message subscription');
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
@@ -420,6 +457,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
       // Update conversation ID if returned
       if (data.conversationId && !conversationId) {
+        console.log('Setting conversationId from response:', data.conversationId);
         setConversationId(data.conversationId);
       }
 
