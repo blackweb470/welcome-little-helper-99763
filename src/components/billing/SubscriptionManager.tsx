@@ -26,10 +26,21 @@ interface SubscriptionStatus {
   cancel_at_period_end: boolean;
 }
 
+interface PaymentRecord {
+  id: string;
+  plan_name: string;
+  amount: number | null;
+  currency: string;
+  status: string;
+  created_at: string;
+  error_message: string | null;
+}
+
 export const SubscriptionManager = () => {
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -44,12 +55,27 @@ export const SubscriptionManager = () => {
       if (!user) return;
 
       const { data, error } = await supabase
-        .rpc('get_subscription_status', { p_user_id: user.id })
-        .single();
+        .rpc('get_subscription_status', { p_user_id: user.id });
 
       if (error) throw error;
 
-      setSubscription(data);
+      if (data && data.length > 0) {
+        setSubscription(data[0]);
+      }
+
+      // Fetch payment history
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payment_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (paymentsError) {
+        console.error('Error fetching payments:', paymentsError);
+      } else {
+        setPayments(paymentsData || []);
+      }
     } catch (error) {
       console.error('Error fetching subscription:', error);
       toast({
@@ -201,6 +227,55 @@ export const SubscriptionManager = () => {
               Polar account
             </a>.
           </p>
+        </div>
+
+        {/* Payment History */}
+        <div className="mt-6">
+          <h4 className="font-semibold mb-4 flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            Payment History
+          </h4>
+          {payments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No payment history available yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {payments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between p-4 border rounded-lg bg-card"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium capitalize">{payment.plan_name} Plan</p>
+                      <Badge variant={
+                        payment.status === 'succeeded' ? 'default' :
+                        payment.status === 'failed' ? 'destructive' :
+                        payment.status === 'refunded' ? 'secondary' :
+                        'outline'
+                      }>
+                        {payment.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {formatDate(payment.created_at)}
+                    </p>
+                    {payment.error_message && (
+                      <p className="text-sm text-destructive mt-1">
+                        {payment.error_message}
+                      </p>
+                    )}
+                  </div>
+                  {payment.amount && (
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        {payment.currency.toUpperCase()} {payment.amount.toFixed(2)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

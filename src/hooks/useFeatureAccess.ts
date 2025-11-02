@@ -39,15 +39,17 @@ export const useFeatureAccess = (userId: string | undefined) => {
 
     const fetchFeatureAccess = async () => {
       try {
-        // Get user's plan
+        // Get user's plan (includes expiration check)
         const { data: planData } = await supabase
           .rpc('get_user_plan_info', { p_user_id: userId });
 
         if (planData && planData.length > 0) {
           setPlanName(planData[0].plan_name);
+        } else {
+          setPlanName('free');
         }
 
-        // Check all features
+        // Check all features (uses updated has_feature_access with expiration logic)
         const featureList: FeatureName[] = [
           'basic_chat',
           'widget_customization',

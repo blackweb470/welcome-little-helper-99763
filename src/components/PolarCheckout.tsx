@@ -43,6 +43,10 @@ export const PolarCheckout = ({
       checkoutUrl.searchParams.set('user_id', userId);
       checkoutUrl.searchParams.set('plan_name', planName);
       
+      // Add success URL to redirect back to dashboard
+      const successUrl = `${window.location.origin}/dashboard`;
+      checkoutUrl.searchParams.set('success_url', successUrl);
+      
       // Redirect to Polar checkout
       window.location.href = checkoutUrl.toString();
     } catch (error) {

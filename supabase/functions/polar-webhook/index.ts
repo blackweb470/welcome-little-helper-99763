@@ -145,6 +145,21 @@ Deno.serve(async (req) => {
           throw upsertError;
         }
 
+        // Record payment in history
+        const paymentStatus = event.data.status === 'active' || event.data.status === 'trialing' ? 'succeeded' : 'failed';
+        await supabase
+          .from('payment_history')
+          .insert({
+            user_id: userId,
+            polar_subscription_id: event.data.id,
+            plan_name: planName,
+            status: paymentStatus,
+            metadata: {
+              event_type: event.type,
+              polar_data: event.data
+            }
+          });
+
         console.log(`Subscription ${event.type} for user ${userId}, plan: ${planName}`);
         break;
       }

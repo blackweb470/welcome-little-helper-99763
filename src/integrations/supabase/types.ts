@@ -680,6 +680,54 @@ export type Database = {
           },
         ]
       }
+      payment_history: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          plan_name: string
+          polar_payment_id: string | null
+          polar_subscription_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          plan_name: string
+          polar_payment_id?: string | null
+          polar_subscription_id?: string | null
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          plan_name?: string
+          polar_payment_id?: string | null
+          polar_subscription_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       proactive_chat_rules: {
         Row: {
           business_id: string
