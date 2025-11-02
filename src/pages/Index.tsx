@@ -450,50 +450,16 @@ const Index = () => {
               Choose Your Plan
             </h3>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Start free and scale as you grow. All plans include our revolutionary self-learning AI.
+              Start with 1 month free on Basic. All plans include self-learning AI powered by Polar.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {/* Free Plan */}
-            <Card className="p-8 hover:shadow-xl transition-all relative">
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-2xl font-bold mb-2">Free</h4>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">$0</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">Perfect for trying out</p>
-                </div>
-                
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">1 Business</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Basic AI Chat</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Widget Customization</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Email Support</span>
-                  </li>
-                </ul>
-
-                <Button className="w-full" variant="outline" onClick={() => navigate("/auth")}>
-                  Get Started
-                </Button>
-              </div>
-            </Card>
-
             {/* Basic Plan */}
             <Card className="p-8 hover:shadow-xl transition-all relative">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600">
+                1 Month Free Trial
+              </Badge>
               <div className="space-y-6">
                 <div>
                   <h4 className="text-2xl font-bold mb-2">Basic</h4>
@@ -507,7 +473,7 @@ const Index = () => {
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">3 Businesses</span>
+                    <span className="text-sm font-semibold">3 Businesses</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
@@ -521,14 +487,10 @@ const Index = () => {
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <span className="text-sm">Basic Analytics</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Email Notifications</span>
-                  </li>
                 </ul>
 
-                <Button className="w-full" onClick={() => navigate("/auth")}>
-                  Get Started
+                <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+                  Start Free Trial
                 </Button>
               </div>
             </Card>
@@ -551,7 +513,7 @@ const Index = () => {
                 <ul className="space-y-3">
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">10 Businesses</span>
+                    <span className="text-sm font-semibold">10 Businesses</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
@@ -569,10 +531,6 @@ const Index = () => {
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <span className="text-sm">Voice Chat</span>
                   </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Product Catalog</span>
-                  </li>
                 </ul>
 
                 <Button className="w-full" onClick={() => navigate("/auth")}>
@@ -582,11 +540,7 @@ const Index = () => {
             </Card>
 
             {/* Business Plan */}
-            <Card className="p-8 hover:shadow-xl transition-all relative bg-gradient-to-br from-primary/5 to-secondary/5">
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-primary/60">
-                <Crown className="w-3 h-3 mr-1" />
-                Enterprise
-              </Badge>
+            <Card className="p-8 hover:shadow-xl transition-all">
               <div className="space-y-6">
                 <div>
                   <h4 className="text-2xl font-bold mb-2">Business</h4>
@@ -594,7 +548,7 @@ const Index = () => {
                     <span className="text-4xl font-bold">$99.99</span>
                     <span className="text-muted-foreground">/month</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">For enterprises</p>
+                  <p className="text-sm text-muted-foreground mt-2">For large organizations</p>
                 </div>
                 
                 <ul className="space-y-3">
@@ -616,11 +570,52 @@ const Index = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">API Access</span>
+                    <span className="text-sm">24/7 Priority Support</span>
+                  </li>
+                </ul>
+
+                <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
+                  Get Started
+                </Button>
+              </div>
+            </Card>
+
+            {/* Enterprise Plan */}
+            <Card className="p-8 hover:shadow-xl transition-all relative bg-gradient-to-br from-primary/5 to-secondary/5">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-primary/60">
+                <Crown className="w-3 h-3 mr-1" />
+                Enterprise
+              </Badge>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-2xl font-bold mb-2">Enterprise</h4>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">$299.99</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">Enterprise-scale</p>
+                </div>
+                
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm font-semibold">Everything in Business</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">24/7 Priority Support</span>
+                    <span className="text-sm">White-Label Solution</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">SLA Guarantees</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Custom Contracts</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">Dedicated Support Team</span>
                   </li>
                 </ul>
 

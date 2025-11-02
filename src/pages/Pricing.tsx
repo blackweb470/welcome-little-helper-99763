@@ -9,25 +9,11 @@ const Pricing = () => {
 
   const plans = [
     {
-      name: "Free",
-      price: "$0",
-      description: "Perfect for trying out",
-      features: [
-        "1 Business",
-        "Basic AI Chat",
-        "Widget Customization",
-        "Email Support",
-        "Conversation History",
-      ],
-      cta: "Get Started",
-      popular: false,
-      gradient: false,
-    },
-    {
       name: "Basic",
       price: "$9.99",
       description: "For growing businesses",
       features: [
+        "1 Month Free Trial",
         "3 Businesses",
         "Pre-Chat Forms",
         "Canned Responses",
@@ -35,9 +21,10 @@ const Pricing = () => {
         "Email Notifications",
         "Chat History",
       ],
-      cta: "Get Started",
+      cta: "Start Free Trial",
       popular: false,
       gradient: false,
+      trial: true,
     },
     {
       name: "Pro",
@@ -60,7 +47,7 @@ const Pricing = () => {
     {
       name: "Business",
       price: "$99.99",
-      description: "For enterprises",
+      description: "For large organizations",
       features: [
         "Unlimited Businesses",
         "AI Learning & Documents",
@@ -70,6 +57,25 @@ const Pricing = () => {
         "24/7 Priority Support",
         "Dedicated Account Manager",
         "Custom Training",
+      ],
+      cta: "Get Started",
+      popular: false,
+      gradient: false,
+    },
+    {
+      name: "Enterprise",
+      price: "$299.99",
+      description: "For enterprise-scale deployments",
+      features: [
+        "Everything in Business",
+        "Custom AI Training",
+        "White-Label Solution",
+        "SLA Guarantees",
+        "Multi-Region Deployment",
+        "Advanced Security Features",
+        "Custom Contracts",
+        "Dedicated Support Team",
+        "On-Premise Option",
       ],
       cta: "Get Started",
       popular: false,
@@ -113,13 +119,13 @@ const Pricing = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Start free and scale as you grow. All plans include our revolutionary self-learning AI.
+            Start with 1 month free on Basic and scale as you grow. Powered by Polar payment processing.
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center pt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-5 h-5 text-primary" />
-              <span>No Credit Card Required</span>
+              <span>1 Month Free Trial</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-5 h-5 text-primary" />
@@ -127,7 +133,7 @@ const Pricing = () => {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-5 h-5 text-primary" />
-              <span>14-Day Money Back</span>
+              <span>Secure Payments via Polar</span>
             </div>
           </div>
         </div>
@@ -141,6 +147,11 @@ const Pricing = () => {
                 plan.popular ? "border-2 border-primary" : ""
               } ${plan.gradient ? "bg-gradient-to-br from-primary/5 to-secondary/5" : ""}`}
             >
+              {plan.trial && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600">
+                  1 Month Free Trial
+                </Badge>
+              )}
               {plan.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                   Most Popular
