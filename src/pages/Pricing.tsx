@@ -3,14 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Crown, ArrowLeft, Sparkles } from "lucide-react";
+import { PolarCheckout } from "@/components/PolarCheckout";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
+  }, []);
 
   const plans = [
     {
       name: "Basic",
       price: "$9.99",
+      priceId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
       description: "For growing businesses",
       features: [
         "1 Month Free Trial",
@@ -23,12 +36,12 @@ const Pricing = () => {
       ],
       cta: "Start Free Trial",
       popular: false,
-      gradient: false,
       trial: true,
     },
     {
       name: "Pro",
       price: "$29.99",
+      priceId: "65495367-3163-49af-9ae4-0c3e740d332a",
       description: "For professional teams",
       features: [
         "10 Businesses",
@@ -42,11 +55,11 @@ const Pricing = () => {
       ],
       cta: "Get Started",
       popular: true,
-      gradient: false,
     },
     {
       name: "Business",
       price: "$99.99",
+      priceId: "495da580-72e9-4fb9-a706-b098921df542",
       description: "For large organizations",
       features: [
         "Unlimited Businesses",
@@ -60,26 +73,6 @@ const Pricing = () => {
       ],
       cta: "Get Started",
       popular: false,
-      gradient: false,
-    },
-    {
-      name: "Enterprise",
-      price: "$299.99",
-      description: "For enterprise-scale deployments",
-      features: [
-        "Everything in Business",
-        "Custom AI Training",
-        "White-Label Solution",
-        "SLA Guarantees",
-        "Multi-Region Deployment",
-        "Advanced Security Features",
-        "Custom Contracts",
-        "Dedicated Support Team",
-        "On-Premise Option",
-      ],
-      cta: "Get Started",
-      popular: false,
-      gradient: true,
     },
   ];
 
@@ -139,13 +132,13 @@ const Pricing = () => {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-16">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
           {plans.map((plan, index) => (
             <Card
               key={index}
               className={`p-8 hover:shadow-xl transition-all relative ${
                 plan.popular ? "border-2 border-primary" : ""
-              } ${plan.gradient ? "bg-gradient-to-br from-primary/5 to-secondary/5" : ""}`}
+              }`}
             >
               {plan.trial && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600">
@@ -155,12 +148,6 @@ const Pricing = () => {
               {plan.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                   Most Popular
-                </Badge>
-              )}
-              {plan.gradient && (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-primary/60">
-                  <Crown className="w-3 h-3 mr-1" />
-                  Enterprise
                 </Badge>
               )}
 
@@ -183,19 +170,24 @@ const Pricing = () => {
                   ))}
                 </ul>
 
-                <Button
-                  className={`w-full ${
-                    plan.gradient
-                      ? "bg-gradient-to-r from-primary to-primary/80"
-                      : plan.popular
-                      ? ""
-                      : ""
-                  }`}
-                  variant={plan.popular || plan.gradient ? "default" : "outline"}
-                  onClick={() => navigate("/auth")}
-                >
-                  {plan.cta}
-                </Button>
+                {userId ? (
+                  <PolarCheckout
+                    planName={plan.name.toLowerCase()}
+                    priceId={plan.priceId}
+                    userId={userId}
+                    className="w-full"
+                  >
+                    {plan.cta}
+                  </PolarCheckout>
+                ) : (
+                  <Button
+                    className="w-full"
+                    variant={plan.popular ? "default" : "outline"}
+                    onClick={() => navigate("/auth")}
+                  >
+                    {plan.cta}
+                  </Button>
+                )}
               </div>
             </Card>
           ))}

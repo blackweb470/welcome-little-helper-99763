@@ -52,12 +52,10 @@ async function verifyPolarSignature(
 
 // Map Polar product IDs to plan names
 function getPlanNameFromProductId(productId: string): string {
-  // You'll need to update these with your actual Polar product IDs
   const productMapping: Record<string, string> = {
-    'prod_basic': 'basic',
-    'prod_pro': 'pro',
-    'prod_business': 'business',
-    'prod_enterprise': 'enterprise',
+    '2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636': 'basic',
+    '65495367-3163-49af-9ae4-0c3e740d332a': 'pro',
+    '495da580-72e9-4fb9-a706-b098921df542': 'business',
   };
   return productMapping[productId] || 'basic';
 }
