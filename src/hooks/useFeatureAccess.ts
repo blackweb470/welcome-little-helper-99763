@@ -18,7 +18,9 @@ export type FeatureName =
   | 'ai_learning'
   | 'visitor_tracking'
   | 'custom_integrations'
-  | 'api_access';
+  | 'api_access'
+  | 'white_label'
+  | 'sla_guarantees';
 
 interface PlanFeatures {
   [key: string]: boolean;
@@ -26,7 +28,7 @@ interface PlanFeatures {
 
 export const useFeatureAccess = (userId: string | undefined) => {
   const [features, setFeatures] = useState<PlanFeatures>({});
-  const [planName, setPlanName] = useState<string>('free');
+  const [planName, setPlanName] = useState<string>('basic');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,6 +66,8 @@ export const useFeatureAccess = (userId: string | undefined) => {
           'visitor_tracking',
           'custom_integrations',
           'api_access',
+          'white_label',
+          'sla_guarantees',
         ];
 
         const featureAccess: PlanFeatures = {};
@@ -91,8 +95,8 @@ export const useFeatureAccess = (userId: string | undefined) => {
 
   const getRequiredPlan = (feature: FeatureName): string => {
     const featurePlanMap: { [key in FeatureName]: string } = {
-      basic_chat: 'free',
-      widget_customization: 'free',
+      basic_chat: 'basic',
+      widget_customization: 'basic',
       pre_chat_forms: 'basic',
       canned_responses: 'basic',
       basic_analytics: 'basic',
@@ -108,6 +112,8 @@ export const useFeatureAccess = (userId: string | undefined) => {
       visitor_tracking: 'business',
       custom_integrations: 'business',
       api_access: 'business',
+      white_label: 'enterprise',
+      sla_guarantees: 'enterprise',
     };
     return featurePlanMap[feature];
   };

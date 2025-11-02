@@ -13,6 +13,7 @@ import NewDocumentation from "./pages/NewDocumentation";
 import FeaturesList from "./pages/FeaturesList";
 import FeaturesTestingCenter from "./pages/FeaturesTestingCenter";
 import Pricing from "./pages/Pricing";
+import Billing from "./pages/Billing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/billing" element={<Billing />} />
           <Route path="/widget/:businessId" element={<WidgetDemo />} />
           <Route path="/embed/:businessId" element={<WidgetEmbed />} />
           <Route path="/docs" element={<NewDocumentation />} />

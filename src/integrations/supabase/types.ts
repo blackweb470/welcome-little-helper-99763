@@ -927,29 +927,44 @@ export type Database = {
       }
       user_subscriptions: {
         Row: {
+          cancel_at_period_end: boolean | null
           created_at: string | null
+          current_period_end: string | null
           expires_at: string | null
           id: string
           plan_name: string
+          polar_customer_id: string | null
+          polar_subscription_id: string | null
           started_at: string | null
+          trial_ends_at: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean | null
           created_at?: string | null
+          current_period_end?: string | null
           expires_at?: string | null
           id?: string
           plan_name: string
+          polar_customer_id?: string | null
+          polar_subscription_id?: string | null
           started_at?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean | null
           created_at?: string | null
+          current_period_end?: string | null
           expires_at?: string | null
           id?: string
           plan_name?: string
+          polar_customer_id?: string | null
+          polar_subscription_id?: string | null
           started_at?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -1179,6 +1194,17 @@ export type Database = {
         Returns: number
       }
       can_create_business: { Args: { p_user_id: string }; Returns: boolean }
+      get_subscription_status: {
+        Args: { p_user_id: string }
+        Returns: {
+          cancel_at_period_end: boolean
+          expires_at: string
+          is_trial: boolean
+          plan_name: string
+          status: string
+          trial_ends_at: string
+        }[]
+      }
       get_user_plan_info: {
         Args: { p_user_id: string }
         Returns: {
@@ -1199,6 +1225,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_on_trial: { Args: { p_user_id: string }; Returns: boolean }
       search_conversations: {
         Args: {
           p_business_id: string
