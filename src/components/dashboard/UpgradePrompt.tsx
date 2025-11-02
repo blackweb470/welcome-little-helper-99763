@@ -2,6 +2,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFoo
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface UpgradePromptProps {
   open: boolean;
@@ -44,6 +45,7 @@ const planFeatures: { [key: string]: string[] } = {
 };
 
 export const UpgradePrompt = ({ open, onClose, featureName, requiredPlan, currentPlan }: UpgradePromptProps) => {
+  const navigate = useNavigate();
   const planName = requiredPlan.charAt(0).toUpperCase() + requiredPlan.slice(1);
   const price = planPrices[requiredPlan] || '';
   const features = planFeatures[requiredPlan] || [];
@@ -87,9 +89,8 @@ export const UpgradePrompt = ({ open, onClose, featureName, requiredPlan, curren
             Maybe Later
           </Button>
           <Button onClick={() => {
-            // TODO: Implement upgrade flow
-            alert('Upgrade functionality will be implemented with payment integration');
             onClose();
+            navigate('/pricing');
           }}>
             Upgrade Now
           </Button>

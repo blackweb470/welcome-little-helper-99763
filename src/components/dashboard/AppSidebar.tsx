@@ -18,6 +18,7 @@ import {
   BellDot,
   TestTube2,
   Lock,
+  CreditCard,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ const mainItems = [
 
 const externalLinks = [
   { title: "Testing Center", path: "/features-testing", icon: TestTube2 },
+  { title: "Billing", path: "/billing", icon: CreditCard },
 ];
 
 const businessItems = [
