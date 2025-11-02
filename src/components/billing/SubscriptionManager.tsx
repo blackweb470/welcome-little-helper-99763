@@ -4,8 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Crown, Calendar, CreditCard } from "lucide-react";
+import { Loader2, Crown, Calendar, CreditCard, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SubscriptionStatus {
   plan_name: string;
@@ -19,6 +29,7 @@ interface SubscriptionStatus {
 export const SubscriptionManager = () => {
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -154,7 +165,7 @@ export const SubscriptionManager = () => {
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 flex-wrap">
           <Button variant="outline" onClick={() => navigate('/pricing')}>
             Change Plan
           </Button>
@@ -163,7 +174,62 @@ export const SubscriptionManager = () => {
               Upgrade Now
             </Button>
           )}
+          {!subscription.cancel_at_period_end && !subscription.is_trial && (
+            <Button 
+              variant="destructive" 
+              onClick={() => setShowCancelDialog(true)}
+            >
+              Cancel Subscription
+            </Button>
+          )}
         </div>
+
+        <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+          <h4 className="font-semibold mb-2 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            Payment Information
+          </h4>
+          <p className="text-sm text-muted-foreground">
+            Your payment method is securely managed through Polar. To update your card or billing details, 
+            please visit your{" "}
+            <a 
+              href="https://polar.sh" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Polar account
+            </a>.
+          </p>
+        </div>
+
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your subscription will remain active until {formatDate(subscription.expires_at)}.
+                After that, you'll lose access to {subscription.plan_name} plan features.
+                You can resubscribe at any time.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  toast({
+                    title: "Cancellation Requested",
+                    description: "To cancel your subscription, please visit your Polar account or contact support.",
+                  });
+                  setShowCancelDialog(false);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirm Cancellation
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Card>
   );

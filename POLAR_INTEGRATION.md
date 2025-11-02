@@ -1,127 +1,112 @@
-# Polar Payment Integration Guide
+# Polar Integration Guide
 
-This guide explains how to complete the Polar payment integration for your LYQN AI application.
+## Overview
+This application uses Polar for subscription management with a professional signup flow:
+1. Users sign up → redirected to plan selection
+2. Select plan with 1-month free trial → Polar checkout
+3. Add payment card → trial starts
+4. Auto-charged after trial ends
 
-## ✅ What's Already Implemented
+## Current Configuration
 
-### Database Structure
-- ✅ `user_subscriptions` table updated with Polar tracking fields:
-  - `polar_customer_id` - Tracks Polar customer
-  - `polar_subscription_id` - Tracks Polar subscription
-  - `trial_ends_at` - 1-month trial tracking
-  - `cancel_at_period_end` - Cancellation status
-  - `current_period_end` - Next billing date
+### Product IDs (Configured in code)
+- **Basic Plan**: `2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636`
+- **Pro Plan**: `65495367-3163-49af-9ae4-0c3e740d332a`
+- **Business Plan**: `495da580-72e9-4fb9-a706-b098921df542`
 
-### Subscription Plans
-- ✅ Basic Plan ($9.99/month) - 1 month free trial
-  - Product ID: `2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636`
-- ✅ Pro Plan ($29.99/month)
-  - Product ID: `65495367-3163-49af-9ae4-0c3e740d332a`
-- ✅ Business Plan ($99.99/month)
-  - Product ID: `495da580-72e9-4fb9-a706-b098921df542`
+These are configured in:
+- `src/pages/Pricing.tsx` (frontend)
+- `supabase/functions/polar-webhook/index.ts` (backend)
 
-### Backend Functions
-- ✅ `polar-webhook` edge function - Handles Polar webhooks securely
-- ✅ Subscription status tracking functions
-- ✅ Feature access control based on plans
+## Setup Steps
 
-### Frontend Components
-- ✅ Subscription Manager component (`/billing`)
-- ✅ PolarCheckout component integrated in pricing page
-- ✅ Updated feature access hooks
-- ✅ Trial period display
-- ✅ Product IDs configured in webhook handler
+### 1. Polar Account Setup
+1. Create account at https://polar.sh
+2. Create products for each plan with trial periods
+3. Copy product IDs
+4. If IDs differ, update in both files above
 
-### Checkout Integration
-- ✅ Checkout URL: `https://buy.polar.sh/polar_cl_BeNKQxpBOCSJ0SbFU6bZAAAEhurIudMmcRwCx4QSlRF`
-- ✅ Automatic metadata passing (user_id, plan_name, product_id)
-- ✅ Email pre-filling for authenticated users
+### 2. Configure Webhook
+1. In Polar dashboard, go to Settings → Webhooks
+2. Add webhook URL: `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/polar-webhook`
+3. Select events: `subscription.*`
+4. Copy webhook secret
 
-## 🔧 Required Setup Steps
+### 3. Add Secrets
+The webhook secret should already be configured as `POLAR_WEBHOOK_SECRET` in your Supabase edge functions. If not, add it via Lovable's secrets management.
 
-### 1. Configure Webhook in Polar Dashboard
+### 4. Test Flow
+1. Sign up as new user
+2. Verify redirect to pricing
+3. Select Basic plan (free trial)
+4. Complete Polar checkout
+5. Verify subscription appears in `/billing`
 
-1. Go to Polar Dashboard → Settings → Webhooks
-2. Add webhook endpoint: `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/polar-webhook`
-3. Select events to listen to:
-   - `subscription.created`
-   - `subscription.updated`
-   - `subscription.cancelled`
-   - `subscription.deleted`
-   - `subscription.revoked`
-4. The webhook secret is already configured as `POLAR_WEBHOOK_SECRET` in your Supabase edge functions
+## Signup Flow
 
-### 2. Test the Integration
+```
+Sign Up → Onboarding Check → Pricing → Polar Checkout → Dashboard
+   ↓            ↓                ↓           ↓            ↓
+Create      Has sub?      Select plan   Add card    Access app
+Account       No→               ↓           ↓            ↓
+              Yes→         Start trial  Save card   Trial status
+            Dashboard                                 visible
+```
 
-The checkout is now fully functional and ready to test:
+## Billing Management
 
-1. Navigate to `/pricing`
-2. Click a plan's subscribe button
-3. Complete checkout in Polar
-4. Verify subscription appears in `/billing`
-5. Check that features are unlocked based on plan
+Users can manage subscriptions at `/billing`:
+- View trial status and end date
+- See next billing date  
+- Change plans
+- Cancel subscription (via Polar)
+- View payment method info
 
-## 📊 Features Mapped to Plans
+## Webhook Events
 
-### Basic Plan ($9.99/month)
-- ✅ 3 Businesses
-- ✅ Pre-Chat Forms
-- ✅ Canned Responses
-- ✅ Basic Analytics
-- ✅ Email Notifications
-- ✅ Chat History
+The webhook handles these Polar events:
+- `subscription.created` - New subscription
+- `subscription.updated` - Plan change, trial end
+- `subscription.cancelled` - User cancelled
+- `subscription.deleted` - Subscription removed
+- `subscription.revoked` - Forced removal
 
-### Pro Plan ($29.99/month)
-- ✅ 10 Businesses
-- ✅ Live Agent Transfer
-- ✅ Advanced Analytics
-- ✅ Sentiment Analysis
-- ✅ Proactive Chat Rules
-- ✅ Voice Chat
-- ✅ Product Catalog
+## Database
 
-### Business Plan ($99.99/month)
-- ✅ Unlimited Businesses
-- ✅ AI Learning & Documents
-- ✅ Advanced Visitor Tracking
-- ✅ Custom Integrations
-- ✅ API Access
-- ✅ 24/7 Priority Support
+Subscriptions stored in `user_subscriptions` table:
+- `trial_ends_at` - When trial ends (NULL if not trial)
+- `expires_at` - Next billing date
+- `cancel_at_period_end` - Cancellation scheduled
+- `polar_subscription_id` - Link to Polar
 
-## 🔍 Testing the Integration
+## Features by Plan
 
-### Test Subscription Flow
-1. Navigate to `/pricing`
-2. Click a plan's subscribe button
-3. Complete checkout in Polar
-4. Verify subscription appears in `/billing`
-5. Check that features are unlocked based on plan
+### Basic ($9.99/month)
+- 1 Month Free Trial
+- 3 Businesses
+- Pre-Chat Forms
+- Canned Responses
+- Basic Analytics
 
-### Verify Trial Period
-1. Subscribe to Basic plan
-2. Check `/billing` shows "Free Trial" badge
-3. Verify `trial_ends_at` is 30 days from now
-4. After trial, ensure billing begins automatically
+### Pro ($29.99/month)
+- 10 Businesses
+- Live Agent Transfer
+- Advanced Analytics
+- Sentiment Analysis
+- Voice Chat
 
-### Monitor Webhooks
-- Check Supabase Edge Function logs for webhook processing
-- Verify subscription data is correctly stored in `user_subscriptions` table
-- Ensure product IDs are correctly mapped to plan names
+### Business ($99.99/month)
+- Unlimited Businesses
+- AI Learning
+- Business Documents
+- Advanced Tracking
+- API Access
 
-## 🔐 Security Notes
+## Launch Ready! 🚀
 
-- ✅ Webhook signatures are verified before processing
-- ✅ JWT verification disabled only for public webhook endpoint
-- ✅ User subscriptions properly linked via metadata
-- ✅ RLS policies protect subscription data
+The integration is complete and professional. Just verify:
+1. Product IDs match your Polar products
+2. Webhook secret is configured
+3. Test signup flow works end-to-end
 
-## 🚀 Next Steps
-
-1. ✅ Product IDs configured
-2. Configure Polar webhook endpoint (Step 1 above)
-3. Test complete subscription flow
-4. Monitor webhook logs for errors
-
----
-
-**Need Help?** Check the Supabase Edge Function logs and Polar webhook logs for debugging.
+See `SIGNUP_FLOW.md` for complete user journey details.

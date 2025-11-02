@@ -6,10 +6,13 @@ import { Check, Crown, ArrowLeft, Sparkles } from "lucide-react";
 import { PolarCheckout } from "@/components/PolarCheckout";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -17,6 +20,10 @@ const Pricing = () => {
       setUserId(user?.id || null);
     };
     getUser();
+
+    // Check if this is a new user from onboarding
+    const params = new URLSearchParams(window.location.search);
+    setIsNewUser(params.get('new_user') === 'true');
   }, []);
 
   const plans = [
@@ -81,20 +88,22 @@ const Pricing = () => {
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-6 h-6 text-primary" />
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 LYQN AI
               </span>
             </div>
+            {isNewUser ? (
+              <div className="text-sm text-muted-foreground">
+                Complete your registration
+              </div>
+            ) : (
+              <Button variant="ghost" onClick={() => navigate(userId ? "/dashboard" : "/")}>
+                {userId ? "Dashboard" : "Back"}
+              </Button>
+            )}
           </div>
         </div>
       </header>
