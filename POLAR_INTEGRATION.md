@@ -32,18 +32,14 @@ This guide explains how to complete the Polar payment integration for your LYQN 
 - ✅ Trial period display
 - ✅ Product IDs configured in webhook handler
 
+### Checkout Integration
+- ✅ Checkout URL: `https://buy.polar.sh/polar_cl_BeNKQxpBOCSJ0SbFU6bZAAAEhurIudMmcRwCx4QSlRF`
+- ✅ Automatic metadata passing (user_id, plan_name, product_id)
+- ✅ Email pre-filling for authenticated users
+
 ## 🔧 Required Setup Steps
 
-### 1. Product IDs Configured ✅
-
-Your Polar product IDs have been configured:
-- **Basic Plan**: `2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636`
-- **Pro Plan**: `65495367-3163-49af-9ae4-0c3e740d332a`
-- **Business Plan**: `495da580-72e9-4fb9-a706-b098921df542`
-
-These are already mapped in the webhook handler.
-
-### 2. Configure Webhook in Polar Dashboard
+### 1. Configure Webhook in Polar Dashboard
 
 1. Go to Polar Dashboard → Settings → Webhooks
 2. Add webhook endpoint: `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/polar-webhook`
@@ -53,21 +49,19 @@ These are already mapped in the webhook handler.
    - `subscription.cancelled`
    - `subscription.deleted`
    - `subscription.revoked`
-4. Copy the webhook secret (already configured as `POLAR_WEBHOOK_SECRET`)
+4. The webhook secret is already configured as `POLAR_WEBHOOK_SECRET` in your Supabase edge functions
 
-### 3. Checkout Integration ✅
+### 2. Test the Integration
 
-The PolarCheckout component has been integrated into the pricing page. It creates checkout sessions dynamically using the Polar API with your configured product IDs.
+The checkout is now fully functional and ready to test:
 
-**Checkout Link**: `https://buy.polar.sh/polar_cl_BeNKQxpBOCSJ0SbFU6bZAAAEhurIudMmcRwCx4QSlRF`
+1. Navigate to `/pricing`
+2. Click a plan's subscribe button
+3. Complete checkout in Polar
+4. Verify subscription appears in `/billing`
+5. Check that features are unlocked based on plan
 
-The component handles:
-- User authentication check
-- Creating checkout sessions via Polar API
-- Redirecting to Polar checkout with metadata
-- Success/cancel URL handling
-
-## 📊 Features Already Mapped to Plans
+## 📊 Features Mapped to Plans
 
 ### Basic Plan ($9.99/month)
 - ✅ 3 Businesses
@@ -96,9 +90,6 @@ The component handles:
 
 ## 🔍 Testing the Integration
 
-### Test Webhook Locally
-Use Polar's webhook testing feature to send test events to your webhook endpoint.
-
 ### Test Subscription Flow
 1. Navigate to `/pricing`
 2. Click a plan's subscribe button
@@ -112,11 +103,10 @@ Use Polar's webhook testing feature to send test events to your webhook endpoint
 3. Verify `trial_ends_at` is 30 days from now
 4. After trial, ensure billing begins automatically
 
-## 📚 Additional Resources
-
-- [Polar API Documentation](https://docs.polar.sh)
-- [Polar Webhooks Guide](https://docs.polar.sh/webhooks)
-- [Polar Checkout Documentation](https://docs.polar.sh/checkout)
+### Monitor Webhooks
+- Check Supabase Edge Function logs for webhook processing
+- Verify subscription data is correctly stored in `user_subscriptions` table
+- Ensure product IDs are correctly mapped to plan names
 
 ## 🔐 Security Notes
 
@@ -128,7 +118,7 @@ Use Polar's webhook testing feature to send test events to your webhook endpoint
 ## 🚀 Next Steps
 
 1. ✅ Product IDs configured
-2. Configure Polar webhook endpoint (Step 2 above)
+2. Configure Polar webhook endpoint (Step 1 above)
 3. Test complete subscription flow
 4. Monitor webhook logs for errors
 

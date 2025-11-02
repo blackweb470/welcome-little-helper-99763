@@ -23,7 +23,7 @@ const Pricing = () => {
     {
       name: "Basic",
       price: "$9.99",
-      priceId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
+      productId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
       description: "For growing businesses",
       features: [
         "1 Month Free Trial",
@@ -41,7 +41,7 @@ const Pricing = () => {
     {
       name: "Pro",
       price: "$29.99",
-      priceId: "65495367-3163-49af-9ae4-0c3e740d332a",
+      productId: "65495367-3163-49af-9ae4-0c3e740d332a",
       description: "For professional teams",
       features: [
         "10 Businesses",
@@ -59,7 +59,7 @@ const Pricing = () => {
     {
       name: "Business",
       price: "$99.99",
-      priceId: "495da580-72e9-4fb9-a706-b098921df542",
+      productId: "495da580-72e9-4fb9-a706-b098921df542",
       description: "For large organizations",
       features: [
         "Unlimited Businesses",
@@ -173,7 +173,7 @@ const Pricing = () => {
                 {userId ? (
                   <PolarCheckout
                     planName={plan.name.toLowerCase()}
-                    priceId={plan.priceId}
+                    productId={plan.productId}
                     userId={userId}
                     className="w-full"
                   >
