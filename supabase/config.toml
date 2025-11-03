@@ -1,5 +1,8 @@
 project_id = "rgczbabidcqvpyiiqjfv"
 
+[functions.start-free-trial]
+verify_jwt = false
+
 [functions.polar-webhook]
 verify_jwt = false
 
