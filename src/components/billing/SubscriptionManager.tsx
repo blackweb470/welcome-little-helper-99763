@@ -92,7 +92,7 @@ export const SubscriptionManager = () => {
     if (!subscription) return null;
 
     if (subscription.is_trial) {
-      return <Badge className="bg-green-600">Free Trial</Badge>;
+      return <Badge className="bg-blue-600 text-white">Free Trial - Basic Features</Badge>;
     }
 
     if (subscription.status === 'active') {
