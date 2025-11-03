@@ -208,7 +208,7 @@ const Index = () => {
 
       <main className="container mx-auto px-4">
         {/* Hero Section */}
-        <section className="relative py-32 text-center overflow-hidden">
+        <section className="relative py-16 text-center overflow-hidden">
           {/* Animated background */}
           <div className="absolute inset-0 -z-10">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -262,7 +262,7 @@ const Index = () => {
         </section>
 
         {/* Self-Learning Feature Highlight */}
-        <section className="py-20 max-w-6xl mx-auto">
+        <section className="py-12 max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <Badge variant="secondary" className="text-sm">
@@ -335,7 +335,7 @@ const Index = () => {
         </section>
 
         {/* Demo Section */}
-        <section id="demo" className="py-20 max-w-5xl mx-auto">
+        <section id="demo" className="py-12 max-w-5xl mx-auto">
           <Card className="p-12 md:p-16 bg-gradient-to-br from-primary/5 via-background to-secondary/5 border-2 border-primary/20">
             <div className="text-center space-y-6">
               <Badge variant="secondary" className="text-sm">
@@ -371,7 +371,7 @@ const Index = () => {
         </section>
 
         {/* Why Superior Section */}
-        <section className="py-20 text-center">
+        <section className="py-12 text-center">
           <Badge variant="secondary" className="mb-6 text-sm">
             <ShieldCheck className="w-4 h-4 mr-2" />
             Enterprise-Grade Features
@@ -405,7 +405,7 @@ const Index = () => {
         </section>
 
         {/* Comparison Section */}
-        <section className="py-16 max-w-5xl mx-auto">
+        <section className="py-12 max-w-5xl mx-auto">
           <h3 className="text-4xl font-bold text-center mb-12">The Clear Choice</h3>
           <Card className="p-8">
             <div className="grid md:grid-cols-2 gap-8">
@@ -440,8 +440,8 @@ const Index = () => {
         </section>
 
         {/* Pricing Section */}
-        <section className="py-24">
-          <div className="text-center mb-16">
+        <section className="py-12">
+          <div className="text-center mb-12">
             <Badge variant="secondary" className="mb-6 text-sm">
               <Crown className="w-4 h-4 mr-2" />
               Simple, Transparent Pricing
@@ -454,7 +454,7 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Basic Plan */}
             <Card className="p-8 hover:shadow-xl transition-all relative">
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600">
@@ -580,50 +580,6 @@ const Index = () => {
               </div>
             </Card>
 
-            {/* Enterprise Plan */}
-            <Card className="p-8 hover:shadow-xl transition-all relative bg-gradient-to-br from-primary/5 to-secondary/5">
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-primary to-primary/60">
-                <Crown className="w-3 h-3 mr-1" />
-                Enterprise
-              </Badge>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="text-2xl font-bold mb-2">Enterprise</h4>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold">$299.99</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-2">Enterprise-scale</p>
-                </div>
-                
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm font-semibold">Everything in Business</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">White-Label Solution</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">SLA Guarantees</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Custom Contracts</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">Dedicated Support Team</span>
-                  </li>
-                </ul>
-
-                <Button className="w-full bg-gradient-to-r from-primary to-primary/80" onClick={() => navigate("/auth")}>
-                  Get Started
-                </Button>
-              </div>
-            </Card>
           </div>
 
           <div className="text-center mt-12">
@@ -634,8 +590,8 @@ const Index = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="py-24 text-center">
-          <Card className="p-16 max-w-4xl mx-auto bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 relative overflow-hidden">
+        <section className="py-12 text-center">
+          <Card className="p-12 max-w-4xl mx-auto bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 relative overflow-hidden">
             <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(white,transparent_70%)]" />
             <div className="relative z-10 space-y-8">
               <h3 className="text-5xl md:text-6xl font-bold">
@@ -675,7 +631,7 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-12 bg-muted/30">
+      <footer className="border-t py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
