@@ -98,7 +98,6 @@ const Dashboard = () => {
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
                   {currentTab === 'businesses' ? 'Businesses' :
-                   currentTab === 'features' ? 'Features' :
                    currentTab === 'analytics' ? 'Analytics' :
                    currentTab === 'conversations' ? 'Conversations' :
                    currentTab === 'tickets' ? 'Tickets' :
@@ -129,10 +128,6 @@ const Dashboard = () => {
                   selectedBusinessId={selectedBusinessId}
                 />
               </Card>
-            )}
-
-            {currentTab === 'features' && (
-              <FeaturesDocumentation />
             )}
 
             {selectedBusinessId && (

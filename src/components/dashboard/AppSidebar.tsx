@@ -47,7 +47,6 @@ interface AppSidebarProps {
 
 const mainItems = [
   { title: "Businesses", path: "businesses", icon: Building2 },
-  { title: "Features", path: "features", icon: BookOpen },
 ];
 
 const externalLinks = [
