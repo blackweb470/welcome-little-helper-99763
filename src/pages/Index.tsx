@@ -638,14 +638,14 @@ const Index = () => {
               <Bot className="w-6 h-6 text-primary" />
               <span className="font-bold text-xl">LYQN AI</span>
             </div>
-            <div className="flex gap-8 text-sm text-muted-foreground">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-muted-foreground">
               <Link to="/features" className="hover:text-foreground transition-colors">Features</Link>
               <Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
               <Link to="/features-testing" className="hover:text-foreground transition-colors">Testing Center</Link>
               <Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link>
               <Link to="/auth" className="hover:text-foreground transition-colors">Login</Link>
             </div>
-            <p className="text-sm text-muted-foreground">© 2025 LYQN AI. All rights reserved.</p>
+            <p className="text-sm text-muted-foreground text-center md:text-left">© 2025 LYQN AI. All rights reserved.</p>
           </div>
         </div>
       </footer>

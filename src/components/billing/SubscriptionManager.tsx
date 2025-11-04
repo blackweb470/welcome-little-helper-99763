@@ -291,12 +291,33 @@ export const SubscriptionManager = () => {
             <AlertDialogFooter>
               <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => {
-                  toast({
-                    title: "Cancellation Requested",
-                    description: "To cancel your subscription, please visit your Polar account or contact support.",
-                  });
-                  setShowCancelDialog(false);
+                onClick={async () => {
+                  try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) throw new Error("Not authenticated");
+
+                    const { error } = await supabase
+                      .from('user_subscriptions')
+                      .update({ cancel_at_period_end: true })
+                      .eq('user_id', user.id);
+
+                    if (error) throw error;
+
+                    toast({
+                      title: "Subscription Cancelled",
+                      description: `Your subscription will end on ${formatDate(subscription.expires_at)}`,
+                    });
+                    
+                    setShowCancelDialog(false);
+                    fetchSubscription();
+                  } catch (error) {
+                    console.error('Cancellation error:', error);
+                    toast({
+                      title: "Error",
+                      description: "Failed to cancel subscription. Please try again or contact support.",
+                      variant: "destructive",
+                    });
+                  }
                 }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
