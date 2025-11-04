@@ -98,6 +98,9 @@ export default function NewDocumentation() {
                 <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
                   Dashboard
                 </Link>
+                <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Features
+                </Link>
                 <Link to="/documentation" className="text-foreground font-medium">
                   Documentation
                 </Link>

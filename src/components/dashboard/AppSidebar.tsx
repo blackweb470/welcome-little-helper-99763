@@ -51,7 +51,6 @@ const mainItems = [
 ];
 
 const externalLinks = [
-  { title: "Testing Center", path: "/features-testing", icon: TestTube2 },
   { title: "Billing", path: "/billing", icon: CreditCard },
 ];
 
