@@ -24,6 +24,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     pre_chat_enabled: true,
     pre_chat_required_fields: ['name', 'email'],
     pre_chat_welcome_message: 'Please tell us a bit about yourself before we start the conversation.',
+    max_input_characters: 500,
   });
   const [embedCode, setEmbedCode] = useState('');
 
@@ -234,6 +235,26 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
             rows={4}
             className="font-mono text-sm"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="max_input_characters">Maximum Input Characters (150-1000)</Label>
+          <Input
+            id="max_input_characters"
+            type="number"
+            min={150}
+            max={1000}
+            value={settings.max_input_characters}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (value >= 150 && value <= 1000) {
+                setSettings({ ...settings, max_input_characters: value });
+              }
+            }}
+          />
+          <p className="text-xs text-muted-foreground">
+            Set the maximum number of characters visitors can type in the chat input box.
+          </p>
         </div>
 
         <div className="flex items-center space-x-2">

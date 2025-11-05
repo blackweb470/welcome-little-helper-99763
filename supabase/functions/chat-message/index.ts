@@ -9,7 +9,7 @@ const corsHeaders = {
 const requestSchema = z.object({
   businessId: z.string().uuid('Invalid business ID format'),
   visitorId: z.string().min(1, 'Visitor ID required').max(200, 'Visitor ID too long'),
-  message: z.string().min(1, 'Message cannot be empty').max(5000, 'Message too long (max 5000 characters)')
+  message: z.string().min(1, 'Message cannot be empty').max(1000, 'Message too long (max 1000 characters)')
 });
 
 Deno.serve(async (req) => {
@@ -118,6 +118,18 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('business_id', businessId)
       .single();
+
+    // Validate message length against configured max_input_characters
+    const maxChars = settings?.max_input_characters || 500;
+    if (message.length > maxChars) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Message too long', 
+          details: `Message exceeds the maximum allowed length of ${maxChars} characters` 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { data: documents } = await supabase
       .from('business_documents')

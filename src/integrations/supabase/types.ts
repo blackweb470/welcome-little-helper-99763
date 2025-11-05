@@ -1154,6 +1154,7 @@ export type Database = {
           business_id: string
           created_at: string | null
           id: string
+          max_input_characters: number | null
           pre_chat_enabled: boolean | null
           pre_chat_required_fields: Json | null
           pre_chat_welcome_message: string | null
@@ -1169,6 +1170,7 @@ export type Database = {
           business_id: string
           created_at?: string | null
           id?: string
+          max_input_characters?: number | null
           pre_chat_enabled?: boolean | null
           pre_chat_required_fields?: Json | null
           pre_chat_welcome_message?: string | null
@@ -1184,6 +1186,7 @@ export type Database = {
           business_id?: string
           created_at?: string | null
           id?: string
+          max_input_characters?: number | null
           pre_chat_enabled?: boolean | null
           pre_chat_required_fields?: Json | null
           pre_chat_welcome_message?: string | null

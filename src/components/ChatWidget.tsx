@@ -37,7 +37,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       // Only fetch public-safe fields (exclude system_prompt)
       const { data } = await supabase
         .from("widget_settings")
-        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, voice_enabled, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields")
+        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, voice_enabled, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields, max_input_characters")
         .eq("business_id", businessId)
         .single();
       
@@ -504,6 +504,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
   const primaryColor = settings?.primary_color || "#000000";
   const agentName = settings?.agent_name || "AI Assistant";
   const welcomeMessage = settings?.welcome_message || "Hi! How can I help you today?";
+  const maxInputChars = settings?.max_input_characters || 500;
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -652,15 +653,32 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
                     {/* Text Input - MOVED AFTER voice interface */}
                     <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2">
                       <div className="flex gap-1.5 sm:gap-2">
-                        <input
-                          type="text"
-                          value={textInput}
-                          onChange={(e) => setTextInput(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="Type a message..."
-                          maxLength={150}
-                          className="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background min-w-0"
-                        />
+                        <div className="flex-1 min-w-0">
+                          <input
+                            type="text"
+                            value={textInput}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value.length <= maxInputChars) {
+                                setTextInput(value);
+                              }
+                            }}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Type a message..."
+                            maxLength={maxInputChars}
+                            className="w-full px-2 sm:px-3 py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                          />
+                          <div className="flex justify-between items-center mt-1 px-1">
+                            <span className="text-[10px] text-muted-foreground">
+                              {textInput.length}/{maxInputChars} characters
+                            </span>
+                            {textInput.length >= maxInputChars && (
+                              <span className="text-[10px] text-destructive">
+                                Character limit reached
+                              </span>
+                            )}
+                          </div>
+                        </div>
                         <Button
                           onClick={() => handleSendText()}
                           disabled={!textInput.trim() || sendingMessage}
