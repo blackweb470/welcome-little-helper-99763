@@ -28,7 +28,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const currentTab = searchParams.get('tab') || 'businesses';
-  const { hasAccess, getRequiredPlan, planName } = useFeatureAccess(user?.id);
+  const { hasAccess, getRequiredPlan, planName, isAdmin } = useFeatureAccess(user?.id);
   const [upgradePrompt, setUpgradePrompt] = useState<{
     open: boolean;
     featureName: string;
@@ -95,7 +95,7 @@ const Dashboard = () => {
           <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-4 px-4 sm:px-6">
               <SidebarTrigger />
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex items-center gap-3">
                 <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
                   {currentTab === 'businesses' ? 'Businesses' :
                    currentTab === 'analytics' ? 'Analytics' :
@@ -112,6 +112,11 @@ const Dashboard = () => {
                     currentTab === 'agent-performance' ? 'Agent Performance' :
                     currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
                 </h1>
+                {isAdmin && (
+                  <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-primary to-primary/60 text-primary-foreground whitespace-nowrap">
+                    Admin Access
+                  </span>
+                )}
               </div>
             </div>
           </header>

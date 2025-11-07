@@ -59,24 +59,29 @@ const Index = () => {
       {/* Header */}
       <header className="border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-xl">
-            <Bot className="w-6 h-6" />
-            LYQN AI
+          <Link to="/" className="flex items-center gap-2 font-semibold text-xl group">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/60 text-primary-foreground transition-transform group-hover:scale-110">
+              <Bot className="w-5 h-5" />
+            </div>
+            <span className="bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
+              LYQN AI
+            </span>
           </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Features
             </Link>
-            <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </Link>
-            <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Documentation
             </Link>
-            <Button onClick={() => navigate("/auth")}>
+            <Button onClick={() => navigate("/auth")} className="shadow-lg hover:shadow-xl transition-shadow">
               Get Started
+              <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </nav>
 
@@ -127,26 +132,39 @@ const Index = () => {
 
       <main>
         {/* Hero Section */}
-        <section className="container mx-auto px-4 py-24 md:py-32 text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-            AI-Powered Customer Support
-            <br />
-            <span className="text-muted-foreground">That Actually Learns</span>
-          </h1>
-          
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Intelligent chat platform that improves with every conversation. 
-            Voice support, live agents, and analytics—all in one place.
-          </p>
+        <section className="container mx-auto px-4 py-24 md:py-32 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-muted/50 backdrop-blur-sm mb-8">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              <span className="text-sm font-medium">Now with OpenAI Realtime Voice API</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+              AI-Powered Customer Support
+              <br />
+              <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                That Actually Learns
+              </span>
+            </h1>
+            
+            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+              Intelligent chat platform that improves with every conversation. 
+              Voice support, live agents, and analytics—all in one place.
+            </p>
 
-          <div className="flex flex-wrap gap-4 justify-center mb-16">
-            <Button size="lg" onClick={() => navigate("/auth")}>
-              Start Free Trial
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate("/docs")}>
-              View Documentation
-            </Button>
+            <div className="flex flex-wrap gap-4 justify-center mb-16">
+              <Button size="lg" onClick={() => navigate("/auth")} className="shadow-lg hover:shadow-xl transition-all">
+                Start Free Trial
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button size="lg" variant="outline" onClick={() => navigate("/docs")} className="border-2">
+                View Documentation
+              </Button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -182,13 +200,13 @@ const Index = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
               {features.map((feature, i) => (
-                <Card key={i} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="mb-4 inline-block p-3 bg-primary/10 rounded-lg text-primary">
+                <Card key={i} className="p-6 hover:shadow-lg hover:border-primary/20 transition-all group cursor-pointer">
+                  <div className="mb-4 inline-block p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl text-primary group-hover:scale-110 transition-transform">
                     {feature.icon}
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                  <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">{feature.title}</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
                     {feature.description}
                   </p>
@@ -211,33 +229,33 @@ const Index = () => {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
+              <div className="text-center group">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   1
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Create Account</h3>
-                <p className="text-muted-foreground text-sm">
-                  Sign up and create your first business profile
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Sign up and create your first business profile in seconds
                 </p>
               </div>
               
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
+              <div className="text-center group">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   2
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Customize Widget</h3>
-                <p className="text-muted-foreground text-sm">
-                  Configure colors, messages, and AI behavior
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Configure colors, messages, and AI behavior to match your brand
                 </p>
               </div>
               
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4">
+              <div className="text-center group">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform">
                   3
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Add to Site</h3>
-                <p className="text-muted-foreground text-sm">
-                  Copy the embed code and paste it into your website
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Copy the embed code and paste it into your website—done!
                 </p>
               </div>
             </div>
@@ -245,21 +263,22 @@ const Index = () => {
         </section>
 
         {/* CTA Section */}
-        <section className="border-t py-24">
-          <div className="container mx-auto px-4">
-            <Card className="p-12 md:p-16 text-center max-w-4xl mx-auto">
+        <section className="border-t py-24 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent pointer-events-none" />
+          <div className="container mx-auto px-4 relative">
+            <Card className="p-12 md:p-16 text-center max-w-4xl mx-auto border-2 shadow-2xl">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Ready to Transform Your Support?
               </h2>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p className="text-lg md:text-xl text-muted-foreground mb-8">
                 Start your 1-month free trial today. No credit card required.
               </p>
               <div className="flex flex-wrap gap-4 justify-center">
-                <Button size="lg" onClick={() => navigate("/auth")}>
+                <Button size="lg" onClick={() => navigate("/auth")} className="shadow-lg hover:shadow-xl transition-all">
                   Start Free Trial
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => navigate("/pricing")}>
+                <Button size="lg" variant="outline" onClick={() => navigate("/pricing")} className="border-2">
                   View Pricing
                 </Button>
               </div>
@@ -288,10 +307,12 @@ const Index = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 font-semibold mb-4">
-                <Bot className="w-5 h-5" />
-                LYQN AI
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/60 text-primary-foreground">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <span>LYQN AI</span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Intelligent customer support platform powered by AI
               </p>
             </div>

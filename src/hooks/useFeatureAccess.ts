@@ -30,6 +30,7 @@ export const useFeatureAccess = (userId: string | undefined) => {
   const [features, setFeatures] = useState<PlanFeatures>({});
   const [planName, setPlanName] = useState<string>('basic');
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!userId) {
@@ -39,6 +40,12 @@ export const useFeatureAccess = (userId: string | undefined) => {
 
     const fetchFeatureAccess = async () => {
       try {
+        // Check if user is admin
+        const { data: roleData } = await supabase
+          .rpc('has_role', { _user_id: userId, _role: 'admin' });
+        
+        setIsAdmin(roleData || false);
+
         // Get user's plan (includes expiration check)
         const { data: planData } = await supabase
           .rpc('get_user_plan_info', { p_user_id: userId });
@@ -120,5 +127,5 @@ export const useFeatureAccess = (userId: string | undefined) => {
     return featurePlanMap[feature];
   };
 
-  return { hasAccess, getRequiredPlan, planName, loading };
+  return { hasAccess, getRequiredPlan, planName, loading, isAdmin };
 };
