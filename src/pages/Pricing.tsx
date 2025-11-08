@@ -96,9 +96,9 @@ const Pricing = () => {
               </span>
             </div>
             {isNewUser ? (
-              <div className="text-sm text-muted-foreground">
-                Complete your registration
-              </div>
+              <Badge variant="secondary" className="text-sm px-4 py-2">
+                Step 2 of 2: Choose Your Plan
+              </Badge>
             ) : (
               <Button variant="ghost" onClick={() => navigate(userId ? "/dashboard" : "/")}>
                 {userId ? "Dashboard" : "Back"}
@@ -121,13 +121,16 @@ const Pricing = () => {
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Start with 1 month free on Basic and scale as you grow. Powered by Polar payment processing.
+            {isNewUser 
+              ? "Add your payment card to start your 1 month free trial. No charges until trial ends."
+              : "Start with 1 month free on Basic and scale as you grow. Powered by Polar payment processing."
+            }
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center pt-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-5 h-5 text-primary" />
-              <span>1 Month Free Trial</span>
+              <span>{isNewUser ? "Card Required (No Charge During Trial)" : "1 Month Free Trial"}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Check className="w-5 h-5 text-primary" />

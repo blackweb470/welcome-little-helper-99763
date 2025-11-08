@@ -27,25 +27,16 @@ const Onboarding = () => {
         .single();
 
       if (error || !data) {
-        // No subscription, create free trial automatically
-        const { error: functionError } = await supabase.functions.invoke('start-free-trial', {
-          body: { userId: user.id }
-        });
-
-        if (functionError) {
-          console.error('Error creating trial:', functionError);
-        }
-
-        // Go to dashboard regardless - trial is created
-        navigate("/dashboard");
+        // No subscription, redirect to pricing to select plan and add card
+        navigate("/pricing?new_user=true");
       } else {
         // Has subscription, go to dashboard
         navigate("/dashboard");
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
-      // Still go to dashboard, don't redirect to pricing
-      navigate("/dashboard");
+      // Redirect to pricing to complete signup
+      navigate("/pricing?new_user=true");
     } finally {
       setChecking(false);
     }
