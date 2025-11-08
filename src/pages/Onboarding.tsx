@@ -21,6 +21,18 @@ const Onboarding = () => {
         return;
       }
 
+      // Check if user is admin - admins bypass payment
+      const { data: isAdmin } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin'
+      });
+
+      if (isAdmin) {
+        // Admins get free access, go straight to dashboard
+        navigate("/dashboard");
+        return;
+      }
+
       // Check if user has a subscription
       const { data, error } = await supabase
         .rpc('get_subscription_status', { p_user_id: user.id })
