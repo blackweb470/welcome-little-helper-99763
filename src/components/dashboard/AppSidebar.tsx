@@ -19,6 +19,7 @@ import {
   TestTube2,
   Lock,
   CreditCard,
+  UsersRound,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +58,7 @@ const businessItems = [
   { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics" },
   { title: "Conversations", path: "conversations", icon: MessageSquare },
   { title: "Tickets", path: "tickets", icon: Ticket },
+  { title: "Team", path: "team", icon: UsersRound, feature: "live_agent" },
   { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent" },
   { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses" },
   { title: "Notifications", path: "notifications", icon: Bell },

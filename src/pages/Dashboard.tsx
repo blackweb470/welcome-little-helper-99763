@@ -19,6 +19,7 @@ import AgentPerformance from "@/components/dashboard/AgentPerformance";
 import { CannedResponses } from "@/components/dashboard/CannedResponses";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
+import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
@@ -101,6 +102,7 @@ const Dashboard = () => {
                    currentTab === 'analytics' ? 'Analytics' :
                    currentTab === 'conversations' ? 'Conversations' :
                    currentTab === 'tickets' ? 'Tickets' :
+                   currentTab === 'team' ? 'Team Management' :
                    currentTab === 'livechat' ? 'Live Chat' :
                    currentTab === 'proactive' ? 'Proactive Chat' :
                    currentTab === 'canned-responses' ? 'Canned Responses' :
@@ -149,6 +151,10 @@ const Dashboard = () => {
 
                 {currentTab === 'tickets' && (
                   <TicketsList businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'team' && hasAccess('live_agent') && (
+                  <TeamManagement businessId={selectedBusinessId} />
                 )}
 
                 {currentTab === 'livechat' && hasAccess('live_agent') && (
