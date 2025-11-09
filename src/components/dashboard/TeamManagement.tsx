@@ -141,61 +141,41 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     }
 
     try {
-      // First check if user exists with this email using auth.admin
-      const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+      // Call edge function to invite team member
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (listError) {
+      if (!session) {
         toast({
           title: "Error",
-          description: "Failed to check user",
+          description: "You must be logged in to invite team members",
           variant: "destructive",
         });
         return;
       }
 
-      const foundUser = listData?.users?.find((u: any) => u.email === inviteEmail);
-      
-      if (!foundUser) {
-        toast({
-          title: "User not found",
-          description: "This user needs to create an account first",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check if already a team member
-      const { data: existing } = await supabase
-        .from('team_members')
-        .select('id')
-        .eq('business_id', businessId)
-        .eq('user_id', foundUser.id)
-        .single();
-
-      if (existing) {
-        toast({
-          title: "Already a member",
-          description: "This user is already part of your team",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data: userData } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from('team_members')
-        .insert({
-          business_id: businessId,
-          user_id: foundUser.id,
+      const response = await supabase.functions.invoke('invite-team-member', {
+        body: {
+          email: inviteEmail,
+          businessId: businessId,
           role: inviteRole,
           permissions: invitePermissions,
-          invited_by: userData.user?.id,
-          status: 'active', // Auto-activate since they're already registered
-          accepted_at: new Date().toISOString(),
-        });
+        },
+      });
 
-      if (error) throw error;
+      if (response.error) {
+        throw response.error;
+      }
+
+      const result = response.data;
+
+      if (result.error) {
+        toast({
+          title: result.error,
+          description: result.message || "Failed to add team member",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success",
