@@ -96,18 +96,28 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     try {
       const { data, error } = await supabase
         .from('team_members')
-        .select(`
-          *,
-          profiles:user_id (
-            email,
-            full_name
-          )
-        `)
+        .select('*')
         .eq('business_id', businessId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTeamMembers(data || []);
+      
+      // Manually fetch user emails for each team member
+      const membersWithProfiles = await Promise.all(
+        (data || []).map(async (member) => {
+          const { data: authData } = await supabase.auth.admin.getUserById(member.user_id);
+          return {
+            ...member,
+            permissions: member.permissions as { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean; },
+            profiles: {
+              email: authData?.user?.email || 'Unknown',
+              full_name: authData?.user?.user_metadata?.full_name || null,
+            }
+          };
+        })
+      );
+      
+      setTeamMembers(membersWithProfiles as TeamMember[]);
     } catch (error) {
       console.error('Error fetching team members:', error);
       toast({
@@ -131,14 +141,21 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     }
 
     try {
-      // First check if user exists with this email
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', inviteEmail)
-        .single();
+      // First check if user exists with this email using auth.admin
+      const { data: listData, error: listError } = await supabase.auth.admin.listUsers();
+      
+      if (listError) {
+        toast({
+          title: "Error",
+          description: "Failed to check user",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      if (!profile) {
+      const foundUser = listData?.users?.find((u: any) => u.email === inviteEmail);
+      
+      if (!foundUser) {
         toast({
           title: "User not found",
           description: "This user needs to create an account first",
@@ -152,7 +169,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         .from('team_members')
         .select('id')
         .eq('business_id', businessId)
-        .eq('user_id', profile.id)
+        .eq('user_id', foundUser.id)
         .single();
 
       if (existing) {
@@ -170,7 +187,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         .from('team_members')
         .insert({
           business_id: businessId,
-          user_id: profile.id,
+          user_id: foundUser.id,
           role: inviteRole,
           permissions: invitePermissions,
           invited_by: userData.user?.id,

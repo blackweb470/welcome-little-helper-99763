@@ -52,6 +52,27 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
     fetchSettings();
     checkProactiveRules();
+
+    // Subscribe to widget_settings changes
+    const channel = supabase
+      .channel('widget-settings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'widget_settings',
+          filter: `business_id=eq.${businessId}`,
+        },
+        () => {
+          fetchSettings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [businessId]);
 
   // Fetch current live chat session status
