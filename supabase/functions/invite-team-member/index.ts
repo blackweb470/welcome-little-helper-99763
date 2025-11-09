@@ -104,6 +104,23 @@ serve(async (req) => {
       );
     }
 
+    // Assign proper user role if they're an admin
+    if (role === 'admin') {
+      const { error: roleError } = await supabaseAdmin
+        .from('user_roles')
+        .insert({
+          user_id: foundUser.id,
+          role: 'admin'
+        })
+        .select()
+        .maybeSingle();
+      
+      // Ignore duplicate key errors (user already has this role)
+      if (roleError && !roleError.message.includes('duplicate') && !roleError.message.includes('unique')) {
+        console.error('Error assigning admin role:', roleError);
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: true, member: newMember }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
