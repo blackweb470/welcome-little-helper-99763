@@ -21,6 +21,7 @@ import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
 
 const Dashboard = () => {
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const currentTab = searchParams.get('tab') || 'businesses';
   const { hasAccess, getRequiredPlan, planName, isAdmin } = useFeatureAccess(user?.id);
+  const { hasPermission, isOwner } = useBusinessPermissions(user?.id);
   const [upgradePrompt, setUpgradePrompt] = useState<{
     open: boolean;
     featureName: string;
@@ -90,6 +92,9 @@ const Dashboard = () => {
           onSignOut={handleSignOut}
           hasAccess={hasAccess}
           onFeatureClick={checkFeatureAccess}
+          businessId={selectedBusinessId || undefined}
+          hasPermission={(permission) => selectedBusinessId ? hasPermission(selectedBusinessId, permission as any) : false}
+          isOwner={selectedBusinessId ? isOwner(selectedBusinessId) : false}
         />
         
         <main className="flex-1 overflow-auto">

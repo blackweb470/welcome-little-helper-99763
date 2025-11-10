@@ -44,6 +44,9 @@ interface AppSidebarProps {
   onSignOut: () => void;
   hasAccess: (feature: FeatureName) => boolean;
   onFeatureClick: (feature: string, featureName: string, tab: string) => boolean;
+  businessId?: string;
+  hasPermission: (permission: string) => boolean;
+  isOwner: boolean;
 }
 
 const mainItems = [
@@ -55,30 +58,26 @@ const externalLinks = [
 ];
 
 const businessItems = [
-  { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics" },
-  { title: "Conversations", path: "conversations", icon: MessageSquare },
-  { title: "Tickets", path: "tickets", icon: Ticket },
-  { title: "Team", path: "team", icon: UsersRound, feature: "live_agent" },
-  { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent" },
-  { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses" },
-  { title: "Notifications", path: "notifications", icon: Bell },
-  { title: "Notification Settings", path: "notification-settings", icon: Settings },
-  { title: "Agent Performance", path: "agent-performance", icon: TrendingUp, feature: "advanced_analytics" },
-  { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat" },
-  { title: "Products", path: "products", icon: Package, feature: "product_catalog" },
-  { title: "Documents", path: "documents", icon: FileText, feature: "business_documents" },
-  { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking" },
-  { title: "Widget Settings", path: "settings", icon: Settings },
+  { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics", permission: "can_view_analytics" },
+  { title: "Conversations", path: "conversations", icon: MessageSquare, permission: "can_chat" },
+  { title: "Tickets", path: "tickets", icon: Ticket, permission: "can_chat" },
+  { title: "Team", path: "team", icon: UsersRound, feature: "live_agent", ownerOnly: true },
+  { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent", permission: "can_chat" },
+  { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses", permission: "can_chat" },
+  { title: "Notifications", path: "notifications", icon: Bell, permission: "can_chat" },
+  { title: "Notification Settings", path: "notification-settings", icon: Settings, permission: "can_chat" },
+  { title: "Agent Performance", path: "agent-performance", icon: TrendingUp, feature: "advanced_analytics", permission: "can_view_analytics" },
+  { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat", permission: "can_manage_settings" },
+  { title: "Products", path: "products", icon: Package, feature: "product_catalog", permission: "can_manage_settings" },
+  { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
+  { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking", permission: "can_view_analytics" },
+  { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
 ];
 
-export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatureClick }: AppSidebarProps) {
+export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatureClick, businessId, hasPermission, isOwner }: AppSidebarProps) {
   const { open } = useSidebar();
   const location = useLocation();
   const currentTab = new URLSearchParams(location.search).get('tab') || 'businesses';
-  
-  // Get business ID from URL if available
-  const searchParams = new URLSearchParams(location.search);
-  const businessId = hasSelectedBusiness ? searchParams.get('businessId') || undefined : undefined;
   const { unreadCount } = useNotifications(businessId);
 
   const isActive = (path: string) => currentTab === path;
@@ -144,7 +143,14 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
             <SidebarGroupContent>
               <SidebarMenu>
                 {businessItems.map((item) => {
-                  const isLocked = item.feature && !hasAccess(item.feature as FeatureName);
+                  // Check feature access (plan-based)
+                  const isFeatureLocked = item.feature && !hasAccess(item.feature as FeatureName);
+                  
+                  // Check permission access (role-based)
+                  const lackPermission = item.permission && !hasPermission(item.permission);
+                  const isOwnerOnlyLocked = item.ownerOnly && !isOwner;
+                  
+                  const isLocked = isFeatureLocked || lackPermission || isOwnerOnlyLocked;
                   
                   return (
                     <SidebarMenuItem key={item.title}>
@@ -152,9 +158,11 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                         asChild={!isLocked} 
                         isActive={isActive(item.path)}
                         onClick={(e) => {
-                          if (isLocked && item.feature) {
+                          if (isLocked) {
                             e.preventDefault();
-                            onFeatureClick(item.feature, item.title, item.path);
+                            if (isFeatureLocked && item.feature) {
+                              onFeatureClick(item.feature, item.title, item.path);
+                            }
                           }
                         }}
                       >

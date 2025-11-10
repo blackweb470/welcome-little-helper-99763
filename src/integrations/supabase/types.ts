@@ -1306,6 +1306,16 @@ export type Database = {
           trial_ends_at: string
         }[]
       }
+      get_user_businesses: {
+        Args: { _user_id: string }
+        Returns: {
+          business_id: string
+          business_name: string
+          is_owner: boolean
+          permissions: Json
+          role: string
+        }[]
+      }
       get_user_plan_info: {
         Args: { p_user_id: string }
         Returns: {
@@ -1314,6 +1324,10 @@ export type Database = {
           current_businesses: number
           plan_name: string
         }[]
+      }
+      has_business_permission: {
+        Args: { _business_id: string; _permission: string; _user_id: string }
+        Returns: boolean
       }
       has_feature_access: {
         Args: { p_feature: string; p_user_id: string }
