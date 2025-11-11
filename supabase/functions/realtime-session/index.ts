@@ -14,7 +14,7 @@ const requestSchema = z.object({
     summary: z.string().optional(),
     key_facts: z.array(z.string()).optional(),
     user_preferences: z.record(z.any()).optional()
-  }).optional()
+  }).nullable().optional()
 });
 
 serve(async (req) => {
