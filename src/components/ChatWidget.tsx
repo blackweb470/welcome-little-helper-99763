@@ -336,18 +336,100 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
       if (!rules || rules.length === 0) return;
 
+      // Track page views for page_views_count trigger
+      let pageViewCount = 0;
+      const pageViewListener = () => {
+        pageViewCount++;
+        checkPageViewRules();
+      };
+      
+      const checkPageViewRules = () => {
+        const pageViewRule = rules.find(r => r.trigger_type === 'page_views_count');
+        if (pageViewRule && !proactiveShown) {
+          const triggerValue = pageViewRule.trigger_value as { count?: number };
+          const requiredViews = triggerValue?.count || 3;
+          
+          if (pageViewCount >= requiredViews) {
+            setIsOpen(true);
+            setProactiveShown(true);
+            handleTranscript(pageViewRule.message, 'assistant');
+          }
+        }
+      };
+
+      // Track initial page view
+      pageViewListener();
+      
+      // Listen for navigation changes (for SPAs)
+      window.addEventListener('popstate', pageViewListener);
+
       // Check time on page trigger
       const timeRule = rules.find(r => r.trigger_type === 'time_on_page');
       if (timeRule) {
         const triggerValue = timeRule.trigger_value as { seconds?: number };
+        const timeoutSeconds = triggerValue?.seconds || 30;
+        
         setTimeout(() => {
-          if (!isOpen && !proactiveShown) {
+          if (!proactiveShown) {
             setIsOpen(true);
             setProactiveShown(true);
             handleTranscript(timeRule.message, 'assistant');
           }
-        }, (triggerValue?.seconds || 30) * 1000);
+        }, timeoutSeconds * 1000);
       }
+
+      // Check exit intent trigger
+      const exitIntentRule = rules.find(r => r.trigger_type === 'exit_intent');
+      if (exitIntentRule) {
+        const handleMouseLeave = (e: MouseEvent) => {
+          // Detect if mouse is leaving at the top of the page (likely closing tab/window)
+          if (e.clientY <= 0 && !proactiveShown) {
+            setIsOpen(true);
+            setProactiveShown(true);
+            handleTranscript(exitIntentRule.message, 'assistant');
+            document.removeEventListener('mouseleave', handleMouseLeave);
+          }
+        };
+        
+        document.addEventListener('mouseleave', handleMouseLeave);
+      }
+
+      // Check scroll depth trigger
+      const scrollRule = rules.find(r => r.trigger_type === 'scroll_depth');
+      if (scrollRule) {
+        const triggerValue = scrollRule.trigger_value as { percentage?: number };
+        const requiredDepth = triggerValue?.percentage || 50;
+        
+        const handleScroll = () => {
+          const scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+          
+          if (scrollDepth >= requiredDepth && !proactiveShown) {
+            setIsOpen(true);
+            setProactiveShown(true);
+            handleTranscript(scrollRule.message, 'assistant');
+            window.removeEventListener('scroll', handleScroll);
+          }
+        };
+        
+        window.addEventListener('scroll', handleScroll);
+      }
+
+      // Check specific page trigger
+      const pageRule = rules.find(r => r.trigger_type === 'specific_page');
+      if (pageRule && !proactiveShown) {
+        const triggerValue = pageRule.trigger_value as { url?: string };
+        const targetUrl = triggerValue?.url || '';
+        
+        if (window.location.href.includes(targetUrl)) {
+          setIsOpen(true);
+          setProactiveShown(true);
+          handleTranscript(pageRule.message, 'assistant');
+        }
+      }
+
+      return () => {
+        window.removeEventListener('popstate', pageViewListener);
+      };
     } catch (error) {
       console.error('Error checking proactive rules:', error);
     }
