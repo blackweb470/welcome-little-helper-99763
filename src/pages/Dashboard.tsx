@@ -31,7 +31,7 @@ const Dashboard = () => {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const currentTab = searchParams.get('tab') || 'businesses';
   const { hasAccess, getRequiredPlan, planName, isAdmin } = useFeatureAccess(user?.id);
-  const { hasPermission, isOwner } = useBusinessPermissions(user?.id);
+  const { hasPermission, isOwner, businesses } = useBusinessPermissions(user?.id);
   const [upgradePrompt, setUpgradePrompt] = useState<{
     open: boolean;
     featureName: string;
@@ -122,6 +122,11 @@ const Dashboard = () => {
                 {isAdmin && (
                   <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-primary to-primary/60 text-primary-foreground whitespace-nowrap">
                     Admin Access
+                  </span>
+                )}
+                {selectedBusinessId && !isOwner(selectedBusinessId) && (
+                  <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground whitespace-nowrap">
+                    Team Member {businesses.find(b => b.business_id === selectedBusinessId)?.role && `• ${businesses.find(b => b.business_id === selectedBusinessId)?.role}`}
                   </span>
                 )}
               </div>
