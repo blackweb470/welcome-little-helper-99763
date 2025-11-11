@@ -301,9 +301,16 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Invite Team Member</DialogTitle>
+                <DialogTitle>Add Team Member</DialogTitle>
                 <DialogDescription>
-                  Add a new agent to your team. They must have an account already.
+                  <div className="space-y-2 pt-2">
+                    <p className="text-sm">To add a team member:</p>
+                    <ol className="text-sm list-decimal list-inside space-y-1 text-muted-foreground">
+                      <li>They must first create an account at /auth</li>
+                      <li>Enter their email below to give them access</li>
+                      <li>They can then log in with their existing account</li>
+                    </ol>
+                  </div>
                 </DialogDescription>
               </DialogHeader>
 
