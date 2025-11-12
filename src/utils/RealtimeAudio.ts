@@ -16,6 +16,7 @@ export class AudioRecorder {
 
   async start() {
     try {
+      // Request higher quality audio with better constraints
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 24000,
@@ -28,10 +29,13 @@ export class AudioRecorder {
       
       this.audioContext = new AudioContext({
         sampleRate: 24000,
+        latencyHint: 'interactive'
       });
       
       this.source = this.audioContext.createMediaStreamSource(this.stream);
-      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+      
+      // Use smaller buffer size (2048) for lower latency and better quality
+      this.processor = this.audioContext.createScriptProcessor(2048, 1, 1);
       
       this.processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
@@ -40,6 +44,8 @@ export class AudioRecorder {
       
       this.source.connect(this.processor);
       this.processor.connect(this.audioContext.destination);
+      
+      console.log('Audio recorder started with sample rate:', this.audioContext.sampleRate);
     } catch (error) {
       console.error('Error accessing microphone:', error);
       throw error;

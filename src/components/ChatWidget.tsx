@@ -327,50 +327,36 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     if (proactiveShown) return;
 
     try {
-      const { data: rules } = await supabase
+      console.log('Checking proactive rules for business:', businessId);
+      // @ts-ignore - Supabase type inference issue
+      const result = await supabase
         .from('proactive_chat_rules')
         .select('*')
         .eq('business_id', businessId)
-        .eq('enabled', true)
-        .order('priority', { ascending: false });
+        .eq('is_active', true);
 
-      if (!rules || rules.length === 0) return;
+      if (result.error) {
+        console.error('Error fetching proactive rules:', result.error);
+        throw result.error;
+      }
 
-      // Track page views for page_views_count trigger
-      let pageViewCount = 0;
-      const pageViewListener = () => {
-        pageViewCount++;
-        checkPageViewRules();
-      };
-      
-      const checkPageViewRules = () => {
-        const pageViewRule = rules.find(r => r.trigger_type === 'page_views_count');
-        if (pageViewRule && !proactiveShown) {
-          const triggerValue = pageViewRule.trigger_value as { count?: number };
-          const requiredViews = triggerValue?.count || 3;
-          
-          if (pageViewCount >= requiredViews) {
-            setIsOpen(true);
-            setProactiveShown(true);
-            handleTranscript(pageViewRule.message, 'assistant');
-          }
-        }
-      };
-
-      // Track initial page view
-      pageViewListener();
-      
-      // Listen for navigation changes (for SPAs)
-      window.addEventListener('popstate', pageViewListener);
+      const rules = result.data as any[];
+      console.log('Proactive rules found:', rules);
+      if (!rules || rules.length === 0) {
+        console.log('No active proactive rules found');
+        return;
+      }
 
       // Check time on page trigger
-      const timeRule = rules.find(r => r.trigger_type === 'time_on_page');
+      const timeRule = rules.find((r: any) => r.trigger_type === 'time_on_page');
       if (timeRule) {
         const triggerValue = timeRule.trigger_value as { seconds?: number };
-        const timeoutSeconds = triggerValue?.seconds || 30;
+        const timeoutSeconds = triggerValue?.seconds || 5;
         
+        console.log(`Setting time trigger for ${timeoutSeconds} seconds`);
         setTimeout(() => {
           if (!proactiveShown) {
+            console.log('Time trigger activated, opening chat');
             setIsOpen(true);
             setProactiveShown(true);
             handleTranscript(timeRule.message, 'assistant');
@@ -378,12 +364,27 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         }, timeoutSeconds * 1000);
       }
 
+      // Check specific page trigger immediately
+      const pageRule = rules.find((r: any) => r.trigger_type === 'specific_page');
+      if (pageRule) {
+        const triggerValue = pageRule.trigger_value as { url?: string };
+        const targetUrl = triggerValue?.url || '';
+        
+        console.log('Checking specific page trigger:', targetUrl, 'Current URL:', window.location.href);
+        if (targetUrl && window.location.href.includes(targetUrl)) {
+          console.log('Page trigger activated, opening chat');
+          setIsOpen(true);
+          setProactiveShown(true);
+          handleTranscript(pageRule.message, 'assistant');
+        }
+      }
+
       // Check exit intent trigger
-      const exitIntentRule = rules.find(r => r.trigger_type === 'exit_intent');
+      const exitIntentRule = rules.find((r: any) => r.trigger_type === 'exit_intent');
       if (exitIntentRule) {
         const handleMouseLeave = (e: MouseEvent) => {
-          // Detect if mouse is leaving at the top of the page (likely closing tab/window)
           if (e.clientY <= 0 && !proactiveShown) {
+            console.log('Exit intent detected, opening chat');
             setIsOpen(true);
             setProactiveShown(true);
             handleTranscript(exitIntentRule.message, 'assistant');
@@ -395,7 +396,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       }
 
       // Check scroll depth trigger
-      const scrollRule = rules.find(r => r.trigger_type === 'scroll_depth');
+      const scrollRule = rules.find((r: any) => r.trigger_type === 'scroll_depth');
       if (scrollRule) {
         const triggerValue = scrollRule.trigger_value as { percentage?: number };
         const requiredDepth = triggerValue?.percentage || 50;
@@ -404,6 +405,7 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           const scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
           
           if (scrollDepth >= requiredDepth && !proactiveShown) {
+            console.log('Scroll depth trigger activated, opening chat');
             setIsOpen(true);
             setProactiveShown(true);
             handleTranscript(scrollRule.message, 'assistant');
@@ -414,22 +416,6 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         window.addEventListener('scroll', handleScroll);
       }
 
-      // Check specific page trigger
-      const pageRule = rules.find(r => r.trigger_type === 'specific_page');
-      if (pageRule && !proactiveShown) {
-        const triggerValue = pageRule.trigger_value as { url?: string };
-        const targetUrl = triggerValue?.url || '';
-        
-        if (window.location.href.includes(targetUrl)) {
-          setIsOpen(true);
-          setProactiveShown(true);
-          handleTranscript(pageRule.message, 'assistant');
-        }
-      }
-
-      return () => {
-        window.removeEventListener('popstate', pageViewListener);
-      };
     } catch (error) {
       console.error('Error checking proactive rules:', error);
     }
