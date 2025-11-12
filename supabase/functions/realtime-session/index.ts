@@ -51,7 +51,19 @@ serve(async (req) => {
     );
 
     const settings = await settingsResponse.json();
-    let systemPrompt = settings[0]?.system_prompt || 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.';
+    
+    // Start with clear voice recognition instructions
+    let systemPrompt = `CRITICAL VOICE INSTRUCTIONS:
+- Listen very carefully to what the user says
+- Repeat back or acknowledge what you heard if there's any confusion
+- Focus on understanding the user's exact words before responding
+- If you're unsure what the user said, politely ask them to repeat
+- Speak clearly and naturally in your responses
+
+`;
+    
+    // Add custom system prompt or default
+    systemPrompt += settings[0]?.system_prompt || 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.';
     
     // Fetch business documents to enhance AI knowledge
     const documentsResponse = await fetch(

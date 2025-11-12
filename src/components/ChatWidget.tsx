@@ -356,10 +356,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         console.log(`Setting time trigger for ${timeoutSeconds} seconds`);
         setTimeout(() => {
           if (!proactiveShown) {
-            console.log('Time trigger activated, opening chat');
-            setIsOpen(true);
+            console.log('Time trigger activated, opening chat with message:', timeRule.message);
             setProactiveShown(true);
             handleTranscript(timeRule.message, 'assistant');
+            // Ensure chat opens after message is added
+            setTimeout(() => setIsOpen(true), 100);
           }
         }, timeoutSeconds * 1000);
       }
@@ -372,10 +373,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         
         console.log('Checking specific page trigger:', targetUrl, 'Current URL:', window.location.href);
         if (targetUrl && window.location.href.includes(targetUrl)) {
-          console.log('Page trigger activated, opening chat');
-          setIsOpen(true);
+          console.log('Page trigger activated, opening chat with message:', pageRule.message);
           setProactiveShown(true);
           handleTranscript(pageRule.message, 'assistant');
+          setTimeout(() => setIsOpen(true), 100);
         }
       }
 
@@ -384,10 +385,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       if (exitIntentRule) {
         const handleMouseLeave = (e: MouseEvent) => {
           if (e.clientY <= 0 && !proactiveShown) {
-            console.log('Exit intent detected, opening chat');
-            setIsOpen(true);
+            console.log('Exit intent detected, opening chat with message:', exitIntentRule.message);
             setProactiveShown(true);
             handleTranscript(exitIntentRule.message, 'assistant');
+            setTimeout(() => setIsOpen(true), 100);
             document.removeEventListener('mouseleave', handleMouseLeave);
           }
         };
@@ -405,10 +406,10 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
           const scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
           
           if (scrollDepth >= requiredDepth && !proactiveShown) {
-            console.log('Scroll depth trigger activated, opening chat');
-            setIsOpen(true);
+            console.log('Scroll depth trigger activated at', scrollDepth, '%, opening chat with message:', scrollRule.message);
             setProactiveShown(true);
             handleTranscript(scrollRule.message, 'assistant');
+            setTimeout(() => setIsOpen(true), 100);
             window.removeEventListener('scroll', handleScroll);
           }
         };
