@@ -81,6 +81,31 @@ serve(async (req) => {
       );
     }
 
+    // Ensure user has a profile (create if doesn't exist)
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('id')
+      .eq('id', foundUser.id)
+      .single();
+
+    if (!existingProfile) {
+      console.log('Creating profile for new team member:', foundUser.email);
+      const { error: profileError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: foundUser.id,
+          email: foundUser.email,
+          full_name: foundUser.user_metadata?.full_name || foundUser.email?.split('@')[0] || 'Team Member',
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // Don't fail the invitation if profile creation fails
+      } else {
+        console.log('Profile created successfully for:', foundUser.email);
+      }
+    }
+
     // Add team member
     const { data: newMember, error: insertError } = await supabaseAdmin
       .from('team_members')
