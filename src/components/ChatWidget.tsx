@@ -328,19 +328,17 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
 
     try {
       console.log('Checking proactive rules for business:', businessId);
-      // @ts-ignore - Supabase type inference issue
-      const result = await supabase
+      const { data: rules, error } = await supabase
         .from('proactive_chat_rules')
         .select('*')
         .eq('business_id', businessId)
-        .eq('is_active', true);
+        .eq('enabled', true)
+        .order('priority', { ascending: false });
 
-      if (result.error) {
-        console.error('Error fetching proactive rules:', result.error);
-        throw result.error;
+      if (error) {
+        console.error('Error fetching proactive rules:', error);
+        return;
       }
-
-      const rules = result.data as any[];
       console.log('Proactive rules found:', rules);
       if (!rules || rules.length === 0) {
         console.log('No active proactive rules found');

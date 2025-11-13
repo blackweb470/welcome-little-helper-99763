@@ -102,17 +102,19 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
 
       if (error) throw error;
       
-      // Manually fetch user emails for each team member
+      // Fetch profiles separately
       const membersWithProfiles = await Promise.all(
         (data || []).map(async (member) => {
-          const { data: authData } = await supabase.auth.admin.getUserById(member.user_id);
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, full_name')
+            .eq('id', member.user_id)
+            .single();
+          
           return {
             ...member,
             permissions: member.permissions as { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean; },
-            profiles: {
-              email: authData?.user?.email || 'Unknown',
-              full_name: authData?.user?.user_metadata?.full_name || null,
-            }
+            profiles: profile || { email: 'Unknown', full_name: null }
           };
         })
       );
