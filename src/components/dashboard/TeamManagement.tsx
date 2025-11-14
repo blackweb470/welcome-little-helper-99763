@@ -81,7 +81,8 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
           table: 'team_members',
           filter: `business_id=eq.${businessId}`,
         },
-        () => {
+        (payload) => {
+          console.log('Team member change detected:', payload);
           fetchTeamMembers();
         }
       )
