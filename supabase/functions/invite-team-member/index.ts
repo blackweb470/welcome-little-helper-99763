@@ -240,8 +240,9 @@ serve(async (req) => {
     );
 
     const { error: emailError } = await resend.emails.send({
-      from: Deno.env.get('RESEND_FROM_EMAIL') || `${business.name} <onboarding@resend.dev>`,
+      from: `Team ${business.name} <invites@lyqn.app>`,
       to: [email],
+      replyTo: inviter.email || undefined,
       subject: `You've been added to ${business.name}'s support team`,
       html: emailHtml,
     });
