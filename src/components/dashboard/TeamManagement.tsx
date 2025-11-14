@@ -29,8 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail } from "lucide-react";
+import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TeamMember {
   id: string;
@@ -57,6 +58,8 @@ interface TeamManagementProps {
 export function TeamManagement({ businessId }: TeamManagementProps) {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inviting, setInviting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agent");
   const [invitePermissions, setInvitePermissions] = useState({
@@ -143,6 +146,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
       return;
     }
 
+    setInviting(true);
     try {
       // Call edge function to invite team member
       const { data: { session } } = await supabase.auth.getSession();
@@ -193,6 +197,9 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         can_view_analytics: false,
         can_manage_settings: false,
       });
+      
+      // Refresh team members list
+      await fetchTeamMembers();
     } catch (error) {
       console.error('Error inviting team member:', error);
       toast({
@@ -200,10 +207,13 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         description: "Failed to add team member",
         variant: "destructive",
       });
+    } finally {
+      setInviting(false);
     }
   };
 
   const handleRemove = async (memberId: string) => {
+    setDeletingId(memberId);
     try {
       const { error } = await supabase
         .from('team_members')
@@ -211,6 +221,9 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         .eq('id', memberId);
 
       if (error) throw error;
+
+      // Optimistically update UI
+      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
 
       toast({
         title: "Success",
@@ -223,6 +236,10 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         description: "Failed to remove team member",
         variant: "destructive",
       });
+      // Refresh on error
+      await fetchTeamMembers();
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -278,8 +295,19 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
   if (loading) {
     return (
       <Card className="p-6">
-        <div className="flex items-center justify-center py-8">
-          <p className="text-muted-foreground">Loading team members...</p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between mb-6">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <Skeleton className="h-10 w-40" />
+          </div>
+          <div className="space-y-3">
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
         </div>
       </Card>
     );
@@ -388,9 +416,18 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
                   </div>
                 </div>
 
-                <Button onClick={handleInvite} className="w-full">
-                  <Mail className="w-4 h-4 mr-2" />
-                  Add Team Member
+                <Button onClick={handleInvite} className="w-full" disabled={inviting}>
+                  {inviting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4 mr-2" />
+                      Add Team Member
+                    </>
+                  )}
                 </Button>
               </div>
             </DialogContent>
@@ -463,8 +500,13 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleRemove(member.id)}
+                        disabled={deletingId === member.id}
                       >
-                        <Trash2 className="w-4 h-4 text-destructive" />
+                        {deletingId === member.id ? (
+                          <Loader2 className="w-4 h-4 text-destructive animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        )}
                       </Button>
                     </TableCell>
                   </TableRow>
