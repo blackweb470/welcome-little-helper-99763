@@ -232,12 +232,18 @@ serve(async (req) => {
     }
 
     // Send notification email to existing user
+    // Get the proper app URL - use the origin from request headers or fallback to production
+    const origin = req.headers.get('origin') || 'https://lyqn.app';
+    const inviteUrl = existingUser 
+      ? `${origin}/dashboard` 
+      : `${origin}/auth`;
+    
     const emailHtml = createInvitationEmail(
       business.name,
       inviterProfile?.full_name || inviter.email || 'Team Admin',
       role.charAt(0).toUpperCase() + role.slice(1),
       permissions,
-      `${Deno.env.get('SUPABASE_URL')?.replace('https://', 'https://').replace('.supabase.co', '.lovable.app')}/dashboard`
+      inviteUrl
     );
 
     const { error: emailError } = await resend.emails.send({
