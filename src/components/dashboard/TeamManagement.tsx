@@ -60,6 +60,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
   const [loading, setLoading] = useState(true);
   const [inviting, setInviting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agent");
   const [invitePermissions, setInvitePermissions] = useState({
@@ -100,28 +101,20 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     try {
       const { data, error } = await supabase
         .from('team_members')
-        .select('*')
+        .select('*, profiles:user_id(full_name)')
         .eq('business_id', businessId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
-      // Fetch profiles separately
-      const membersWithProfiles = await Promise.all(
-        (data || []).map(async (member) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email, full_name')
-            .eq('id', member.user_id)
-            .single();
-          
-          return {
-            ...member,
-            permissions: member.permissions as { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean; },
-            profiles: profile || { email: 'Unknown', full_name: null }
-          };
-        })
-      );
+      const membersWithProfiles = (data || []).map((member: any) => ({
+        ...member,
+        permissions: member.permissions as { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean; },
+        profiles: {
+          email: member.email || 'No email',
+          full_name: member.profiles?.full_name || null
+        }
+      }));
       
       setTeamMembers(membersWithProfiles as TeamMember[]);
     } catch (error) {
@@ -292,6 +285,16 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
   };
 
+  const filteredMembers = teamMembers.filter((member) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      member.profiles?.full_name?.toLowerCase().includes(query) ||
+      member.profiles?.email?.toLowerCase().includes(query) ||
+      member.role.toLowerCase().includes(query)
+    );
+  });
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -434,12 +437,25 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
           </Dialog>
         </div>
 
-        {teamMembers.length === 0 ? (
+        {teamMembers.length > 0 && (
+          <div className="mb-4">
+            <Input
+              placeholder="Search by name, email, or role..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+        )}
+
+        {filteredMembers.length === 0 ? (
           <div className="text-center py-12">
             <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-lg font-medium mb-2">No team members yet</p>
+            <p className="text-lg font-medium mb-2">
+              {searchQuery ? 'No matching team members' : 'No team members yet'}
+            </p>
             <p className="text-muted-foreground mb-4">
-              Add agents to help manage your live chats
+              {searchQuery ? 'Try a different search term' : 'Add agents to help manage your live chats'}
             </p>
           </div>
         ) : (
@@ -456,7 +472,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teamMembers.map((member) => (
+                {filteredMembers.map((member) => (
                   <TableRow key={member.id}>
                     <TableCell>
                       <div>

@@ -884,6 +884,7 @@ export type Database = {
           accepted_at: string | null
           business_id: string
           created_at: string | null
+          email: string | null
           id: string
           invited_at: string | null
           invited_by: string | null
@@ -897,6 +898,7 @@ export type Database = {
           accepted_at?: string | null
           business_id: string
           created_at?: string | null
+          email?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
@@ -910,6 +912,7 @@ export type Database = {
           accepted_at?: string | null
           business_id?: string
           created_at?: string | null
+          email?: string | null
           id?: string
           invited_at?: string | null
           invited_by?: string | null
