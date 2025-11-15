@@ -163,6 +163,7 @@ serve(async (req) => {
     // Create team member record
     const teamMemberData: any = {
       business_id: businessId,
+      email: email,
       role: role,
       permissions: permissions,
       invited_by: inviter.id,
