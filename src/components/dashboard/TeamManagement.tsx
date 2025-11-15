@@ -28,8 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2, UserX, MoreVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -101,8 +107,9 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     try {
       const { data, error } = await supabase
         .from('team_members')
-        .select('*, profiles:user_id(full_name)')
+        .select('*')
         .eq('business_id', businessId)
+        .neq('status', 'deactivated')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -112,7 +119,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         permissions: member.permissions as { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean; },
         profiles: {
           email: member.email || 'No email',
-          full_name: member.profiles?.full_name || null
+          full_name: member.user_id ? 'Team Member' : 'Pending'
         }
       }));
       
@@ -227,6 +234,37 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
       toast({
         title: "Error",
         description: "Failed to remove team member",
+        variant: "destructive",
+      });
+      // Refresh on error
+      await fetchTeamMembers();
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleDeactivate = async (memberId: string) => {
+    setDeletingId(memberId);
+    try {
+      const { error } = await supabase
+        .from('team_members')
+        .update({ status: 'deactivated' })
+        .eq('id', memberId);
+
+      if (error) throw error;
+
+      // Optimistically update UI
+      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
+
+      toast({
+        title: "Success",
+        description: "Team member deactivated",
+      });
+    } catch (error) {
+      console.error('Error deactivating team member:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate team member",
         variant: "destructive",
       });
       // Refresh on error
@@ -512,18 +550,37 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
                       {new Date(member.invited_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemove(member.id)}
-                        disabled={deletingId === member.id}
-                      >
-                        {deletingId === member.id ? (
-                          <Loader2 className="w-4 h-4 text-destructive animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        )}
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={deletingId === member.id}
+                          >
+                            {deletingId === member.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <MoreVertical className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => handleDeactivate(member.id)}
+                            className="text-orange-600 focus:text-orange-600"
+                          >
+                            <UserX className="w-4 h-4 mr-2" />
+                            Deactivate Account
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleRemove(member.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove from Team
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
