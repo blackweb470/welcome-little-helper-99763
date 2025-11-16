@@ -60,6 +60,17 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Validate selected business access - redirect if removed from team
+  useEffect(() => {
+    if (selectedBusinessId && businesses.length > 0) {
+      const hasAccess = businesses.some(b => b.business_id === selectedBusinessId);
+      if (!hasAccess) {
+        setSelectedBusinessId(null);
+        setActiveTab('businesses');
+      }
+    }
+  }, [businesses, selectedBusinessId]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -70,6 +81,16 @@ const Dashboard = () => {
   };
 
   const checkFeatureAccess = (feature: string, featureName: string, tab: string) => {
+    // If business is selected, check if user still has access to it
+    if (selectedBusinessId) {
+      const businessAccess = businesses.find(b => b.business_id === selectedBusinessId);
+      if (!businessAccess) {
+        setSelectedBusinessId(null);
+        setActiveTab('businesses');
+        return false;
+      }
+    }
+    
     if (!hasAccess(feature as any)) {
       setUpgradePrompt({
         open: true,
