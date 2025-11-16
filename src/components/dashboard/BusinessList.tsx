@@ -6,13 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, ExternalLink, Copy, Trash2, Crown } from "lucide-react";
+import { Plus, Building2, ExternalLink, Copy, Trash2, Crown, Users } from "lucide-react";
+import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 
 interface Business {
   id: string;
   name: string;
   domain: string | null;
   created_at: string;
+  is_owner?: boolean;
+  role?: string;
 }
 
 interface BusinessListProps {
@@ -30,16 +33,21 @@ interface PlanInfo {
 
 const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: BusinessListProps) => {
   const { toast } = useToast();
+  const { businesses: userBusinesses, loading: loadingPermissions } = useBusinessPermissions(userId);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [newBusiness, setNewBusiness] = useState({ name: '', domain: '' });
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
 
   const fetchBusinesses = async () => {
+    // Get full business details for all accessible businesses
+    if (userBusinesses.length === 0) return;
+    
+    const businessIds = userBusinesses.map(b => b.business_id);
     const { data, error } = await supabase
       .from('businesses')
       .select('*')
-      .eq('owner_id', userId)
+      .in('id', businessIds)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -51,9 +59,19 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
       return;
     }
 
-    setBusinesses(data || []);
-    if (data && data.length > 0 && !selectedBusinessId) {
-      onSelectBusiness(data[0].id);
+    // Merge business data with role info
+    const enrichedBusinesses = (data || []).map(business => {
+      const userBusiness = userBusinesses.find(ub => ub.business_id === business.id);
+      return {
+        ...business,
+        is_owner: userBusiness?.is_owner || false,
+        role: userBusiness?.role || 'member'
+      };
+    });
+
+    setBusinesses(enrichedBusinesses);
+    if (enrichedBusinesses.length > 0 && !selectedBusinessId) {
+      onSelectBusiness(enrichedBusinesses[0].id);
     }
   };
 
@@ -72,9 +90,11 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
   };
 
   useEffect(() => {
-    fetchBusinesses();
-    fetchPlanInfo();
-  }, [userId]);
+    if (!loadingPermissions && userBusinesses.length >= 0) {
+      fetchBusinesses();
+      fetchPlanInfo();
+    }
+  }, [userId, userBusinesses, loadingPermissions]);
 
   const createBusiness = async () => {
     if (!newBusiness.name.trim()) {
@@ -267,12 +287,25 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
             >
               <Building2 className="w-8 h-8 text-muted-foreground" />
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">{business.name}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-lg">{business.name}</h3>
+                  {business.is_owner ? (
+                    <Badge variant="default" className="flex items-center gap-1">
+                      <Crown className="w-3 h-3" />
+                      Owner
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Users className="w-3 h-3" />
+                      Team Member
+                    </Badge>
+                  )}
+                </div>
                 {business.domain && (
                   <p className="text-sm text-muted-foreground">{business.domain}</p>
                 )}
                 <p className="text-xs text-muted-foreground mt-2">
-                  Created: {new Date(business.created_at).toLocaleDateString()}
+                  {business.is_owner ? 'Created' : 'Joined'}: {new Date(business.created_at).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -309,19 +342,21 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
                     Copy Widget URL
                   </Button>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete "${business.name}"?`)) {
-                      deleteBusiness(business.id);
-                    }
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Business
-                </Button>
+                {business.is_owner && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to delete "${business.name}"?`)) {
+                        deleteBusiness(business.id);
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Business
+                  </Button>
+                )}
               </div>
             )}
           </Card>
