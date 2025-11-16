@@ -75,6 +75,50 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     };
   }, [businessId]);
 
+  // Listen for agent messages in realtime
+  useEffect(() => {
+    if (!conversationId || !liveChatSession || liveChatSession.status !== 'active') return;
+
+    const channel = supabase
+      .channel('agent-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const message = payload.new as any;
+          
+          // Only notify for agent messages (not user's own messages)
+          if (message.role === 'assistant' || message.role === 'agent') {
+            // Show browser notification if supported and permitted
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification('Live Agent Message', {
+                body: message.content.substring(0, 100),
+                icon: '/favicon.ico',
+                tag: conversationId,
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, liveChatSession]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   // Fetch current live chat session status
   const fetchLiveChatSession = async (convId: string) => {
     try {

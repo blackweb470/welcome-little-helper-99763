@@ -71,6 +71,44 @@ const Dashboard = () => {
     }
   }, [businesses, selectedBusinessId]);
 
+  // Listen for team member removal in realtime
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('team-member-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'team_members',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Team member change:', payload);
+          
+          if (payload.eventType === 'DELETE' || 
+              (payload.eventType === 'UPDATE' && payload.new.status === 'deactivated')) {
+            const { toast } = require('@/hooks/use-toast');
+            toast({
+              title: "Access Removed",
+              description: "You have been removed from a team. Your access has been revoked.",
+              variant: "destructive",
+            });
+            
+            // Force refresh businesses list
+            window.location.reload();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
