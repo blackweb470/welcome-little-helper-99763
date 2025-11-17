@@ -29,7 +29,7 @@ export function showBrowserNotification(title: string, options?: NotificationOpt
 }
 
 export async function sendEmailNotification(
-  type: 'chat_transfer' | 'new_message' | 'ticket_created' | 'ticket_resolved',
+  type: 'chat_transfer' | 'new_message' | 'ticket_created' | 'ticket_resolved' | 'team_member_removed',
   businessId: string,
   data: {
     conversationId?: string;
@@ -37,6 +37,8 @@ export async function sendEmailNotification(
     visitorId?: string;
     message?: string;
     agentEmail?: string;
+    userEmail?: string;
+    businessName?: string;
   }
 ) {
   try {
