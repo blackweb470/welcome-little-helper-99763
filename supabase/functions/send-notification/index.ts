@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted']),
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed']),
   businessId: z.string().uuid("Invalid business ID format"),
   data: z.object({
     conversationId: z.string().uuid("Invalid conversation ID format").optional(),
@@ -22,6 +22,8 @@ const NotificationRequestSchema = z.object({
     message: z.string().max(5000).optional(),
     agentEmail: z.string().email("Invalid email format").optional(),
     agentName: z.string().optional(),
+    userEmail: z.string().email("Invalid email format").optional(),
+    businessName: z.string().optional(),
   }),
 });
 
@@ -146,6 +148,25 @@ const handler = async (req: Request): Promise<Response> => {
         html = `
           <h1>Support Ticket Resolved</h1>
           <p><strong>Ticket ID:</strong> ${data.ticketId || 'N/A'}</p>
+        `;
+        break;
+
+      case 'team_member_removed':
+        recipientEmail = data.userEmail || '';
+        if (!recipientEmail) {
+          console.error('No user email provided for team_member_removed notification');
+          return new Response(
+            JSON.stringify({ error: 'No user email provided' }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        subject = `⚠️ Team Access Removed - ${data.businessName || sanitizedBusinessName}`;
+        html = `
+          <h1>Your team access has been removed</h1>
+          <p>You have been removed from the team at <strong>${data.businessName || sanitizedBusinessName}</strong>.</p>
+          <p>Your access to the business dashboard and all related features has been revoked.</p>
+          <p>If you believe this was done in error, please contact the business owner directly.</p>
+          <p>Thank you for your contributions to the team.</p>
         `;
         break;
 
