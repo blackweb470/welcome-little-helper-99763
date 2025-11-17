@@ -34,29 +34,29 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-4 p-6 bg-muted/20">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-border/40">
+            <Card key={i} className="border-0 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-4 rounded" />
+                <Skeleton className="h-8 w-8 rounded-lg" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-8 w-20 mb-2" />
-                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-8 w-20 mb-1" />
+                <Skeleton className="h-3 w-24" />
               </CardContent>
             </Card>
           ))}
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-border/40">
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2].map((i) => (
+            <Card key={i} className="border-0 shadow-sm">
               <CardHeader>
-                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-5 w-32" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-[300px] w-full" />
+                <Skeleton className="h-[280px] w-full" />
               </CardContent>
             </Card>
           ))}
@@ -67,12 +67,14 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
 
   if (!analytics || analytics.length === 0) {
     return (
-      <div className="p-6">
-        <Card className="border-border/40 bg-gradient-to-br from-card to-muted/20">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Activity className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
+      <div className="p-6 bg-muted/20 min-h-[600px] flex items-center justify-center">
+        <Card className="border-0 shadow-sm max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Activity className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">No Data Available</h3>
+            <p className="text-sm text-muted-foreground">
               Start having conversations with your visitors to see analytics and insights here.
             </p>
           </CardContent>
@@ -152,49 +154,49 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
           </CardContent>
         </Card>
 
-        <Card className="border-border/40 bg-gradient-to-br from-card to-chart-1/5 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Messages</CardTitle>
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'hsl(var(--chart-1) / 0.1)' }}>
-              <Users className="h-4 w-4" style={{ color: 'hsl(var(--chart-1))' }} />
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Avg. Messages</CardTitle>
+            <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{avgMessages.toFixed(1)}</div>
+            <div className="text-3xl font-bold">{avgMessages.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground mt-1">Per conversation</p>
           </CardContent>
         </Card>
 
-        <Card className="border-border/40 bg-gradient-to-br from-card to-chart-2/5 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Duration</CardTitle>
-            <div className="p-2 rounded-lg" style={{ backgroundColor: 'hsl(var(--chart-2) / 0.1)' }}>
-              <Clock className="h-4 w-4" style={{ color: 'hsl(var(--chart-2))' }} />
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Avg. Duration</CardTitle>
+            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <Clock className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{Math.floor(avgDuration / 60)}m</div>
-            <p className="text-xs text-muted-foreground mt-1">{Math.floor(avgDuration % 60)}s average</p>
+            <div className="text-3xl font-bold">{Math.floor(avgDuration / 60)}:{String(Math.floor(avgDuration % 60)).padStart(2, '0')}</div>
+            <p className="text-xs text-muted-foreground mt-1">Minutes per chat</p>
           </CardContent>
         </Card>
 
-        <Card className="border-border/40 bg-gradient-to-br from-card to-chart-3/5 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Sentiment</CardTitle>
-            <div className="p-2 rounded-lg" style={{ backgroundColor: avgSentiment > 0.5 ? 'hsl(var(--chart-2) / 0.1)' : avgSentiment < -0.2 ? 'hsl(var(--chart-3) / 0.1)' : 'hsl(var(--chart-4) / 0.1)' }}>
-              {avgSentiment > 0.5 ? (
-                <Smile className="h-4 w-4" style={{ color: 'hsl(var(--chart-2))' }} />
-              ) : avgSentiment < -0.2 ? (
-                <Frown className="h-4 w-4" style={{ color: 'hsl(var(--chart-3))' }} />
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sentiment Score</CardTitle>
+            <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              {avgSentiment > 0.3 ? (
+                <Smile className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              ) : avgSentiment > -0.3 ? (
+                <Meh className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               ) : (
-                <Meh className="h-4 w-4" style={{ color: 'hsl(var(--chart-4))' }} />
+                <Frown className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{(avgSentiment * 100).toFixed(0)}%</div>
+            <div className="text-3xl font-bold">{(avgSentiment * 100).toFixed(0)}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {avgSentiment > 0.5 ? 'Positive' : avgSentiment < -0.2 ? 'Negative' : 'Neutral'}
+              {avgSentiment > 0.3 ? 'Positive feedback' : avgSentiment > -0.3 ? 'Neutral' : 'Needs attention'}
             </p>
           </CardContent>
         </Card>

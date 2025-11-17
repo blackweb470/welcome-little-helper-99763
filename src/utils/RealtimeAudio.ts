@@ -16,33 +16,45 @@ export class AudioRecorder {
 
   async start() {
     try {
-      // Request higher quality audio with better constraints
+      // Request professional-grade audio with optimal constraints
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate: 24000,
+          sampleRate: 48000, // Higher sample rate for better quality
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
+          autoGainControl: true,
+          sampleSize: 16
         }
       });
       
       this.audioContext = new AudioContext({
-        sampleRate: 24000,
+        sampleRate: 48000,
         latencyHint: 'interactive'
       });
       
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       
-      // Use smaller buffer size (2048) for lower latency and better quality
-      this.processor = this.audioContext.createScriptProcessor(2048, 1, 1);
+      // Add dynamics compressor for better audio levels
+      const compressor = this.audioContext.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-24, this.audioContext.currentTime);
+      compressor.knee.setValueAtTime(30, this.audioContext.currentTime);
+      compressor.ratio.setValueAtTime(12, this.audioContext.currentTime);
+      compressor.attack.setValueAtTime(0.003, this.audioContext.currentTime);
+      compressor.release.setValueAtTime(0.25, this.audioContext.currentTime);
+      
+      // Use optimal buffer size (4096) for balance between quality and latency
+      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
       
       this.processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
-        this.onAudioData(new Float32Array(inputData));
+        // Resample from 48kHz to 24kHz for API compatibility
+        const downsampled = this.downsample(inputData, 48000, 24000);
+        this.onAudioData(downsampled);
       };
       
-      this.source.connect(this.processor);
+      this.source.connect(compressor);
+      compressor.connect(this.processor);
       this.processor.connect(this.audioContext.destination);
       
       console.log('Audio recorder started with sample rate:', this.audioContext.sampleRate);
@@ -50,6 +62,36 @@ export class AudioRecorder {
       console.error('Error accessing microphone:', error);
       throw error;
     }
+  }
+
+  private downsample(buffer: Float32Array, sampleRate: number, outSampleRate: number): Float32Array {
+    if (outSampleRate === sampleRate) {
+      return buffer;
+    }
+    
+    const sampleRateRatio = sampleRate / outSampleRate;
+    const newLength = Math.round(buffer.length / sampleRateRatio);
+    const result = new Float32Array(newLength);
+    
+    let offsetResult = 0;
+    let offsetBuffer = 0;
+    
+    while (offsetResult < result.length) {
+      const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+      let accum = 0;
+      let count = 0;
+      
+      for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+        accum += buffer[i];
+        count++;
+      }
+      
+      result[offsetResult] = accum / count;
+      offsetResult++;
+      offsetBuffer = nextOffsetBuffer;
+    }
+    
+    return result;
   }
 
   stop() {

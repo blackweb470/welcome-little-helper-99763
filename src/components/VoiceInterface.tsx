@@ -245,57 +245,40 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <StatusIndicator businessId={businessId} />
+    <div className="flex flex-col items-center space-y-6 p-6">
+      <div className="relative">
+        <Button
+          variant={status === 'connected' ? 'destructive' : 'default'}
+          size="lg"
+          className={`rounded-full h-24 w-24 shadow-lg transition-all duration-300 ${
+            isSpeaking ? 'scale-110 shadow-2xl ring-4 ring-primary/50' : ''
+          }`}
+          onClick={status === 'connected' ? endConversation : startConversation}
+          disabled={status === 'connecting'}
+        >
+          {status === 'connecting' ? (
+            <Loader2 className="h-10 w-10 animate-spin" />
+          ) : status === 'connected' ? (
+            <MicOff className="h-10 w-10" />
+          ) : (
+            <Mic className="h-10 w-10" />
+          )}
+        </Button>
+        {isSpeaking && <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75" />}
+        {status === 'connected' && !isSpeaking && (
+          <div className="absolute -bottom-2 -right-2 h-6 w-6 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
+        )}
+      </div>
       
-      {status === 'disconnected' && (
-        <Button 
-          onClick={startConversation}
-          size="lg"
-          className="rounded-full w-16 h-16 p-0"
-        >
-          <Mic className="w-6 h-6" />
-        </Button>
-      )}
-      
-      {status === 'connecting' && (
-        <Button 
-          disabled
-          size="lg"
-          className="rounded-full w-16 h-16 p-0"
-        >
-          <Loader2 className="w-6 h-6 animate-spin" />
-        </Button>
-      )}
-      
-      {status === 'connected' && (
-        <Button 
-          onClick={endConversation}
-          size="lg"
-          variant={isSpeaking ? "default" : "secondary"}
-          className="rounded-full w-16 h-16 p-0"
-        >
-          <MicOff className="w-6 h-6" />
-        </Button>
-      )}
-
-      {status === 'error' && (
-        <Button 
-          onClick={startConversation}
-          size="lg"
-          variant="destructive"
-          className="rounded-full w-16 h-16 p-0"
-        >
-          <Mic className="w-6 h-6" />
-        </Button>
-      )}
-
-      <p className="text-sm text-muted-foreground">
-        {status === 'disconnected' && 'Click to start'}
-        {status === 'connecting' && 'Connecting...'}
-        {status === 'connected' && (isSpeaking ? 'Listening...' : 'Ready')}
-        {status === 'error' && 'Error - Try again'}
-      </p>
+      <div className="text-center space-y-2">
+        <StatusIndicator status={status} />
+        <p className="text-base font-medium">
+          {status === 'disconnected' && 'Start Voice Chat'}
+          {status === 'connecting' && 'Connecting...'}
+          {status === 'connected' && (isSpeaking ? '🎤 Listening' : '✓ Connected')}
+          {status === 'error' && 'Error'}
+        </p>
+      </div>
     </div>
   );
 };
