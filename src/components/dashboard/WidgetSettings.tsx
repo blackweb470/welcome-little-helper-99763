@@ -155,6 +155,24 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
       iframe.setAttribute('allow', 'microphone');
       document.body.appendChild(iframe);
 
+      // Send parent URL to widget for proactive rules
+      iframe.onload = function() {
+        iframe.contentWindow.postMessage({
+          type: 'PARENT_URL',
+          url: window.location.href
+        }, '*');
+      };
+
+      // Listen for URL requests from widget
+      window.addEventListener('message', function(event) {
+        if (event.data.type === 'REQUEST_PARENT_URL') {
+          iframe.contentWindow.postMessage({
+            type: 'PARENT_URL',
+            url: window.location.href
+          }, '*');
+        }
+      });
+
       // Toggle open/close
       var btn = document.getElementById('chat-toggle');
       btn.addEventListener('click', function() {

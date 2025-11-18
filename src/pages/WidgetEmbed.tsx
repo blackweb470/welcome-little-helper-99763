@@ -1,10 +1,38 @@
 import { useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChatWidget } from "@/components/ChatWidget";
 import { VisitorTracker } from "@/utils/visitorTracking";
 
 const WidgetEmbed = () => {
   const { businessId } = useParams<{ businessId: string }>();
+  const [parentUrl, setParentUrl] = useState<string>('');
+
+  // Get parent page URL from iframe
+  useEffect(() => {
+    try {
+      // Try to get parent URL (will work if same-origin or parent sends it via postMessage)
+      const referrer = document.referrer || window.location.href;
+      setParentUrl(referrer);
+      
+      // Listen for parent page URL from postMessage
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data.type === 'PARENT_URL') {
+          setParentUrl(event.data.url);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      // Request parent URL
+      window.parent.postMessage({ type: 'REQUEST_PARENT_URL' }, '*');
+      
+      return () => {
+        window.removeEventListener('message', handleMessage);
+      };
+    } catch (e) {
+      console.error('Error getting parent URL:', e);
+    }
+  }, []);
 
   // Make the page background transparent for embedding
   useEffect(() => {
@@ -37,7 +65,7 @@ const WidgetEmbed = () => {
 
   return (
     <div className="w-screen h-screen overflow-hidden">
-      <ChatWidget businessId={businessId} />
+      <ChatWidget businessId={businessId} parentPageUrl={parentUrl} />
     </div>
   );
 };
