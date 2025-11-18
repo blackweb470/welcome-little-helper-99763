@@ -20,6 +20,7 @@ import {
   Lock,
   CreditCard,
   UsersRound,
+  User,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,7 @@ const mainItems = [
 ];
 
 const externalLinks = [
+  { title: "Profile", path: "/profile", icon: User },
   { title: "Billing", path: "/billing", icon: CreditCard },
 ];
 

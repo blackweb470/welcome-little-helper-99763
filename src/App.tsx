@@ -16,6 +16,7 @@ import Pricing from "./pages/Pricing";
 import Billing from "./pages/Billing";
 import Onboarding from "./pages/Onboarding";
 import AcceptInvite from "./pages/AcceptInvite";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/billing" element={<Billing />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/widget/:businessId" element={<WidgetDemo />} />
           <Route path="/embed/:businessId" element={<WidgetEmbed />} />
           <Route path="/docs" element={<NewDocumentation />} />
