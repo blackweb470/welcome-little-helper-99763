@@ -9,9 +9,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChatWidgetProps {
   businessId: string;
+  parentPageUrl?: string;
 }
 
-export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
+export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
   const [settings, setSettings] = useState<any>(null);
@@ -51,7 +52,6 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
     };
 
     fetchSettings();
-    checkProactiveRules();
 
     // Subscribe to widget_settings changes
     const channel = supabase
@@ -74,6 +74,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
       supabase.removeChannel(channel);
     };
   }, [businessId]);
+
+  // Check proactive rules when parent URL is available
+  useEffect(() => {
+    checkProactiveRules();
+  }, [parentPageUrl, businessId]);
 
   // Listen for agent messages in realtime
   useEffect(() => {
@@ -413,8 +418,11 @@ export const ChatWidget = ({ businessId }: ChatWidgetProps) => {
         const triggerValue = pageRule.trigger_value as { url?: string };
         const targetUrl = triggerValue?.url || '';
         
-        console.log('Checking specific page trigger:', targetUrl, 'Current URL:', window.location.href);
-        if (targetUrl && window.location.href.includes(targetUrl)) {
+        // Use parent page URL if available (for embedded widgets), otherwise use current URL
+        const currentUrl = parentPageUrl || window.location.href;
+        console.log('Checking specific page trigger:', targetUrl, 'Current URL:', currentUrl);
+        
+        if (targetUrl && currentUrl.includes(targetUrl)) {
           console.log('Page trigger activated, opening chat with message:', pageRule.message);
           setProactiveShown(true);
           handleTranscript(pageRule.message, 'assistant');
