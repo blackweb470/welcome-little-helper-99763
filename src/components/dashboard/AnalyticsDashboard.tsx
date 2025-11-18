@@ -134,6 +134,18 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
     value
   }));
 
+  // Peak conversation hours (0-23)
+  const hourlyDist = analytics.reduce((acc, a) => {
+    const hour = new Date(a.started_at).getHours();
+    acc[hour] = (acc[hour] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
+
+  const hourlyData = Array.from({ length: 24 }, (_, i) => ({
+    hour: `${i}:00`,
+    conversations: hourlyDist[i] || 0
+  }));
+
   return (
     <div className="space-y-6 p-6">
       {/* Summary Cards */}
@@ -203,7 +215,7 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-border/40 hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -391,6 +403,54 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
                   fill="url(#colorSentiment)"
                 />
               </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/40 hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" style={{ color: 'hsl(var(--chart-5))' }} />
+              Peak Conversation Hours
+            </CardTitle>
+            <CardDescription>Distribution of conversations by hour of day</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={hourlyData}>
+                <defs>
+                  <linearGradient id="colorHourly" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--chart-5))" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="hsl(var(--chart-5))" stopOpacity={0.3}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis 
+                  dataKey="hour" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={10}
+                  tickLine={false}
+                  interval={2}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                  }}
+                />
+                <Bar 
+                  dataKey="conversations" 
+                  fill="url(#colorHourly)" 
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

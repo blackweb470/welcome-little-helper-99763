@@ -271,7 +271,6 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
       </div>
       
       <div className="text-center space-y-2">
-        <StatusIndicator status={status} />
         <p className="text-base font-medium">
           {status === 'disconnected' && 'Start Voice Chat'}
           {status === 'connecting' && 'Connecting...'}
