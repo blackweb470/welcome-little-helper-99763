@@ -182,6 +182,7 @@ export type Database = {
           created_at: string | null
           domain: string | null
           id: string
+          logo_url: string | null
           name: string
           online_status: boolean | null
           owner_id: string
@@ -194,6 +195,7 @@ export type Database = {
           created_at?: string | null
           domain?: string | null
           id?: string
+          logo_url?: string | null
           name: string
           online_status?: boolean | null
           owner_id: string
@@ -206,6 +208,7 @@ export type Database = {
           created_at?: string | null
           domain?: string | null
           id?: string
+          logo_url?: string | null
           name?: string
           online_status?: boolean | null
           owner_id?: string

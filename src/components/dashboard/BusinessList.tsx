@@ -6,13 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, ExternalLink, Copy, Trash2, Crown, Users } from "lucide-react";
+import { Plus, Building2, ExternalLink, Copy, Trash2, Crown, Users, Upload, Loader2 } from "lucide-react";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Business {
   id: string;
   name: string;
   domain: string | null;
+  logo_url: string | null;
   created_at: string;
   is_owner?: boolean;
   role?: string;
@@ -38,6 +40,90 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
   const [isCreating, setIsCreating] = useState(false);
   const [newBusiness, setNewBusiness] = useState({ name: '', domain: '' });
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState<string | null>(null);
+
+  const handleLogoUpload = async (businessId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be less than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingLogo(businessId);
+    try {
+      const business = businesses.find(b => b.id === businessId);
+      if (!business) throw new Error("Business not found");
+
+      // Delete old logo if exists
+      if (business.logo_url) {
+        const oldPath = business.logo_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage
+            .from('avatars')
+            .remove([`business-logos/${businessId}/${oldPath}`]);
+        }
+      }
+
+      // Upload new logo
+      const fileExt = file.name.split('.').pop();
+      const fileName = `business-logos/${businessId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update business with new logo URL
+      const { error: updateError } = await supabase
+        .from('businesses')
+        .update({ logo_url: publicUrl })
+        .eq('id', businessId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setBusinesses(businesses.map(b => 
+        b.id === businessId ? { ...b, logo_url: publicUrl } : b
+      ));
+
+      toast({
+        title: "Success",
+        description: "Business logo updated successfully",
+      });
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload logo",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingLogo(null);
+    }
+  };
 
   const fetchBusinesses = async () => {
     // Get full business details for all accessible businesses
@@ -285,7 +371,12 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
               className="flex items-start gap-4 cursor-pointer"
               onClick={() => onSelectBusiness(business.id)}
             >
-              <Building2 className="w-8 h-8 text-muted-foreground" />
+              <Avatar className="w-12 h-12">
+                <AvatarImage src={business.logo_url || undefined} alt={business.name} />
+                <AvatarFallback>
+                  {business.name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-lg">{business.name}</h3>
@@ -312,6 +403,38 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
             
             {selectedBusinessId === business.id && (
               <div className="mt-4 pt-4 border-t space-y-3">
+                {business.is_owner && (
+                  <div className="flex gap-2">
+                    <Label htmlFor={`logo-${business.id}`} className="cursor-pointer flex-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingLogo === business.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          document.getElementById(`logo-${business.id}`)?.click();
+                        }}
+                        className="w-full"
+                      >
+                        {uploadingLogo === business.id ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4 mr-2" />
+                        )}
+                        {business.logo_url ? 'Change Logo' : 'Upload Logo'}
+                      </Button>
+                    </Label>
+                    <Input
+                      id={`logo-${business.id}`}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleLogoUpload(business.id, e)}
+                      className="hidden"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
