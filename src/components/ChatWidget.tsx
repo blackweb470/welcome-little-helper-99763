@@ -80,12 +80,12 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
     checkProactiveRules();
   }, [parentPageUrl, businessId]);
 
-  // Listen for agent messages in realtime
+  // Listen for all incoming messages in realtime
   useEffect(() => {
-    if (!conversationId || !liveChatSession || liveChatSession.status !== 'active') return;
+    if (!conversationId) return;
 
     const channel = supabase
-      .channel('agent-messages')
+      .channel('incoming-messages')
       .on(
         'postgres_changes',
         {
@@ -97,8 +97,13 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
         (payload) => {
           const message = payload.new as any;
           
-          // Only notify for agent messages (not user's own messages)
+          // Only notify for agent/assistant messages (not user's own messages)
           if (message.role === 'assistant' || message.role === 'agent') {
+            // Request notification permission if not already granted
+            if ('Notification' in window && Notification.permission === 'default') {
+              Notification.requestPermission();
+            }
+            
             // Show browser notification if supported and permitted
             if ('Notification' in window && Notification.permission === 'granted') {
               new Notification('Live Agent Message', {
