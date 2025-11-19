@@ -16,6 +16,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
   const [settings, setSettings] = useState<any>(null);
+  const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
   const [proactiveShown, setProactiveShown] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -51,7 +52,20 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       }
     };
 
+    const fetchBusinessInfo = async () => {
+      const { data } = await supabase
+        .from("businesses")
+        .select("name, logo_url")
+        .eq("id", businessId)
+        .single();
+      
+      if (data) {
+        setBusinessInfo(data);
+      }
+    };
+
     fetchSettings();
+    fetchBusinessInfo();
 
     // Subscribe to widget_settings changes
     const channel = supabase
@@ -106,9 +120,12 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             
             // Show browser notification if supported and permitted
             if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification('Live Agent Message', {
+              // Use business logo or generate abbreviation
+              const notificationIcon = getNotificationIcon();
+              
+              new Notification(settings?.agent_name || 'Support Agent', {
                 body: message.content.substring(0, 100),
-                icon: '/favicon.ico',
+                icon: notificationIcon,
                 tag: conversationId,
               });
             }
@@ -375,6 +392,47 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
     } catch (error) {
       console.error('Error initializing text conversation:', error);
     }
+  };
+
+  const getNotificationIcon = (): string => {
+    // If business has a logo, use it
+    if (businessInfo?.logo_url) {
+      return businessInfo.logo_url;
+    }
+    
+    // Otherwise, generate an icon with business name abbreviation
+    if (businessInfo?.name) {
+      const abbreviation = businessInfo.name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+      
+      // Create a data URL with the abbreviation
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // Use primary color or default
+        const bgColor = settings?.primary_color || '#000000';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, 128, 128);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 64px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(abbreviation, 64, 64);
+      }
+      
+      return canvas.toDataURL();
+    }
+    
+    // Fallback to default icon
+    return '/favicon.ico';
   };
 
   const checkProactiveRules = async () => {
