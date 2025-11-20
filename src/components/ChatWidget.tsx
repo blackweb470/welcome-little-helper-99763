@@ -26,6 +26,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isTextMode, setIsTextMode] = useState(true);
   const [showEscalateButton, setShowEscalateButton] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const notificationMessagesRef = useRef<Map<string, string[]>>(new Map());
   const [sendingMessage, setSendingMessage] = useState(false);
   const [visitorEmail, setVisitorEmail] = useState("");
   const [showEmailInput, setShowEmailInput] = useState(false);
@@ -120,13 +121,32 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             
             // Show browser notification if supported and permitted
             if ('Notification' in window && Notification.permission === 'granted') {
-              // Use business logo or generate abbreviation
+              // Get or initialize message list for this conversation
+              const conversationMessages = notificationMessagesRef.current.get(conversationId) || [];
+              conversationMessages.push(message.content);
+              notificationMessagesRef.current.set(conversationId, conversationMessages);
+
+              const messageCount = conversationMessages.length;
               const notificationIcon = getNotificationIcon();
               
+              // Create notification body based on message count
+              let notificationBody = '';
+              if (messageCount === 1) {
+                notificationBody = message.content.substring(0, 100);
+              } else {
+                notificationBody = `${messageCount} new messages\n${message.content.substring(0, 80)}`;
+              }
+
               new Notification(settings?.agent_name || 'Support Agent', {
-                body: message.content.substring(0, 100),
+                body: notificationBody,
                 icon: notificationIcon,
                 tag: conversationId,
+                requireInteraction: false,
+                data: {
+                  conversationId,
+                  messageCount,
+                  messages: conversationMessages.slice(-3),
+                }
               });
             }
           }
@@ -138,6 +158,13 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       supabase.removeChannel(channel);
     };
   }, [conversationId, liveChatSession]);
+
+  // Clear notification messages when widget is opened
+  useEffect(() => {
+    if (isOpen && conversationId) {
+      notificationMessagesRef.current.delete(conversationId);
+    }
+  }, [isOpen, conversationId]);
 
   // Request notification permission on mount
   useEffect(() => {
