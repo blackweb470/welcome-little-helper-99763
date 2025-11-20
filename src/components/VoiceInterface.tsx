@@ -246,13 +246,34 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
 
   return (
     <div className="flex flex-col items-center space-y-6 p-6">
+      <div className="flex items-center gap-2 mb-2">
+        <h3 className="text-lg font-semibold">Voice Chat</h3>
+        <span className="text-xs bg-blue-500/20 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full font-medium">
+          BETA
+        </span>
+      </div>
+
+      {status === 'disconnected' && (
+        <div className="w-full space-y-4 text-center">
+          <div className="bg-muted/50 p-4 rounded-lg space-y-2 text-left">
+            <p className="text-sm font-medium">Voice Chat allows you to speak naturally with our AI</p>
+            <ul className="text-xs text-muted-foreground space-y-1 pl-4">
+              <li>• Click the microphone button below to start</li>
+              <li>• Allow microphone access when prompted</li>
+              <li>• Speak clearly and wait for AI responses</li>
+              <li>• Works best in quiet environments</li>
+            </ul>
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         <Button
           variant={status === 'connected' ? 'destructive' : 'default'}
           size="lg"
           className={`rounded-full h-24 w-24 shadow-lg transition-all duration-300 ${
-            isSpeaking ? 'scale-110 shadow-2xl ring-4 ring-primary/50' : ''
-          }`}
+            isSpeaking ? 'scale-110 shadow-2xl ring-4 ring-red-500/50 bg-red-500' : ''
+          } ${status === 'connected' && !isSpeaking ? 'ring-4 ring-green-500/50' : ''}`}
           onClick={status === 'connected' ? endConversation : startConversation}
           disabled={status === 'connecting'}
         >
@@ -264,20 +285,57 @@ const VoiceInterface = ({ businessId, onSpeakingChange, onTranscript, onConversa
             <Mic className="h-10 w-10" />
           )}
         </Button>
-        {isSpeaking && <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-75" />}
+        {isSpeaking && (
+          <div className="absolute inset-0 rounded-full border-4 border-red-500 animate-ping opacity-75" />
+        )}
         {status === 'connected' && !isSpeaking && (
           <div className="absolute -bottom-2 -right-2 h-6 w-6 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
         )}
       </div>
       
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-2 min-h-[60px]">
         <p className="text-base font-medium">
-          {status === 'disconnected' && 'Start Voice Chat'}
-          {status === 'connecting' && 'Connecting...'}
-          {status === 'connected' && (isSpeaking ? '🎤 Listening' : '✓ Connected')}
-          {status === 'error' && 'Error'}
+          {status === 'disconnected' && 'Tap to Start Voice Chat'}
+          {status === 'connecting' && 'Connecting to microphone...'}
+          {status === 'connected' && (
+            <span className={isSpeaking ? 'text-red-500' : 'text-green-500'}>
+              {isSpeaking ? '🎤 Listening...' : '✓ Ready - Speak anytime'}
+            </span>
+          )}
+          {status === 'error' && (
+            <span className="text-destructive">Connection Error</span>
+          )}
         </p>
+        
+        {status === 'connected' && (
+          <p className="text-xs text-muted-foreground">
+            {isSpeaking ? 'Speak now, I\'m listening' : 'Start speaking when ready'}
+          </p>
+        )}
+        
+        {status === 'error' && (
+          <div className="space-y-2 pt-2">
+            <p className="text-xs text-muted-foreground">
+              Please check microphone permissions and try again
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={startConversation}
+            >
+              Retry Connection
+            </Button>
+          </div>
+        )}
       </div>
+
+      {status === 'connected' && (
+        <div className="w-full bg-muted/30 p-3 rounded-lg">
+          <p className="text-xs text-muted-foreground text-center">
+            💡 Speak naturally and pause when done. Click the red button to end the conversation.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
