@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import BusinessList from "@/components/dashboard/BusinessList";
 import ConversationsList from "@/components/dashboard/ConversationsList";
+import { BusinessConversationAnalysis } from "@/components/dashboard/BusinessConversationAnalysis";
 import WidgetSettings from "@/components/dashboard/WidgetSettings";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 import { ProductCatalog } from "@/components/dashboard/ProductCatalog";
@@ -213,9 +214,12 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'conversations' && (
-                  <Card className="p-6">
-                    <ConversationsList businessId={selectedBusinessId} />
-                  </Card>
+                  <div className="space-y-6">
+                    <BusinessConversationAnalysis businessId={selectedBusinessId} />
+                    <Card className="p-6">
+                      <ConversationsList businessId={selectedBusinessId} />
+                    </Card>
+                  </div>
                 )}
 
                 {currentTab === 'tickets' && (
