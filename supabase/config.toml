@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.request-live-agent]
 verify_jwt = false
+
+[functions.analyze-conversations]
+verify_jwt = true
