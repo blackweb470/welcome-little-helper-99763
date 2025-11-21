@@ -92,21 +92,54 @@ Extract and categorize:
 3. **Complaints** - Customer frustrations, dissatisfaction, pain points
 
 For each category, provide:
-- The specific issue/question/complaint
-- How many times it appears (frequency estimate)
-- Severity/importance (high/medium/low)
+- The specific issue/question/complaint (be concise but clear)
+- How many times it appears (frequency estimate based on conversation analysis)
+- Severity/importance:
+  - **high**: Critical issues affecting multiple customers, urgent problems, service outages, data loss, payment issues
+  - **medium**: Important but not urgent, feature requests, minor bugs, billing questions
+  - **low**: General questions, minor inconveniences, informational requests
+
+**IMPORTANT FOR QUESTIONS:**
+- Group similar questions together (e.g., "How do I reset password?" and "Forgot password help" are the same)
+- Sort questions by frequency (most asked first)
+- For each question, provide a brief answer suggestion if possible
 
 Also provide:
 - A brief overall summary of customer concerns
-- Top 3 action items for the business
+- Top 3 action items for the business (prioritized by impact)
 
 Format as JSON:
 {
-  "issues": [{"item": "...", "frequency": 5, "severity": "high"}],
-  "questions": [{"item": "...", "frequency": 3, "severity": "medium"}],
-  "complaints": [{"item": "...", "frequency": 2, "severity": "high"}],
-  "summary": "Brief overall summary...",
-  "actionItems": ["Action 1", "Action 2", "Action 3"],
+  "issues": [
+    {
+      "item": "Clear description of the issue",
+      "frequency": 5,
+      "severity": "high",
+      "impact": "Brief description of customer impact"
+    }
+  ],
+  "questions": [
+    {
+      "item": "What is the question?",
+      "frequency": 8,
+      "severity": "medium",
+      "suggestedAnswer": "Brief answer that could help customers"
+    }
+  ],
+  "complaints": [
+    {
+      "item": "What is the complaint about?",
+      "frequency": 3,
+      "severity": "high",
+      "context": "Additional context about why this matters"
+    }
+  ],
+  "summary": "2-3 sentence overall summary highlighting key trends and sentiment",
+  "actionItems": [
+    "Most critical action to take",
+    "Second priority action",
+    "Third priority action"
+  ],
   "totalConversations": ${conversations.length}
 }`;
 

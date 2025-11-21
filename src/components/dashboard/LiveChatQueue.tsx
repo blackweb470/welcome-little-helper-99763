@@ -47,6 +47,9 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [endingChat, setEndingChat] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [cannedResponsesOpen, setCannedResponsesOpen] = useState(false);
+  const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -404,6 +407,54 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const queuedSessions = sessions.filter(s => s.status === 'queued');
   const activeSessions = sessions.filter(s => s.status === 'active');
 
+  // Get AI suggestions based on conversation context
+  const getAISuggestions = async () => {
+    if (!selectedSession) return;
+    
+    try {
+      setLoadingSuggestions(true);
+      
+      // Get last few messages for context
+      const recentMessages = messages.slice(-5);
+      const context = recentMessages.map(m => `${m.role}: ${m.content}`).join('\n');
+      const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+      
+      // Calculate sentiment
+      const userMessages = messages.filter(m => m.role === 'user');
+      const sentiment = userMessages.length > 0 
+        ? userMessages[userMessages.length - 1]?.content.toLowerCase().includes('frustrated') || 
+          userMessages[userMessages.length - 1]?.content.toLowerCase().includes('angry')
+          ? 'frustrated' 
+          : 'neutral'
+        : 'neutral';
+      
+      const { data, error } = await supabase.functions.invoke('ai-assist', {
+        body: {
+          action: 'suggest_response',
+          context,
+          lastMessage: lastUserMessage?.content || '',
+          sentiment
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.responses) {
+        setAiSuggestions(data.responses);
+        setAiSuggestionsOpen(true);
+      }
+    } catch (error) {
+      console.error('Error getting AI suggestions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get AI suggestions",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
   // If viewing a chat, show the chat interface
   if (selectedSession) {
     return (
@@ -489,8 +540,9 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                     size="icon"
                     type="button"
                     disabled={sendingMessage}
+                    title="Canned Responses"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    <MessageSquare className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80" align="start">
@@ -528,6 +580,61 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                   </div>
                 </PopoverContent>
               </Popover>
+              
+              <Popover open={aiSuggestionsOpen} onOpenChange={setAiSuggestionsOpen}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    type="button"
+                    disabled={sendingMessage || loadingSuggestions}
+                    onClick={getAISuggestions}
+                    title="AI Suggestions"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96" align="start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <h4 className="font-medium text-sm">AI Suggested Responses</h4>
+                    </div>
+                    {loadingSuggestions ? (
+                      <div className="py-4 text-center">
+                        <p className="text-sm text-muted-foreground">Generating suggestions...</p>
+                      </div>
+                    ) : aiSuggestions.length === 0 ? (
+                      <div className="py-4 text-center">
+                        <p className="text-sm text-muted-foreground">Click the button to get AI suggestions</p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="h-[300px]">
+                        <div className="space-y-3">
+                          {aiSuggestions.map((suggestion, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setMessageInput(suggestion);
+                                setAiSuggestionsOpen(false);
+                              }}
+                              className="w-full text-left p-3 rounded border hover:bg-accent transition-colors"
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                  {idx + 1}
+                                </div>
+                                <div className="text-sm flex-1">{suggestion}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
               <Input
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}

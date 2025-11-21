@@ -17,6 +17,9 @@ interface AnalysisItem {
   item: string;
   frequency: number;
   severity: 'high' | 'medium' | 'low';
+  impact?: string;
+  suggestedAnswer?: string;
+  context?: string;
 }
 
 interface AnalysisData {
@@ -167,7 +170,7 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
                 </CardContent>
               </Card>
 
-              {/* Issues */}
+              {/* Issues with Priority Badges */}
               {analysis.issues && analysis.issues.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -175,22 +178,39 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
                       <AlertCircle className="h-5 w-5 text-destructive" />
                       <CardTitle className="text-lg">Issues Reported</CardTitle>
                       <Badge variant="secondary">{analysis.issues.length}</Badge>
+                      <Badge variant="destructive" className="ml-auto">
+                        {analysis.issues.filter(i => i.severity === 'high').length} Critical
+                      </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <ScrollArea className="h-[200px]">
+                    <ScrollArea className="h-[250px]">
                       <div className="space-y-3">
-                        {analysis.issues.map((issue, idx) => (
-                          <div key={idx} className="flex items-start justify-between gap-4 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                        {analysis.issues
+                          .sort((a, b) => {
+                            const severityOrder = { high: 0, medium: 1, low: 2 };
+                            return severityOrder[a.severity] - severityOrder[b.severity];
+                          })
+                          .map((issue: any, idx) => (
+                          <div key={idx} className={`flex items-start justify-between gap-4 p-3 border-2 rounded-lg hover:bg-accent/50 transition-colors ${
+                            issue.severity === 'high' ? 'border-destructive/30 bg-destructive/5' : ''
+                          }`}>
                             <div className="flex-1">
-                              <p className="text-sm font-medium">{issue.item}</p>
+                              <div className="flex items-start gap-2 mb-1">
+                                <p className="text-sm font-medium flex-1">{issue.item}</p>
+                                <Badge variant={getSeverityColor(issue.severity) as any}>
+                                  {issue.severity}
+                                </Badge>
+                              </div>
+                              {issue.impact && (
+                                <p className="text-xs text-muted-foreground mt-1 italic">
+                                  Impact: {issue.impact}
+                                </p>
+                              )}
                               <p className="text-xs text-muted-foreground mt-1">
                                 Reported {issue.frequency} time{issue.frequency !== 1 ? 's' : ''}
                               </p>
                             </div>
-                            <Badge variant={getSeverityColor(issue.severity) as any}>
-                              {issue.severity}
-                            </Badge>
                           </div>
                         ))}
                       </div>
@@ -199,23 +219,71 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
                 </Card>
               )}
 
-              {/* Questions */}
+              {/* Top 3 Most Frequent Questions with Answers */}
               {analysis.questions && analysis.questions.length > 0 && (
-                <Card>
+                <Card className="border-blue-500/20 bg-blue-500/5">
                   <CardHeader>
                     <div className="flex items-center gap-2">
                       <HelpCircle className="h-5 w-5 text-blue-500" />
-                      <CardTitle className="text-lg">Common Questions</CardTitle>
+                      <CardTitle className="text-lg">Top 3 Most Frequent Questions</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {analysis.questions
+                        .sort((a: any, b: any) => b.frequency - a.frequency)
+                        .slice(0, 3)
+                        .map((question: any, idx) => (
+                        <div key={idx} className="p-4 border-2 border-blue-500/20 rounded-lg bg-background">
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">
+                                {idx + 1}
+                              </div>
+                              <Badge variant={getSeverityColor(question.severity) as any}>
+                                {question.severity} priority
+                              </Badge>
+                            </div>
+                            <Badge variant="outline" className="bg-blue-500/10">
+                              {question.frequency}x asked
+                            </Badge>
+                          </div>
+                          <p className="text-sm font-semibold ml-10 mb-2">{question.item}</p>
+                          {question.suggestedAnswer && (
+                            <div className="ml-10 mt-2 p-2 bg-muted rounded text-xs">
+                              <span className="font-medium text-green-600">💡 Suggested Answer: </span>
+                              {question.suggestedAnswer}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* All Questions */}
+              {analysis.questions && analysis.questions.length > 3 && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-blue-500" />
+                      <CardTitle className="text-lg">All Questions</CardTitle>
                       <Badge variant="secondary">{analysis.questions.length}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[200px]">
                       <div className="space-y-3">
-                        {analysis.questions.map((question, idx) => (
+                        {analysis.questions.slice(3).map((question: any, idx) => (
                           <div key={idx} className="flex items-start justify-between gap-4 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                             <div className="flex-1">
                               <p className="text-sm font-medium">{question.item}</p>
+                              {question.suggestedAnswer && (
+                                <p className="text-xs text-muted-foreground mt-1 italic">
+                                  💡 {question.suggestedAnswer}
+                                </p>
+                              )}
                               <p className="text-xs text-muted-foreground mt-1">
                                 Asked {question.frequency} time{question.frequency !== 1 ? 's' : ''}
                               </p>
@@ -231,7 +299,7 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
                 </Card>
               )}
 
-              {/* Complaints */}
+              {/* Complaints with Context */}
               {analysis.complaints && analysis.complaints.length > 0 && (
                 <Card>
                   <CardHeader>
@@ -244,10 +312,15 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
                   <CardContent>
                     <ScrollArea className="h-[200px]">
                       <div className="space-y-3">
-                        {analysis.complaints.map((complaint, idx) => (
+                        {analysis.complaints.map((complaint: any, idx) => (
                           <div key={idx} className="flex items-start justify-between gap-4 p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                             <div className="flex-1">
                               <p className="text-sm font-medium">{complaint.item}</p>
+                              {complaint.context && (
+                                <p className="text-xs text-muted-foreground mt-1 italic">
+                                  {complaint.context}
+                                </p>
+                              )}
                               <p className="text-xs text-muted-foreground mt-1">
                                 Mentioned {complaint.frequency} time{complaint.frequency !== 1 ? 's' : ''}
                               </p>
