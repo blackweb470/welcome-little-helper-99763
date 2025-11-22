@@ -75,6 +75,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
     can_manage_settings: false,
   });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [showPending, setShowPending] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -324,14 +325,19 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
   };
 
   const filteredMembers = teamMembers.filter((member) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      member.profiles?.full_name?.toLowerCase().includes(query) ||
-      member.profiles?.email?.toLowerCase().includes(query) ||
-      member.role.toLowerCase().includes(query)
+    const matchesSearch = !searchQuery || (
+      member.profiles?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.profiles?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.role.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    
+    const matchesStatus = showPending ? member.status === 'pending' : member.status === 'active';
+    
+    return matchesSearch && matchesStatus;
   });
+  
+  const pendingCount = teamMembers.filter(m => m.status === 'pending').length;
+  const activeCount = teamMembers.filter(m => m.status === 'active').length;
 
   if (loading) {
     return (
@@ -476,13 +482,30 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         </div>
 
         {teamMembers.length > 0 && (
-          <div className="mb-4">
+          <div className="mb-4 flex gap-4 items-center">
             <Input
               placeholder="Search by name, email, or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
+            <div className="flex gap-2">
+              <Button
+                variant={!showPending ? "default" : "outline"}
+                onClick={() => setShowPending(false)}
+                className="gap-2"
+              >
+                Active ({activeCount})
+              </Button>
+              <Button
+                variant={showPending ? "default" : "outline"}
+                onClick={() => setShowPending(true)}
+                className="gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Pending ({pendingCount})
+              </Button>
+            </div>
           </div>
         )}
 
@@ -490,10 +513,18 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
           <div className="text-center py-12">
             <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-lg font-medium mb-2">
-              {searchQuery ? 'No matching team members' : 'No team members yet'}
+              {searchQuery 
+                ? 'No matching team members' 
+                : showPending 
+                  ? 'No pending invitations' 
+                  : 'No active team members'}
             </p>
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? 'Try a different search term' : 'Add agents to help manage your live chats'}
+              {searchQuery 
+                ? 'Try a different search term' 
+                : showPending
+                  ? 'All invited members have accepted or been removed'
+                  : 'Add agents to help manage your live chats'}
             </p>
           </div>
         ) : (
