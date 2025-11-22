@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { 
   MessageSquare, 
   Brain, 
@@ -29,28 +30,28 @@ const Index = () => {
     },
     {
       icon: <Brain className="w-6 h-6" />,
-      title: "Self-Learning AI",
-      description: "Automatically learns from every conversation to improve responses"
+      title: "AI Conversation Analysis",
+      description: "Automatic analysis of customer conversations to identify issues, questions, and complaints"
     },
     {
       icon: <Users className="w-6 h-6" />,
-      title: "Live Agent Handoff",
-      description: "Seamlessly transfer complex queries to human agents when needed"
+      title: "Team Management",
+      description: "Invite team members with role-based permissions and pending invitation tracking"
     },
     {
       icon: <BarChart3 className="w-6 h-6" />,
-      title: "Analytics Dashboard",
-      description: "Track conversations, sentiment, and customer insights in real-time"
+      title: "Advanced Analytics",
+      description: "Track conversations, sentiment, and customer insights with AI-powered insights"
     },
     {
       icon: <Target className="w-6 h-6" />,
-      title: "Smart Recommendations",
-      description: "AI suggests relevant products based on conversation context"
+      title: "AI Chat Suggestions",
+      description: "Contextual response suggestions for live agents powered by conversation history"
     },
     {
-      icon: <ShieldCheck className="w-6 h-6" />,
-      title: "Multi-Business",
-      description: "Manage multiple businesses from one unified dashboard"
+      icon: <MessageSquare className="w-6 h-6" />,
+      title: "Live Agent Handoff",
+      description: "Seamlessly transfer complex queries to human agents with full context"
     }
   ];
 
@@ -140,7 +141,7 @@ const Index = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
               </span>
-              <span className="text-sm font-medium">Now with OpenAI Realtime Voice API</span>
+              <span className="text-sm font-medium">AI-Powered Conversation Analysis & Team Collaboration</span>
             </div>
             
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
@@ -152,8 +153,8 @@ const Index = () => {
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-              Intelligent chat platform that improves with every conversation. 
-              Voice support, live agents, and analytics—all in one place.
+              Intelligent chat platform with AI conversation analysis, team collaboration tools,
+              and contextual agent assistance—all in one unified dashboard.
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center mb-16">
@@ -212,6 +213,93 @@ const Index = () => {
                   </p>
                 </Card>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* New Features Highlight */}
+        <section className="py-24 border-t">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <div className="inline-block px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                Latest Updates
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                New AI-Powered Features
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Recent improvements to help you deliver better customer support
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              <Card className="p-8 border-2 hover:shadow-xl transition-all">
+                <div className="mb-4 inline-block p-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary">
+                  <Brain className="w-8 h-8" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">AI Conversation Analysis</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Automatically analyze all customer conversations to identify common issues, 
+                  frequently asked questions, and customer complaints. Get actionable insights 
+                  with severity ratings and suggested responses.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Pattern Detection</Badge>
+                  <Badge variant="secondary">Issue Categorization</Badge>
+                  <Badge variant="secondary">Time-based Filtering</Badge>
+                </div>
+              </Card>
+
+              <Card className="p-8 border-2 hover:shadow-xl transition-all">
+                <div className="mb-4 inline-block p-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary">
+                  <Target className="w-8 h-8" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">AI Chat Suggestions for Agents</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Live agents get real-time AI-powered response suggestions based on conversation 
+                  context, customer sentiment, and chat history. Simply click to insert the 
+                  suggested response and personalize as needed.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Context-Aware</Badge>
+                  <Badge variant="secondary">One-Click Insert</Badge>
+                  <Badge variant="secondary">Sentiment Analysis</Badge>
+                </div>
+              </Card>
+
+              <Card className="p-8 border-2 hover:shadow-xl transition-all">
+                <div className="mb-4 inline-block p-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary">
+                  <Users className="w-8 h-8" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">Enhanced Team Management</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Invite team members with customizable role-based permissions. Track pending 
+                  invitations and manage active team members from a unified dashboard. Email 
+                  notifications keep everyone in the loop.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Role-Based Access</Badge>
+                  <Badge variant="secondary">Pending Invites</Badge>
+                  <Badge variant="secondary">Email Notifications</Badge>
+                </div>
+              </Card>
+
+              <Card className="p-8 border-2 hover:shadow-xl transition-all">
+                <div className="mb-4 inline-block p-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary">
+                  <BarChart3 className="w-8 h-8" />
+                </div>
+                <h3 className="font-bold text-xl mb-3">Business Intelligence Reports</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Get detailed reports on top customer issues, most frequent questions, and 
+                  complaint trends. Filter by date range (24h, 7d, 30d) to track improvements 
+                  and identify areas needing attention.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Frequency Analysis</Badge>
+                  <Badge variant="secondary">Priority Ranking</Badge>
+                  <Badge variant="secondary">Date Filtering</Badge>
+                </div>
+              </Card>
             </div>
           </div>
         </section>
