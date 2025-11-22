@@ -156,8 +156,8 @@ serve(async (req) => {
       }
     }
 
-    // If user doesn't exist, create a pending invitation with email stored in metadata
-    // If user exists, add them directly and notify them
+    // If user doesn't exist, create a pending invitation
+    // If user exists, add them directly as active
     const status = existingUser ? 'active' : 'pending';
     
     // Create team member record
@@ -168,25 +168,9 @@ serve(async (req) => {
       permissions: permissions,
       invited_by: inviter.id,
       status: status,
+      user_id: existingUser ? userId : null,
+      accepted_at: existingUser ? new Date().toISOString() : null,
     };
-
-    // Store invited email in metadata for pending invitations
-    if (!existingUser) {
-      teamMemberData.user_id = null;
-      teamMemberData.accepted_at = null;
-      // We'll need to add an email field to track pending invitations
-      // For now, we can't proceed without a user_id due to NOT NULL constraint
-      return new Response(
-        JSON.stringify({ 
-          error: 'User must create account first',
-          message: 'Please ask the user to create an account at /auth first, then you can add them to your team.'
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } else {
-      teamMemberData.user_id = userId;
-      teamMemberData.accepted_at = new Date().toISOString();
-    }
 
     const { data: newMember, error: insertError } = await supabaseAdmin
       .from('team_members')
@@ -202,33 +186,36 @@ serve(async (req) => {
       );
     }
 
-    // Ensure user has a profile
-    const { data: existingProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', userId!)
-      .single();
-
-    if (!existingProfile) {
-      await supabaseAdmin
+    // Only create profile and assign roles if user exists
+    if (existingUser && userId) {
+      // Ensure user has a profile
+      const { data: existingProfile } = await supabaseAdmin
         .from('profiles')
-        .insert({
-          id: userId!,
-          email: existingUser!.email,
-          full_name: existingUser!.user_metadata?.full_name || existingUser!.email?.split('@')[0] || 'Team Member',
-        });
-    }
+        .select('id')
+        .eq('id', userId)
+        .single();
 
-    // Assign admin role if needed
-    if (role === 'admin') {
-      await supabaseAdmin
-        .from('user_roles')
-        .insert({
-          user_id: userId!,
-          role: 'admin'
-        })
-        .select()
-        .maybeSingle();
+      if (!existingProfile) {
+        await supabaseAdmin
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: existingUser.email,
+            full_name: existingUser.user_metadata?.full_name || existingUser.email?.split('@')[0] || 'Team Member',
+          });
+      }
+
+      // Assign admin role if needed
+      if (role === 'admin') {
+        await supabaseAdmin
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: 'admin'
+          })
+          .select()
+          .maybeSingle();
+      }
     }
 
     // Send notification email to existing user
@@ -246,24 +233,44 @@ serve(async (req) => {
       inviteUrl
     );
 
-    const { error: emailError } = await resend.emails.send({
-      from: `Team ${business.name} <invites@lyqn.app>`,
-      to: [email],
-      replyTo: inviter.email || undefined,
-      subject: `You've been added to ${business.name}'s support team`,
-      html: emailHtml,
-    });
+    // Get the configured from email or use default
+    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
+    
+    try {
+      const { error: emailError } = await resend.emails.send({
+        from: fromEmail,
+        to: [email],
+        replyTo: inviter.email || undefined,
+        subject: `You've been invited to join ${business.name}'s team`,
+        html: emailHtml,
+      });
 
-    if (emailError) {
-      console.error('Error sending notification email:', emailError);
-      // Don't fail the invitation if email fails
+      if (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Log the error but don't fail the invitation
+        // Return success but notify that email failed
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            member: newMember,
+            warning: 'Team member added but email notification failed to send',
+            emailError: emailError.message
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (error) {
+      console.error('Exception sending invitation email:', error);
+      // Continue anyway
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         member: newMember,
-        message: 'Team member added successfully and notified via email'
+        message: existingUser 
+          ? 'Team member added successfully and notified via email'
+          : 'Invitation sent! The user will become active once they create an account with this email address.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
