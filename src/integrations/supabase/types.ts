@@ -368,6 +368,59 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body_text: string | null
+          business_id: string
+          button_text: string | null
+          created_at: string
+          footer_text: string | null
+          header_text: string | null
+          id: string
+          primary_color: string | null
+          show_logo: boolean | null
+          subject: string
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          body_text?: string | null
+          business_id: string
+          button_text?: string | null
+          created_at?: string
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          primary_color?: string | null
+          show_logo?: boolean | null
+          subject?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Update: {
+          body_text?: string | null
+          business_id?: string
+          button_text?: string | null
+          created_at?: string
+          footer_text?: string | null
+          header_text?: string | null
+          id?: string
+          primary_color?: string | null
+          show_logo?: boolean | null
+          subject?: string
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_chat_sessions: {
         Row: {
           accepted_at: string | null

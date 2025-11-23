@@ -21,6 +21,7 @@ import { CannedResponses } from "@/components/dashboard/CannedResponses";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
+import { EmailTemplateSettings } from "@/components/dashboard/EmailTemplateSettings";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
@@ -271,6 +272,12 @@ const Dashboard = () => {
                 {currentTab === 'settings' && (
                   <Card className="p-6">
                     <WidgetSettings businessId={selectedBusinessId} />
+                  </Card>
+                )}
+
+                {currentTab === 'email-templates' && (
+                  <Card className="p-6">
+                    <EmailTemplateSettings businessId={selectedBusinessId} />
                   </Card>
                 )}
               </>

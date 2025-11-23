@@ -21,6 +21,7 @@ import {
   CreditCard,
   UsersRound,
   User,
+  Mail,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -74,6 +75,7 @@ const businessItems = [
   { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
   { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking", permission: "can_view_analytics" },
   { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
+  { title: "Email Templates", path: "email-templates", icon: Mail, ownerOnly: true },
 ];
 
 export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatureClick, businessId, hasPermission, isOwner }: AppSidebarProps) {
