@@ -11,32 +11,15 @@ const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
 
 const createInvitationEmail = (
   businessName: string,
-  businessLogo: string | null,
   inviterName: string,
   role: string,
   permissions: { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean },
-  signupUrl: string,
-  template: any = null
+  signupUrl: string
 ) => {
   const permissionsList = [];
   if (permissions.can_chat) permissionsList.push('<li>Handle live chats with customers</li>');
   if (permissions.can_view_analytics) permissionsList.push('<li>View analytics and reports</li>');
   if (permissions.can_manage_settings) permissionsList.push('<li>Manage settings and configuration</li>');
-
-  // Use custom template if available
-  const headerText = template?.header_text || 'Team Invitation';
-  const bodyText = template?.body_text || `{inviter_name} has invited you to join {business_name}'s team as a {role}.`;
-  const footerText = template?.footer_text || 'This invitation was sent by {business_name}';
-  const primaryColor = template?.primary_color || '#000';
-  const buttonText = template?.button_text || 'Accept Invitation & Create Account';
-  const showLogo = template?.show_logo !== false;
-
-  const formattedBody = bodyText
-    .replace(/{inviter_name}/g, `<strong>${inviterName}</strong>`)
-    .replace(/{business_name}/g, `<strong>${businessName}</strong>`)
-    .replace(/{role}/g, `<strong>${role}</strong>`);
-
-  const formattedFooter = footerText.replace(/{business_name}/g, businessName);
 
   return `
     <!DOCTYPE html>
@@ -47,16 +30,10 @@ const createInvitationEmail = (
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; background-color: #f6f9fc; margin: 0; padding: 0;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px 40px 48px;">
-          ${showLogo && businessLogo ? `
-            <div style="text-align: center; margin-bottom: 24px;">
-              <img src="${businessLogo}" alt="${businessName}" style="max-width: 120px; height: auto;" />
-            </div>
-          ` : ''}
-          
-          <h1 style="color: #333; font-size: 28px; font-weight: bold; margin: 40px 0 20px;">${headerText}</h1>
+          <h1 style="color: #333; font-size: 28px; font-weight: bold; margin: 40px 0 20px;">Team Invitation</h1>
           
           <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
-            ${formattedBody}
+            <strong>${inviterName}</strong> has invited you to join <strong>${businessName}</strong>'s support team as a <strong>${role}</strong>.
           </p>
 
           <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 24px 0;">
@@ -67,8 +44,8 @@ const createInvitationEmail = (
           </div>
 
           <div style="text-align: center; padding: 27px 0;">
-            <a href="${signupUrl}" style="background-color: ${primaryColor}; border-radius: 6px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block; padding: 12px 32px;">
-              ${buttonText}
+            <a href="${signupUrl}" style="background-color: #000; border-radius: 6px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block; padding: 12px 32px;">
+              Accept Invitation & Create Account
             </a>
           </div>
 
@@ -79,7 +56,7 @@ const createInvitationEmail = (
           </p>
 
           <p style="color: #8898aa; font-size: 12px; line-height: 16px; margin-top: 32px;">
-            ${formattedFooter}
+            This invitation was sent by ${businessName}
           </p>
         </div>
       </body>
@@ -134,20 +111,12 @@ serve(async (req) => {
       .eq('id', inviter.id)
       .single();
 
-    // Get business details and email template
+    // Get business details
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
-      .select('name, logo_url')
+      .select('name')
       .eq('id', businessId)
       .single();
-
-    // Get custom email template if exists
-    const { data: emailTemplate } = await supabaseAdmin
-      .from('email_templates')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('template_type', 'team_invitation')
-      .maybeSingle();
 
     if (businessError || !business) {
       return new Response(
@@ -258,16 +227,11 @@ serve(async (req) => {
     
     const emailHtml = createInvitationEmail(
       business.name,
-      business.logo_url,
       inviterProfile?.full_name || inviter.email || 'Team Admin',
       role.charAt(0).toUpperCase() + role.slice(1),
       permissions,
-      inviteUrl,
-      emailTemplate
+      inviteUrl
     );
-
-    // Use custom subject if available
-    const emailSubject = emailTemplate?.subject || `You've been invited to join ${business.name}'s team`;
 
     // Get the configured from email or use default
     const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
@@ -277,7 +241,7 @@ serve(async (req) => {
         from: fromEmail,
         to: [email],
         replyTo: inviter.email || undefined,
-        subject: emailSubject,
+        subject: `You've been invited to join ${business.name}'s team`,
         html: emailHtml,
       });
 

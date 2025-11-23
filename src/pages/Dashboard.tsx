@@ -21,7 +21,7 @@ import { CannedResponses } from "@/components/dashboard/CannedResponses";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
-import { EmailTemplateSettings } from "@/components/dashboard/EmailTemplateSettings";
+import { BotCustomization } from "@/components/dashboard/BotCustomization";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
@@ -275,9 +275,9 @@ const Dashboard = () => {
                   </Card>
                 )}
 
-                {currentTab === 'email-templates' && (
+                {currentTab === 'customize-bot' && (
                   <Card className="p-6">
-                    <EmailTemplateSettings businessId={selectedBusinessId} />
+                    <BotCustomization businessId={selectedBusinessId} />
                   </Card>
                 )}
               </>
