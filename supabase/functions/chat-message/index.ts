@@ -106,6 +106,44 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check for programmed Q&A responses first
+    const { data: qaPairs } = await supabase
+      .from('bot_qa_pairs')
+      .select('*')
+      .eq('business_id', businessId)
+      .eq('enabled', true)
+      .order('priority', { ascending: false });
+
+    if (qaPairs && qaPairs.length > 0) {
+      const messageLower = message.toLowerCase();
+      
+      // Try to find exact or keyword match
+      for (const pair of qaPairs) {
+        const questionLower = pair.question.toLowerCase();
+        const keywords = pair.keywords || [];
+        
+        // Check for exact question match or keyword match
+        if (messageLower.includes(questionLower) || 
+            keywords.some((kw: string) => messageLower.includes(kw.toLowerCase()))) {
+          
+          // Save the programmed response
+          await supabase
+            .from('messages')
+            .insert({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: pair.answer
+            });
+          
+          console.log('Found matching Q&A pair, returning programmed response');
+          return new Response(
+            JSON.stringify({ reply: pair.answer, conversationId, programmedResponse: true }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+
     // Get AI response
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {

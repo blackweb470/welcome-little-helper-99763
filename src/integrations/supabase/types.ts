@@ -58,6 +58,50 @@ export type Database = {
           },
         ]
       }
+      bot_qa_pairs: {
+        Row: {
+          answer: string
+          business_id: string
+          created_at: string
+          enabled: boolean | null
+          id: string
+          keywords: string[] | null
+          priority: number | null
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          business_id: string
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          keywords?: string[] | null
+          priority?: number | null
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          business_id?: string
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          keywords?: string[] | null
+          priority?: number | null
+          question?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_qa_pairs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_documents: {
         Row: {
           business_id: string
