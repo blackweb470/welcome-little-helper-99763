@@ -1315,6 +1315,7 @@ export type Database = {
           pre_chat_required_fields: Json | null
           pre_chat_welcome_message: string | null
           primary_color: string | null
+          show_qa_to_visitors: boolean | null
           system_prompt: string | null
           updated_at: string | null
           voice_enabled: boolean | null
@@ -1331,6 +1332,7 @@ export type Database = {
           pre_chat_required_fields?: Json | null
           pre_chat_welcome_message?: string | null
           primary_color?: string | null
+          show_qa_to_visitors?: boolean | null
           system_prompt?: string | null
           updated_at?: string | null
           voice_enabled?: boolean | null
@@ -1347,6 +1349,7 @@ export type Database = {
           pre_chat_required_fields?: Json | null
           pre_chat_welcome_message?: string | null
           primary_color?: string | null
+          show_qa_to_visitors?: boolean | null
           system_prompt?: string | null
           updated_at?: string | null
           voice_enabled?: boolean | null

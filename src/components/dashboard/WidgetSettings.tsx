@@ -25,6 +25,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     pre_chat_required_fields: ['name', 'email'],
     pre_chat_welcome_message: 'Please tell us a bit about yourself before we start the conversation.',
     max_input_characters: 500,
+    show_qa_to_visitors: false,
   });
   const [embedCode, setEmbedCode] = useState('');
 
@@ -291,6 +292,15 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
             onCheckedChange={(checked) => setSettings({ ...settings, pre_chat_enabled: checked })}
           />
           <Label htmlFor="pre_chat_enabled">Enable Pre-Chat Form</Label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="show_qa_to_visitors"
+            checked={settings.show_qa_to_visitors}
+            onCheckedChange={(checked) => setSettings({ ...settings, show_qa_to_visitors: checked })}
+          />
+          <Label htmlFor="show_qa_to_visitors">Show Q&A Pairs to Visitors</Label>
         </div>
 
         {settings.pre_chat_enabled && (
