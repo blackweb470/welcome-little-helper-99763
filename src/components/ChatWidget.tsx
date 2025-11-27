@@ -34,13 +34,14 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [visitorInfo, setVisitorInfo] = useState<any>({});
   const [agentTyping, setAgentTyping] = useState(false);
   const [requestingAgent, setRequestingAgent] = useState(false);
+  const [qaPairs, setQaPairs] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchSettings = async () => {
       // Only fetch public-safe fields (exclude system_prompt)
       const { data } = await supabase
         .from("widget_settings")
-        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, voice_enabled, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields, max_input_characters")
+        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, voice_enabled, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields, max_input_characters, show_qa_to_visitors")
         .eq("business_id", businessId)
         .single();
       
@@ -65,8 +66,22 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       }
     };
 
+    const fetchQaPairs = async () => {
+      const { data } = await supabase
+        .from("bot_qa_pairs")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("enabled", true)
+        .order("priority", { ascending: false });
+      
+      if (data) {
+        setQaPairs(data);
+      }
+    };
+
     fetchSettings();
     fetchBusinessInfo();
+    fetchQaPairs();
 
     // Subscribe to widget_settings changes
     const channel = supabase
@@ -782,6 +797,27 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
                     <div className="p-2 sm:p-3 md:p-4 shrink-0">
                       <div className="bg-muted/50 rounded-lg p-2 sm:p-3 shadow-sm">
                         <p className="text-xs sm:text-sm">{welcomeMessage}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Q&A Pairs */}
+                  {settings?.show_qa_to_visitors && qaPairs.length > 0 && transcript.length === 0 && (
+                    <div className="p-2 sm:p-3 md:p-4 shrink-0">
+                      <div className="space-y-2">
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">Common Questions:</p>
+                        {qaPairs.map((pair) => (
+                          <button
+                            key={pair.id}
+                            onClick={() => {
+                              handleTranscript(pair.question, 'user');
+                              handleTranscript(pair.answer, 'assistant');
+                            }}
+                            className="w-full text-left p-2 sm:p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                          >
+                            <p className="text-xs sm:text-sm font-medium">{pair.question}</p>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
