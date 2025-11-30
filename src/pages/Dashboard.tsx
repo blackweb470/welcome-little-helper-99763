@@ -158,41 +158,41 @@ const Dashboard = () => {
           isOwner={selectedBusinessId ? isOwner(selectedBusinessId) : false}
         />
         
-        <main className="flex-1 overflow-auto">
-          <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 sm:h-16 items-center gap-2 sm:gap-4 px-4 sm:px-6">
-              <SidebarTrigger />
-              <div className="flex-1 min-w-0 flex items-center gap-3">
-                <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent truncate">
-                  {currentTab === 'businesses' ? 'Businesses' :
-                   currentTab === 'analytics' ? 'Analytics' :
-                   currentTab === 'conversations' ? 'Conversations' :
-                   currentTab === 'tickets' ? 'Tickets' :
-                   currentTab === 'team' ? 'Team Management' :
-                   currentTab === 'livechat' ? 'Live Chat' :
-                   currentTab === 'proactive' ? 'Proactive Chat' :
-                   currentTab === 'canned-responses' ? 'Canned Responses' :
-                   currentTab === 'notifications' ? 'Notifications' :
-                   currentTab === 'notification-settings' ? 'Notification Settings' :
-                    currentTab === 'products' ? 'Products' :
-                    currentTab === 'documents' ? 'Business Documents' :
-                    currentTab === 'scoring' ? 'Behavioral Scoring' :
-                    currentTab === 'agent-performance' ? 'Agent Performance' :
-                    currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
-                </h1>
-                {isAdmin && (
-                  <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-primary to-primary/60 text-primary-foreground whitespace-nowrap">
-                    Admin Access
-                  </span>
-                )}
-                {selectedBusinessId && !isOwner(selectedBusinessId) && (
-                  <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground whitespace-nowrap">
-                    Team Member {businesses.find(b => b.business_id === selectedBusinessId)?.role && `• ${businesses.find(b => b.business_id === selectedBusinessId)?.role}`}
-                  </span>
-                )}
-              </div>
+      <main className="flex-1 overflow-auto">
+        <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-elegant">
+          <div className="flex h-16 items-center gap-4 px-6">
+            <SidebarTrigger />
+            <div className="flex-1 min-w-0 flex items-center gap-3">
+              <h1 className="text-2xl font-display font-bold text-gradient truncate">
+                {currentTab === 'businesses' ? 'Businesses' :
+                 currentTab === 'analytics' ? 'Analytics' :
+                 currentTab === 'conversations' ? 'Conversations' :
+                 currentTab === 'tickets' ? 'Tickets' :
+                 currentTab === 'team' ? 'Team Management' :
+                 currentTab === 'livechat' ? 'Live Chat' :
+                 currentTab === 'proactive' ? 'Proactive Chat' :
+                 currentTab === 'canned-responses' ? 'Canned Responses' :
+                 currentTab === 'notifications' ? 'Notifications' :
+                 currentTab === 'notification-settings' ? 'Notification Settings' :
+                  currentTab === 'products' ? 'Products' :
+                  currentTab === 'documents' ? 'Business Documents' :
+                  currentTab === 'scoring' ? 'Behavioral Scoring' :
+                  currentTab === 'agent-performance' ? 'Agent Performance' :
+                  currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
+              </h1>
+              {isAdmin && (
+                <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-glow whitespace-nowrap">
+                  Admin
+                </span>
+              )}
+              {selectedBusinessId && !isOwner(selectedBusinessId) && (
+                <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground whitespace-nowrap">
+                  {businesses.find(b => b.business_id === selectedBusinessId)?.role || 'Team Member'}
+                </span>
+              )}
             </div>
-          </header>
+          </div>
+        </header>
 
           <div className="p-4 sm:p-6 animate-fade-in">
             {currentTab === 'businesses' && (
