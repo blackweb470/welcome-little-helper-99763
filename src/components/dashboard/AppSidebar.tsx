@@ -114,12 +114,12 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                       to={`/dashboard?tab=${item.path}`}
                       className={({ isActive }) => 
                         isActive 
-                          ? "bg-primary text-primary-foreground font-semibold shadow-elegant" 
-                          : "hover:bg-muted transition-colors"
+                          ? "bg-primary text-primary-foreground font-bold shadow-elegant" 
+                          : "bg-secondary/50 font-semibold hover:bg-muted transition-colors"
                       }
                     >
-                      <item.icon className="w-4 h-4" />
-                      {open && <span>{item.title}</span>}
+                      <item.icon className="w-5 h-5" />
+                      {open && <span className="text-foreground">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -129,10 +129,10 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.path}
-                      className="hover:bg-muted transition-colors"
+                      className="bg-secondary/50 font-semibold hover:bg-muted transition-colors"
                     >
-                      <item.icon className="w-4 h-4" />
-                      {open && <span>{item.title}</span>}
+                      <item.icon className="w-5 h-5" />
+                      {open && <span className="text-foreground">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -171,11 +171,11 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                         }}
                       >
                         {isLocked ? (
-                          <div className="flex items-center gap-2 opacity-50 cursor-pointer hover:opacity-70 transition-opacity">
-                            {item.icon && <item.icon className="w-4 h-4" />}
+                          <div className="flex items-center gap-2 bg-secondary/30 font-semibold opacity-50 cursor-pointer hover:opacity-70 transition-opacity">
+                            {item.icon && <item.icon className="w-5 h-5" />}
                             {open && (
                               <>
-                                <span>{item.title}</span>
+                                <span className="text-foreground">{item.title}</span>
                                 <Lock className="w-3 h-3 ml-auto" />
                               </>
                             )}
@@ -185,17 +185,17 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                             to={`/dashboard?tab=${item.path}`}
                             className={({ isActive }) => 
                               isActive 
-                                ? "bg-primary text-primary-foreground font-semibold shadow-elegant" 
-                                : "hover:bg-muted transition-colors"
+                                ? "bg-primary text-primary-foreground font-bold shadow-elegant" 
+                                : "bg-secondary/50 font-semibold hover:bg-muted transition-colors"
                             }
                           >
                             {item.path === "notifications" && unreadCount > 0 ? (
-                              <BellDot className="w-4 h-4" />
+                              <BellDot className="w-5 h-5" />
                             ) : (
-                              <item.icon className="w-4 h-4" />
+                              <item.icon className="w-5 h-5" />
                             )}
                             {open && (
-                              <span className="flex items-center gap-2">
+                              <span className="flex items-center gap-2 text-foreground">
                                 {item.title}
                                 {item.path === "notifications" && unreadCount > 0 && (
                                   <Badge variant="destructive" className="h-5 min-w-5 px-1.5 font-bold shadow-sm">
@@ -220,11 +220,11 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
         <Button
           onClick={onSignOut}
           variant="ghost"
-          className="w-full justify-start"
+          className="w-full justify-start font-semibold"
           size="sm"
         >
-          <LogOut className="w-4 h-4 mr-2" />
-          {open && "Sign Out"}
+          <LogOut className="w-5 h-5 mr-2" />
+          {open && <span className="text-foreground">Sign Out</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
