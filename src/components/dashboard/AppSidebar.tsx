@@ -88,15 +88,15 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
 
   return (
     <Sidebar className="border-r bg-card">
-      <SidebarHeader className="border-b px-6 py-4">
+      <SidebarHeader className="border-b px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
+            <MessageSquare className="w-5 h-5 text-primary-foreground" />
           </div>
           {open && (
             <div>
-              <h2 className="font-bold text-lg">LYQN</h2>
-              <p className="text-xs text-muted-foreground">Dashboard</p>
+              <h2 className="font-display font-bold text-xl tracking-tight">LYQN</h2>
+              <p className="text-xs text-muted-foreground font-medium">AI Dashboard</p>
             </div>
           )}
         </div>
@@ -104,7 +104,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-bold tracking-wider">MAIN MENU</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -114,8 +114,8 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                       to={`/dashboard?tab=${item.path}`}
                       className={({ isActive }) => 
                         isActive 
-                          ? "bg-primary/10 text-primary font-medium" 
-                          : "hover:bg-muted/50"
+                          ? "bg-primary text-primary-foreground font-semibold shadow-elegant" 
+                          : "hover:bg-muted transition-colors"
                       }
                     >
                       <item.icon className="w-4 h-4" />
@@ -129,7 +129,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.path}
-                      className="hover:bg-muted/50"
+                      className="hover:bg-muted transition-colors"
                     >
                       <item.icon className="w-4 h-4" />
                       {open && <span>{item.title}</span>}
@@ -143,7 +143,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
 
         {hasSelectedBusiness && (
           <SidebarGroup>
-            <SidebarGroupLabel>Business Tools</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-xs font-bold tracking-wider">BUSINESS TOOLS</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {businessItems.map((item) => {
@@ -171,7 +171,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                         }}
                       >
                         {isLocked ? (
-                          <div className="flex items-center gap-2 opacity-60 cursor-pointer hover:opacity-80">
+                          <div className="flex items-center gap-2 opacity-50 cursor-pointer hover:opacity-70 transition-opacity">
                             {item.icon && <item.icon className="w-4 h-4" />}
                             {open && (
                               <>
@@ -185,8 +185,8 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                             to={`/dashboard?tab=${item.path}`}
                             className={({ isActive }) => 
                               isActive 
-                                ? "bg-primary/10 text-primary font-medium" 
-                                : "hover:bg-muted/50"
+                                ? "bg-primary text-primary-foreground font-semibold shadow-elegant" 
+                                : "hover:bg-muted transition-colors"
                             }
                           >
                             {item.path === "notifications" && unreadCount > 0 ? (
@@ -198,7 +198,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                               <span className="flex items-center gap-2">
                                 {item.title}
                                 {item.path === "notifications" && unreadCount > 0 && (
-                                  <Badge variant="destructive" className="h-5 min-w-5 px-1">
+                                  <Badge variant="destructive" className="h-5 min-w-5 px-1.5 font-bold shadow-sm">
                                     {unreadCount}
                                   </Badge>
                                 )}
