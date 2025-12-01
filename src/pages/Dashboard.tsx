@@ -158,12 +158,12 @@ const Dashboard = () => {
           isOwner={selectedBusinessId ? isOwner(selectedBusinessId) : false}
         />
         
-      <main className="flex-1 overflow-auto">
-        <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-elegant">
-          <div className="flex h-16 items-center gap-4 px-6">
-            <SidebarTrigger />
-            <div className="flex-1 min-w-0 flex items-center gap-3">
-              <h1 className="text-2xl font-display font-bold text-gradient truncate">
+      <main className="flex-1 overflow-auto bg-muted/30">
+        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
+          <div className="flex h-20 items-center gap-6 px-8">
+            <SidebarTrigger className="hover:bg-muted transition-colors" />
+            <div className="flex-1 min-w-0 flex items-center gap-4">
+              <h1 className="text-3xl font-display font-bold tracking-tight truncate">
                 {currentTab === 'businesses' ? 'Businesses' :
                  currentTab === 'analytics' ? 'Analytics' :
                  currentTab === 'conversations' ? 'Conversations' :
@@ -181,22 +181,22 @@ const Dashboard = () => {
                   currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
               </h1>
               {isAdmin && (
-                <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-glow whitespace-nowrap">
-                  Admin
+                <span className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-elegant whitespace-nowrap">
+                  ADMIN
                 </span>
               )}
               {selectedBusinessId && !isOwner(selectedBusinessId) && (
-                <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-secondary text-secondary-foreground whitespace-nowrap">
-                  {businesses.find(b => b.business_id === selectedBusinessId)?.role || 'Team Member'}
+                <span className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-xs font-semibold border border-border bg-card whitespace-nowrap">
+                  {businesses.find(b => b.business_id === selectedBusinessId)?.role || 'TEAM MEMBER'}
                 </span>
               )}
             </div>
           </div>
         </header>
 
-          <div className="p-4 sm:p-6 animate-fade-in">
+          <div className="p-8 space-y-8 max-w-[1600px] mx-auto animate-fade-in">
             {currentTab === 'businesses' && (
-              <Card className="p-6">
+              <Card className="p-8 shadow-elegant">
                 <BusinessList 
                   userId={user.id} 
                   onSelectBusiness={(id) => {
@@ -217,7 +217,7 @@ const Dashboard = () => {
                 {currentTab === 'conversations' && (
                   <div className="space-y-6">
                     <BusinessConversationAnalysis businessId={selectedBusinessId} />
-                    <Card className="p-6">
+                    <Card className="p-8 shadow-elegant">
                       <ConversationsList businessId={selectedBusinessId} />
                     </Card>
                   </div>
@@ -256,7 +256,7 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'products' && hasAccess('product_catalog') && (
-                  <Card className="p-6">
+                  <Card className="p-8 shadow-elegant">
                     <ProductCatalog businessId={selectedBusinessId} />
                   </Card>
                 )}
@@ -270,13 +270,13 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'settings' && (
-                  <Card className="p-6">
+                  <Card className="p-8 shadow-elegant">
                     <WidgetSettings businessId={selectedBusinessId} />
                   </Card>
                 )}
 
                 {currentTab === 'customize-bot' && (
-                  <Card className="p-6">
+                  <Card className="p-8 shadow-elegant">
                     <BotCustomization businessId={selectedBusinessId} />
                   </Card>
                 )}
