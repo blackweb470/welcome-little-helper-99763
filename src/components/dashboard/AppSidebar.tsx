@@ -118,7 +118,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                           : "bg-secondary/50 font-semibold hover:bg-muted transition-colors"
                       }
                     >
-                      <item.icon className="w-5 h-5" />
+                      <item.icon className="w-5 h-5 text-foreground" />
                       {open && <span className="text-foreground">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -131,7 +131,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                       to={item.path}
                       className="bg-secondary/50 font-semibold hover:bg-muted transition-colors"
                     >
-                      <item.icon className="w-5 h-5" />
+                      <item.icon className="w-5 h-5 text-foreground" />
                       {open && <span className="text-foreground">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -172,7 +172,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                       >
                         {isLocked ? (
                           <div className="flex items-center gap-2 bg-secondary/30 font-semibold opacity-50 cursor-pointer hover:opacity-70 transition-opacity">
-                            {item.icon && <item.icon className="w-5 h-5" />}
+                            {item.icon && <item.icon className="w-5 h-5 text-foreground" />}
                             {open && (
                               <>
                                 <span className="text-foreground">{item.title}</span>
@@ -190,9 +190,9 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                             }
                           >
                             {item.path === "notifications" && unreadCount > 0 ? (
-                              <BellDot className="w-5 h-5" />
+                              <BellDot className="w-5 h-5 text-foreground" />
                             ) : (
-                              <item.icon className="w-5 h-5" />
+                              <item.icon className="w-5 h-5 text-foreground" />
                             )}
                             {open && (
                               <span className="flex items-center gap-2 text-foreground">
@@ -223,7 +223,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
           className="w-full justify-start font-semibold"
           size="sm"
         >
-          <LogOut className="w-5 h-5 mr-2" />
+          <LogOut className="w-5 h-5 mr-2 text-foreground" />
           {open && <span className="text-foreground">Sign Out</span>}
         </Button>
       </SidebarFooter>
