@@ -325,6 +325,153 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Premium Analytics Section */}
+        <section className="py-32 bg-gradient-to-b from-background via-muted/20 to-background border-t relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.05),transparent_50%)]" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
+          
+          <div className="container mx-auto px-4 relative">
+            <div className="text-center mb-16">
+              <div className="inline-block px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-bold mb-6 shadow-glow">
+                Premium Analytics
+              </div>
+              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
+                Insights That Drive Growth
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Powerful analytics dashboard to understand your customers better
+              </p>
+            </div>
+
+            {/* Analytics Dashboard Preview */}
+            <div className="max-w-6xl mx-auto">
+              <Card className="p-8 md:p-12 border-2 border-primary/10 shadow-elegant-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent" />
+                
+                <div className="relative grid lg:grid-cols-3 gap-8">
+                  {/* Left Stats */}
+                  <div className="space-y-6">
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium text-muted-foreground">Total Conversations</span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-semibold">+24%</span>
+                      </div>
+                      <div className="text-4xl font-display font-bold mb-2">12,847</div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-primary to-primary/60 animate-pulse" />
+                      </div>
+                    </div>
+                    
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium text-muted-foreground">AI Resolution Rate</span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-semibold">+12%</span>
+                      </div>
+                      <div className="text-4xl font-display font-bold mb-2">87.3%</div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-primary to-primary/60" />
+                      </div>
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-medium text-muted-foreground">Customer Satisfaction</span>
+                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-semibold">+8%</span>
+                      </div>
+                      <div className="text-4xl font-display font-bold mb-2">4.9/5</div>
+                      <div className="flex gap-1">
+                        {[1,2,3,4,5].map((star) => (
+                          <div key={star} className={`w-6 h-6 rounded-full ${star <= 4 ? 'bg-primary' : 'bg-primary/60'} flex items-center justify-center`}>
+                            <span className="text-xs text-primary-foreground">★</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Center - Bar Chart */}
+                  <div className="lg:col-span-2 p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-transparent border border-primary/10">
+                    <div className="flex items-center justify-between mb-8">
+                      <div>
+                        <h3 className="font-display font-bold text-lg mb-1">Conversation Volume</h3>
+                        <p className="text-sm text-muted-foreground">Last 7 days performance</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">Weekly</span>
+                        <span className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-semibold">Monthly</span>
+                      </div>
+                    </div>
+                    
+                    {/* Premium Animated Bar Chart */}
+                    <div className="flex items-end justify-between gap-3 h-48 mb-6">
+                      {[
+                        { day: 'Mon', height: '60%', value: '1,234' },
+                        { day: 'Tue', height: '75%', value: '1,567' },
+                        { day: 'Wed', height: '45%', value: '987' },
+                        { day: 'Thu', height: '90%', value: '1,892' },
+                        { day: 'Fri', height: '85%', value: '1,756' },
+                        { day: 'Sat', height: '55%', value: '1,123' },
+                        { day: 'Sun', height: '70%', value: '1,445' },
+                      ].map((item, i) => (
+                        <div key={item.day} className="flex-1 flex flex-col items-center gap-2 group">
+                          <div className="relative w-full">
+                            <div 
+                              className="w-full rounded-t-xl bg-gradient-to-t from-primary via-primary to-primary/80 shadow-glow transition-all duration-500 ease-out group-hover:from-primary-glow group-hover:shadow-glow-lg cursor-pointer relative overflow-hidden"
+                              style={{ 
+                                height: item.height,
+                                animationDelay: `${i * 100}ms`
+                              }}
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10" />
+                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="text-xs font-bold text-primary-foreground">{item.value}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground">{item.day}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Chart Legend */}
+                    <div className="flex items-center justify-center gap-8 pt-4 border-t border-border/50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <span className="text-sm text-muted-foreground">AI Handled</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-primary/40" />
+                        <span className="text-sm text-muted-foreground">Agent Handled</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span className="text-sm text-muted-foreground">Converted</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Stats Row */}
+                <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-border/50">
+                  {[
+                    { label: 'Avg Response Time', value: '< 2s', icon: '⚡' },
+                    { label: 'Messages Today', value: '3,421', icon: '💬' },
+                    { label: 'Active Visitors', value: '847', icon: '👥' },
+                    { label: 'Tickets Resolved', value: '156', icon: '✅' },
+                  ].map((stat) => (
+                    <div key={stat.label} className="text-center p-4 rounded-xl hover:bg-muted/50 transition-colors cursor-default group">
+                      <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{stat.icon}</div>
+                      <div className="text-2xl font-display font-bold mb-1">{stat.value}</div>
+                      <div className="text-xs text-muted-foreground">{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* How It Works */}
         <section className="py-32 bg-gradient-to-b from-background to-muted/30">
           <div className="container mx-auto px-4">
