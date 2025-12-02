@@ -87,7 +87,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
   const isActive = (path: string) => currentTab === path;
 
   return (
-    <Sidebar className="border-r bg-card">
+    <Sidebar collapsible="icon" className="border-r bg-card">
       <SidebarHeader className="border-b px-6 py-5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
