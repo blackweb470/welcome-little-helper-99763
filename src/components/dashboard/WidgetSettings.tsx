@@ -75,9 +75,8 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
-    const code = `<!-- LYQN Chat Widget (Improved) -->
+    const code = `<!-- LYQN Chat Widget -->
 <style>
-  /* Floating Chat Button */
   #chat-toggle {
     position: fixed;
     bottom: 25px;
@@ -94,19 +93,8 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     transition: all 0.3s ease;
   }
-
-  #chat-toggle:hover {
-    background-color: #5C6BC0;
-    transform: scale(1.05);
-  }
-
-  /* Slide animation */
-  @keyframes slideUp {
-    from { transform: translateY(40px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  /* Chat Iframe (Hidden by default) */
+  #chat-toggle:hover { background-color: #5C6BC0; transform: scale(1.05); }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   #lyqn-chat-widget {
     position: fixed;
     bottom: 90px;
@@ -120,73 +108,32 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     display: none;
     animation: slideUp 0.4s ease;
   }
-
-  /* Responsive (Mobile view) */
   @media (max-width: 768px) {
-    #lyqn-chat-widget {
-      width: 100%;
-      height: 60%;
-      right: 0;
-      bottom: 0;
-      border-radius: 0;
-    }
-
-    #chat-toggle {
-      bottom: 15px;
-      right: 15px;
-      width: 55px;
-      height: 55px;
-      font-size: 24px;
-    }
+    #lyqn-chat-widget { width: 100%; height: 60%; right: 0; bottom: 0; border-radius: 0; }
+    #chat-toggle { bottom: 15px; right: 15px; width: 55px; height: 55px; font-size: 24px; }
   }
 </style>
-
 <button id="chat-toggle" title="Chat with us">💬</button>
-
 <script>
-  (function() {
-    function initWidget() {
-      if (document.getElementById('lyqn-chat-widget')) return;
-
-      var iframe = document.createElement('iframe');
-      iframe.src = '${appUrl}/embed/${id}';
-      iframe.id = 'lyqn-chat-widget';
-      iframe.title = 'LYQN Chat Widget';
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
-      iframe.setAttribute('allow', 'microphone');
-      document.body.appendChild(iframe);
-
-      // Send parent URL to widget for proactive rules
-      iframe.onload = function() {
-        iframe.contentWindow.postMessage({
-          type: 'PARENT_URL',
-          url: window.location.href
-        }, '*');
-      };
-
-      // Listen for URL requests from widget
-      window.addEventListener('message', function(event) {
-        if (event.data.type === 'REQUEST_PARENT_URL') {
-          iframe.contentWindow.postMessage({
-            type: 'PARENT_URL',
-            url: window.location.href
-          }, '*');
-        }
-      });
-
-      // Toggle open/close
-      var btn = document.getElementById('chat-toggle');
-      btn.addEventListener('click', function() {
-        iframe.style.display = (iframe.style.display === 'none' || iframe.style.display === '') ? 'block' : 'none';
-      });
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initWidget);
-    } else {
-      initWidget();
-    }
-  })();
+(function() {
+  function initWidget() {
+    if (document.getElementById('lyqn-chat-widget')) return;
+    var iframe = document.createElement('iframe');
+    iframe.src = '${appUrl}/widget/${id}';
+    iframe.id = 'lyqn-chat-widget';
+    iframe.title = 'LYQN Chat Widget';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+    iframe.setAttribute('allow', 'microphone');
+    document.body.appendChild(iframe);
+    iframe.onload = function() { iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*'); };
+    window.addEventListener('message', function(event) {
+      if (event.data.type === 'REQUEST_PARENT_URL') { iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*'); }
+    });
+    var btn = document.getElementById('chat-toggle');
+    btn.addEventListener('click', function() { iframe.style.display = (iframe.style.display === 'none' || iframe.style.display === '') ? 'block' : 'none'; });
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initWidget); } else { initWidget(); }
+})();
 </script>`;
     setEmbedCode(code);
   };

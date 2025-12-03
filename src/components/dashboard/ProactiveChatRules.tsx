@@ -27,7 +27,12 @@ interface ProactiveChatRulesProps {
 export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
   const [rules, setRules] = useState<ProactiveRule[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    trigger_type: string;
+    trigger_value: Record<string, any>;
+    message: string;
+  }>({
     name: '',
     trigger_type: 'time_on_page',
     trigger_value: { seconds: 30 },
@@ -193,13 +198,79 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
                 <Label>Seconds on Page</Label>
                 <Input
                   type="number"
+                  min="5"
+                  max="300"
                   value={formData.trigger_value.seconds}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    trigger_value: { seconds: parseInt(e.target.value) }
+                    trigger_value: { seconds: parseInt(e.target.value) || 30 }
                   })}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Message appears after visitor spends this many seconds on page
+                </p>
               </div>
+            )}
+
+            {formData.trigger_type === 'page_visit' && (
+              <div>
+                <Label>URL Contains</Label>
+                <Input
+                  value={formData.trigger_value.url || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    trigger_value: { url: e.target.value }
+                  })}
+                  placeholder="/pricing, /checkout, /contact"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Triggers when page URL contains this text
+                </p>
+              </div>
+            )}
+
+            {formData.trigger_type === 'scroll_depth' && (
+              <div>
+                <Label>Scroll Percentage (%)</Label>
+                <Input
+                  type="number"
+                  min="10"
+                  max="100"
+                  value={formData.trigger_value.percentage || 50}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    trigger_value: { percentage: parseInt(e.target.value) || 50 }
+                  })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Triggers when visitor scrolls past this percentage of the page
+                </p>
+              </div>
+            )}
+
+            {formData.trigger_type === 'high_engagement' && (
+              <div>
+                <Label>Engagement Score Threshold</Label>
+                <Input
+                  type="number"
+                  min="30"
+                  max="100"
+                  value={formData.trigger_value.score || 70}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    trigger_value: { score: parseInt(e.target.value) || 70 }
+                  })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Triggers when visitor's engagement score exceeds this value
+                </p>
+              </div>
+            )}
+
+            {formData.trigger_type === 'exit_intent' && (
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
+                This rule triggers when a visitor moves their mouse towards the browser's close button or address bar, indicating they might leave.
+              </p>
             )}
 
             <div>
