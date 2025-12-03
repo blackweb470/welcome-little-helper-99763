@@ -52,13 +52,26 @@ serve(async (req) => {
 
     const settings = await settingsResponse.json();
     
-    // Start with clear voice recognition instructions
-    let systemPrompt = `CRITICAL VOICE INSTRUCTIONS:
-- Listen very carefully to what the user says
-- Repeat back or acknowledge what you heard if there's any confusion
-- Focus on understanding the user's exact words before responding
-- If you're unsure what the user said, politely ask them to repeat
-- Speak clearly and naturally in your responses
+    // Start with clear voice recognition instructions optimized for accuracy
+    let systemPrompt = `CRITICAL VOICE RECOGNITION & RESPONSE INSTRUCTIONS:
+
+LISTENING GUIDELINES:
+- Pay extremely close attention to each word the user speaks
+- If you hear "I am coming" or similar phrases, understand the full context
+- Common misheard words: "coming" vs "comment", "hear" vs "here", be attentive to context
+- If the transcription seems unclear, ask the user to repeat or clarify
+- Do not assume what the user meant - respond to what they actually said
+
+SPEECH CLARITY:
+- Speak at a moderate, clear pace
+- Enunciate each word clearly
+- Use natural pauses between sentences
+- Avoid rushing through responses
+
+CONVERSATION STYLE:
+- Be conversational and warm
+- Acknowledge what you heard before responding
+- If something sounds unclear, say "I heard you say [X], is that correct?"
 
 `;
     
@@ -153,7 +166,7 @@ serve(async (req) => {
     
     console.log('Creating session with system prompt:', systemPrompt);
 
-    // Request an ephemeral token from OpenAI
+    // Request an ephemeral token from OpenAI with improved transcription settings
     const response = await fetch("https://api.openai.com/v1/realtime/sessions", {
       method: "POST",
       headers: {
@@ -164,11 +177,17 @@ serve(async (req) => {
         model: "gpt-4o-realtime-preview-2024-12-17",
         voice: "alloy",
         instructions: systemPrompt,
+        input_audio_format: "pcm16",
+        output_audio_format: "pcm16",
+        input_audio_transcription: {
+          model: "whisper-1"
+        },
         turn_detection: {
           type: "server_vad",
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 1000
+          threshold: 0.6,
+          prefix_padding_ms: 400,
+          silence_duration_ms: 800,
+          create_response: true
         }
       }),
     });
