@@ -16,82 +16,57 @@ export class AudioRecorder {
 
   async start() {
     try {
-      // Request professional-grade audio with optimal constraints
+      // Request audio optimized for speech recognition
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate: 48000, // Higher sample rate for better quality
+          sampleRate: 24000, // Match API expected sample rate directly
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleSize: 16
         }
       });
       
       this.audioContext = new AudioContext({
-        sampleRate: 48000,
+        sampleRate: 24000, // 24kHz for OpenAI Realtime API
         latencyHint: 'interactive'
       });
       
       this.source = this.audioContext.createMediaStreamSource(this.stream);
       
-      // Add dynamics compressor for better audio levels
-      const compressor = this.audioContext.createDynamicsCompressor();
-      compressor.threshold.setValueAtTime(-24, this.audioContext.currentTime);
-      compressor.knee.setValueAtTime(30, this.audioContext.currentTime);
-      compressor.ratio.setValueAtTime(12, this.audioContext.currentTime);
-      compressor.attack.setValueAtTime(0.003, this.audioContext.currentTime);
-      compressor.release.setValueAtTime(0.25, this.audioContext.currentTime);
+      // Add high-pass filter to remove low-frequency noise
+      const highPassFilter = this.audioContext.createBiquadFilter();
+      highPassFilter.type = 'highpass';
+      highPassFilter.frequency.setValueAtTime(80, this.audioContext.currentTime);
       
-      // Use optimal buffer size (4096) for balance between quality and latency
-      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+      // Add dynamics compressor for consistent audio levels
+      const compressor = this.audioContext.createDynamicsCompressor();
+      compressor.threshold.setValueAtTime(-20, this.audioContext.currentTime);
+      compressor.knee.setValueAtTime(20, this.audioContext.currentTime);
+      compressor.ratio.setValueAtTime(8, this.audioContext.currentTime);
+      compressor.attack.setValueAtTime(0.003, this.audioContext.currentTime);
+      compressor.release.setValueAtTime(0.15, this.audioContext.currentTime);
+      
+      // Use smaller buffer for lower latency (2048 samples)
+      this.processor = this.audioContext.createScriptProcessor(2048, 1, 1);
       
       this.processor.onaudioprocess = (e) => {
         const inputData = e.inputBuffer.getChannelData(0);
-        // Resample from 48kHz to 24kHz for API compatibility
-        const downsampled = this.downsample(inputData, 48000, 24000);
-        this.onAudioData(downsampled);
+        // Send audio directly since we're already at 24kHz
+        this.onAudioData(new Float32Array(inputData));
       };
       
-      this.source.connect(compressor);
+      // Connect: source -> highpass -> compressor -> processor -> destination
+      this.source.connect(highPassFilter);
+      highPassFilter.connect(compressor);
       compressor.connect(this.processor);
       this.processor.connect(this.audioContext.destination);
       
-      console.log('Audio recorder started with sample rate:', this.audioContext.sampleRate);
+      console.log('Audio recorder started at', this.audioContext.sampleRate, 'Hz');
     } catch (error) {
       console.error('Error accessing microphone:', error);
       throw error;
     }
-  }
-
-  private downsample(buffer: Float32Array, sampleRate: number, outSampleRate: number): Float32Array {
-    if (outSampleRate === sampleRate) {
-      return buffer;
-    }
-    
-    const sampleRateRatio = sampleRate / outSampleRate;
-    const newLength = Math.round(buffer.length / sampleRateRatio);
-    const result = new Float32Array(newLength);
-    
-    let offsetResult = 0;
-    let offsetBuffer = 0;
-    
-    while (offsetResult < result.length) {
-      const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
-      let accum = 0;
-      let count = 0;
-      
-      for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
-        accum += buffer[i];
-        count++;
-      }
-      
-      result[offsetResult] = accum / count;
-      offsetResult++;
-      offsetBuffer = nextOffsetBuffer;
-    }
-    
-    return result;
   }
 
   stop() {
