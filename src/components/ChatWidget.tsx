@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, Minimize2, Users, HelpCircle, MessageSquare, Mic } from "lucide-react";
+import { MessageCircle, X, Minimize2, BookOpen, HelpCircle, MessageSquare, Mic } from "lucide-react";
 import VoiceInterface from "./VoiceInterface";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,14 @@ interface ChatWidgetProps {
   parentPageUrl?: string;
 }
 
-type WidgetTab = "guild" | "faq" | "chat" | "voice";
+type WidgetTab = "guide" | "faq" | "chat" | "voice";
+
+interface Guide {
+  id: string;
+  title: string;
+  content: string;
+  icon: string;
+}
 
 export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -39,6 +46,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [agentTyping, setAgentTyping] = useState(false);
   const [requestingAgent, setRequestingAgent] = useState(false);
   const [qaPairs, setQaPairs] = useState<any[]>([]);
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [expandedGuideId, setExpandedGuideId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -83,9 +92,23 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       }
     };
 
+    const fetchGuides = async () => {
+      const { data } = await supabase
+        .from("business_guides")
+        .select("id, title, content, icon")
+        .eq("business_id", businessId)
+        .eq("enabled", true)
+        .order("display_order", { ascending: true });
+      
+      if (data) {
+        setGuides(data);
+      }
+    };
+
     fetchSettings();
     fetchBusinessInfo();
     fetchQaPairs();
+    fetchGuides();
 
     // Subscribe to widget_settings changes
     const channel = supabase
@@ -780,30 +803,51 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const welcomeMessage = settings?.welcome_message || "Hi! How can I help you today?";
   const maxInputChars = settings?.max_input_characters || 500;
 
-  // Render Guild Tab Content
-  const renderGuildContent = () => (
+  // Render Guide Tab Content
+  const renderGuideContent = () => (
     <div className="p-4 space-y-4">
-      <div className="text-center">
-        <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-        <h3 className="font-semibold text-lg mb-2">Community Guild</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Connect with our community and get help from fellow users.
+      <div className="text-center mb-4">
+        <BookOpen className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold text-lg mb-2">Help Guide</h3>
+        <p className="text-sm text-muted-foreground">
+          Quick guides to help you get started
         </p>
       </div>
-      <div className="space-y-3">
-        <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-          <p className="font-medium text-sm">📢 Announcements</p>
-          <p className="text-xs text-muted-foreground">Latest updates and news</p>
+      <ScrollArea className="h-[300px]">
+        <div className="space-y-2">
+          {guides.length > 0 ? (
+            guides.map((guide) => (
+              <div
+                key={guide.id}
+                className="border rounded-lg overflow-hidden transition-colors"
+              >
+                <button
+                  onClick={() => setExpandedGuideId(expandedGuideId === guide.id ? null : guide.id)}
+                  className="w-full p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left"
+                >
+                  <span className="text-xl">{guide.icon}</span>
+                  <span className="font-medium text-sm flex-1">{guide.title}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {expandedGuideId === guide.id ? "▲" : "▼"}
+                  </span>
+                </button>
+                {expandedGuideId === guide.id && (
+                  <div className="px-3 pb-3 pt-0 border-t bg-muted/30">
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {guide.content}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">No guides available yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">Check back later!</p>
+            </div>
+          )}
         </div>
-        <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-          <p className="font-medium text-sm">💬 General Discussion</p>
-          <p className="text-xs text-muted-foreground">Chat with the community</p>
-        </div>
-        <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-          <p className="font-medium text-sm">🆘 Help & Support</p>
-          <p className="text-xs text-muted-foreground">Get assistance from members</p>
-        </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 
@@ -1042,11 +1086,10 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             </div>
           </CardHeader>
 
-          {/* Tabs Navigation */}
           <div className="border-b shrink-0">
             <div className="flex">
               {[
-                { id: "guild" as WidgetTab, icon: Users, label: "Guild" },
+                { id: "guide" as WidgetTab, icon: BookOpen, label: "Guide" },
                 { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
                 { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
                 { id: "voice" as WidgetTab, icon: Mic, label: "Voice" },
@@ -1069,7 +1112,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           </div>
 
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
-            {activeTab === "guild" && renderGuildContent()}
+            {activeTab === "guide" && renderGuideContent()}
             {activeTab === "faq" && renderFaqContent()}
             {activeTab === "chat" && renderChatContent()}
             {activeTab === "voice" && renderVoiceContent()}
