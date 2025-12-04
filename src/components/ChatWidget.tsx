@@ -1,20 +1,24 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, Minimize2 } from "lucide-react";
+import { MessageCircle, X, Minimize2, Users, HelpCircle, MessageSquare, Mic } from "lucide-react";
 import VoiceInterface from "./VoiceInterface";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ChatWidgetProps {
   businessId: string;
   parentPageUrl?: string;
 }
 
+type WidgetTab = "guild" | "faq" | "chat" | "voice";
+
 export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
   const [settings, setSettings] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
@@ -776,6 +780,246 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const welcomeMessage = settings?.welcome_message || "Hi! How can I help you today?";
   const maxInputChars = settings?.max_input_characters || 500;
 
+  // Render Guild Tab Content
+  const renderGuildContent = () => (
+    <div className="p-4 space-y-4">
+      <div className="text-center">
+        <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold text-lg mb-2">Community Guild</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Connect with our community and get help from fellow users.
+        </p>
+      </div>
+      <div className="space-y-3">
+        <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+          <p className="font-medium text-sm">📢 Announcements</p>
+          <p className="text-xs text-muted-foreground">Latest updates and news</p>
+        </div>
+        <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+          <p className="font-medium text-sm">💬 General Discussion</p>
+          <p className="text-xs text-muted-foreground">Chat with the community</p>
+        </div>
+        <div className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+          <p className="font-medium text-sm">🆘 Help & Support</p>
+          <p className="text-xs text-muted-foreground">Get assistance from members</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render FAQ Tab Content
+  const renderFaqContent = () => (
+    <div className="p-4 space-y-4">
+      <div className="text-center mb-4">
+        <HelpCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold text-lg mb-2">Frequently Asked Questions</h3>
+      </div>
+      <ScrollArea className="h-[300px]">
+        <div className="space-y-2">
+          {qaPairs.length > 0 ? (
+            qaPairs.map((pair) => (
+              <div
+                key={pair.id}
+                className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => {
+                  setActiveTab("chat");
+                  handleTranscript(pair.question, 'user');
+                  handleTranscript(pair.answer, 'assistant');
+                }}
+              >
+                <p className="font-medium text-sm">{pair.question}</p>
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{pair.answer}</p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">No FAQs available yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">Check back later for helpful answers!</p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+
+  // Render Chat Tab Content
+  const renderChatContent = () => (
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      {showPreChatForm ? (
+        <div className="p-2 sm:p-3 md:p-4 overflow-y-auto">
+          <PreChatForm
+            welcomeMessage={settings?.pre_chat_welcome_message}
+            requiredFields={settings?.pre_chat_required_fields || ['name', 'email']}
+            primaryColor={primaryColor}
+            onSubmit={async (data) => {
+              setVisitorInfo(data);
+              setVisitorEmail(data.email);
+              setShowPreChatForm(false);
+              await initializeTextConversation(data);
+            }}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Welcome message */}
+          {transcript.length === 0 && (
+            <div className="p-2 sm:p-3 md:p-4 shrink-0">
+              <div className="bg-muted/50 rounded-lg p-2 sm:p-3 shadow-sm">
+                <p className="text-xs sm:text-sm">{welcomeMessage}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Transcript */}
+          <ScrollArea className="flex-1 p-2 sm:p-3 md:p-4 overflow-y-auto scroll-smooth">
+            <div className="space-y-2 sm:space-y-3">
+              {transcript.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-lg p-2 sm:p-2.5 md:p-3 ${
+                      item.role === "user"
+                        ? "text-white shadow-sm"
+                        : "bg-muted"
+                    }`}
+                    style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
+                  >
+                    <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{item.text}</p>
+                  </div>
+                </div>
+              ))}
+              
+              {(sendingMessage || agentTyping) && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg p-2 sm:p-2.5 md:p-3">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          {/* Chat Input */}
+          <div className="border-t bg-background shrink-0">
+            {liveChatSession?.status === 'queued' && (
+              <div className="m-2 sm:m-3 p-2 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">⏳ Waiting for agent...</p>
+              </div>
+            )}
+            {liveChatSession?.status === 'active' && (
+              <div className="m-2 sm:m-3 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="font-medium text-green-800 dark:text-green-200 text-xs sm:text-sm">✅ Speaking with agent</p>
+              </div>
+            )}
+            
+            <div className="px-2 sm:px-3 pt-2 pb-2">
+              <div className="flex gap-1.5 sm:gap-2">
+                <input
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => {
+                    if (e.target.value.length <= maxInputChars) {
+                      setTextInput(e.target.value);
+                    }
+                  }}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type a message..."
+                  maxLength={maxInputChars}
+                  className="flex-1 px-2 sm:px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
+                <Button
+                  onClick={() => handleSendText()}
+                  disabled={!textInput.trim() || sendingMessage}
+                  size="sm"
+                  className="h-9 px-3 text-xs shrink-0"
+                  style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
+                >
+                  Send
+                </Button>
+              </div>
+            </div>
+
+            {!liveChatSession && (
+              <div className="px-2 sm:px-3 pb-2">
+                <Button
+                  onClick={() => requestLiveAgent('User requested live agent support')}
+                  disabled={requestingAgent}
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-8 text-[10px] sm:text-xs"
+                >
+                  {requestingAgent ? 'Requesting...' : 'Talk to Live Agent'}
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  // Render Voice Tab Content
+  const renderVoiceContent = () => (
+    <div className="flex-1 flex flex-col p-4">
+      <div className="text-center mb-4">
+        <Mic className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+        <h3 className="font-semibold text-lg mb-2">Voice Assistant</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Speak directly with our AI assistant
+        </p>
+      </div>
+      
+      {settings?.voice_enabled ? (
+        <div className="flex-1 flex flex-col">
+          {/* Voice transcript */}
+          <ScrollArea className="flex-1 mb-4 max-h-[200px]">
+            <div className="space-y-2">
+              {transcript.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-lg p-2 text-xs ${
+                      item.role === "user"
+                        ? "text-white"
+                        : "bg-muted"
+                    }`}
+                    style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
+                  >
+                    {item.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          
+          <div className="mt-auto">
+            <VoiceInterface
+              businessId={businessId}
+              onTranscript={handleTranscript}
+              onConversationCreated={setConversationId}
+              onChatReady={setSendMessageFn}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-sm text-muted-foreground">Voice is not enabled for this business.</p>
+          <p className="text-xs text-muted-foreground mt-1">Use the Chat tab to send messages.</p>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="w-full h-full flex flex-col">
       {!isMinimized ? (
@@ -798,227 +1042,37 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              {/* Pre-chat form */}
-              {showPreChatForm ? (
-                <div className="p-2 sm:p-3 md:p-4 overflow-y-auto">
-                  <PreChatForm
-                    welcomeMessage={settings.pre_chat_welcome_message}
-                    requiredFields={settings.pre_chat_required_fields || ['name', 'email']}
-                    primaryColor={primaryColor}
-                    onSubmit={async (data) => {
-                      setVisitorInfo(data);
-                      setVisitorEmail(data.email);
-                      setShowPreChatForm(false);
-                      await initializeTextConversation(data);
-                    }}
-                  />
-                </div>
-              ) : (
-                <>
-                  {/* Welcome message */}
-                  {transcript.length === 0 && (
-                    <div className="p-2 sm:p-3 md:p-4 shrink-0">
-                      <div className="bg-muted/50 rounded-lg p-2 sm:p-3 shadow-sm">
-                        <p className="text-xs sm:text-sm">{welcomeMessage}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Q&A Pairs */}
-                  {settings?.show_qa_to_visitors && qaPairs.length > 0 && transcript.length === 0 && (
-                    <div className="p-2 sm:p-3 md:p-4 shrink-0">
-                      <div className="space-y-2">
-                        <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-2">Common Questions:</p>
-                        {qaPairs.map((pair) => (
-                          <button
-                            key={pair.id}
-                            onClick={() => {
-                              handleTranscript(pair.question, 'user');
-                              handleTranscript(pair.answer, 'assistant');
-                            }}
-                            className="w-full text-left p-2 sm:p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                          >
-                            <p className="text-xs sm:text-sm font-medium">{pair.question}</p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Transcript */}
-                  <ScrollArea className="flex-1 p-2 sm:p-3 md:p-4 overflow-y-auto scroll-smooth">
-                    <div className="space-y-2 sm:space-y-3">
-                      {transcript.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-lg p-2 sm:p-2.5 md:p-3 ${
-                              item.role === "user"
-                                ? "text-white shadow-sm"
-                                : "bg-muted"
-                            }`}
-                            style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
-                          >
-                            <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{item.text}</p>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {/* Typing indicator - for both sending message and agent typing */}
-                      {(sendingMessage || agentTyping) && (
-                        <div className="flex justify-start">
-                          <div className="bg-muted rounded-lg p-2 sm:p-2.5 md:p-3">
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                              <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </ScrollArea>
-
-                  {/* Text and Voice interface */}
-                  <div className="border-t bg-background shrink-0">
-                    {liveChatSession?.status === 'queued' && liveChatSession?.status !== 'active' && (
-                      <div className="m-2 sm:m-3 md:m-4 p-2 sm:p-2.5 md:p-3 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">⏳ Waiting for agent...</p>
-                        <p className="text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-300 mt-1">An agent will join shortly</p>
-                      </div>
-                    )}
-                    {liveChatSession?.status === 'active' && (
-                      <div className="m-2 sm:m-3 md:m-4 p-2 sm:p-2.5 md:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                        <p className="font-medium text-green-800 dark:text-green-200 text-xs sm:text-sm">✅ You are speaking to an agent</p>
-                        <p className="text-[10px] sm:text-xs text-green-700 dark:text-green-300 mt-1">An agent has joined</p>
-                      </div>
-                    )}
-                    
-                    {/* Email Input */}
-                    {showEmailInput && !visitorEmail && (
-                      <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2">
-                        <div className="flex flex-col gap-2">
-                          <input
-                            type="email"
-                            value={visitorEmail}
-                            onChange={(e) => setVisitorEmail(e.target.value)}
-                            placeholder="Enter your email..."
-                            className="flex-1 px-2 sm:px-3 py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                          />
-                          <Button
-                            onClick={() => {
-                              if (visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)) {
-                                setShowEmailInput(false);
-                                requestLiveAgent('User requested live agent');
-                              }
-                            }}
-                            disabled={!visitorEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail)}
-                            size="sm"
-                            className="h-9 sm:h-10 text-xs sm:text-sm"
-                            style={{ backgroundColor: visitorEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(visitorEmail) ? primaryColor : undefined }}
-                          >
-                            Submit Email
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Voice Interface - MOVED BEFORE text input */}
-                    {settings?.voice_enabled && (
-                      <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2 border-b">
-                        <VoiceInterface
-                          businessId={businessId}
-                          onTranscript={handleTranscript}
-                          onConversationCreated={setConversationId}
-                          onChatReady={setSendMessageFn}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Text Input - MOVED AFTER voice interface */}
-                    <div className="px-2 sm:px-3 md:px-4 pt-2 sm:pt-3 md:pt-4 pb-2">
-                      <div className="flex gap-1.5 sm:gap-2">
-                        <div className="flex-1 min-w-0">
-                          <input
-                            type="text"
-                            value={textInput}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value.length <= maxInputChars) {
-                                setTextInput(value);
-                              }
-                            }}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Type a message..."
-                            maxLength={maxInputChars}
-                            className="w-full px-2 sm:px-3 py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                          />
-                          <div className="flex justify-between items-center mt-1 px-1">
-                            <span className="text-[10px] text-muted-foreground">
-                              {textInput.length}/{maxInputChars} characters
-                            </span>
-                            {textInput.length >= maxInputChars && (
-                              <span className="text-[10px] text-destructive">
-                                Character limit reached
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => handleSendText()}
-                          disabled={!textInput.trim() || sendingMessage}
-                          size="sm"
-                          className="h-9 sm:h-10 px-2 sm:px-3 md:px-4 text-xs sm:text-sm shrink-0"
-                          style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
-                        >
-                          {sendingMessage ? 'Sending...' : 'Send'}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {!liveChatSession && !showEscalateButton && (
-                      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
-                        <Button
-                          onClick={() => {
-                            requestLiveAgent('User requested live agent support');
-                          }}
-                          disabled={requestingAgent}
-                          variant="outline"
-                          size="sm"
-                          className="w-full h-8 sm:h-9 text-[10px] sm:text-xs"
-                        >
-                          {requestingAgent ? 'Requesting...' : 'Talk to Live Agent'}
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {showEscalateButton && !liveChatSession && (
-                      <div className="px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
-                        <Button
-                          onClick={() => {
-                            requestLiveAgent('AI determined escalation needed');
-                            setShowEscalateButton(false);
-                          }}
-                          disabled={requestingAgent}
-                          variant="default"
-                          size="sm"
-                          className="w-full h-8 sm:h-9 text-[10px] sm:text-xs"
-                          style={{ backgroundColor: primaryColor }}
-                        >
-                          {requestingAgent ? 'Connecting...' : 'Connect to Live Agent Now'}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
+          {/* Tabs Navigation */}
+          <div className="border-b shrink-0">
+            <div className="flex">
+              {[
+                { id: "guild" as WidgetTab, icon: Users, label: "Guild" },
+                { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
+                { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
+                { id: "voice" as WidgetTab, icon: Mic, label: "Voice" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-colors text-[10px] sm:text-xs ${
+                    activeTab === tab.id
+                      ? "border-b-2 text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                  style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
+                >
+                  <tab.icon className="w-4 h-4 mb-0.5" />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
+          </div>
+
+          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
+            {activeTab === "guild" && renderGuildContent()}
+            {activeTab === "faq" && renderFaqContent()}
+            {activeTab === "chat" && renderChatContent()}
+            {activeTab === "voice" && renderVoiceContent()}
           </CardContent>
         </Card>
       ) : (
