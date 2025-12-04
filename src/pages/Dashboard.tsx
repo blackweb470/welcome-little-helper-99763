@@ -22,6 +22,7 @@ import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { BotCustomization } from "@/components/dashboard/BotCustomization";
+import { BusinessGuides } from "@/components/dashboard/BusinessGuides";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
@@ -176,6 +177,7 @@ const Dashboard = () => {
                  currentTab === 'notification-settings' ? 'Notification Settings' :
                   currentTab === 'products' ? 'Products' :
                   currentTab === 'documents' ? 'Business Documents' :
+                  currentTab === 'guides' ? 'Customer Guides' :
                   currentTab === 'scoring' ? 'Behavioral Scoring' :
                   currentTab === 'agent-performance' ? 'Agent Performance' :
                   currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
@@ -267,6 +269,10 @@ const Dashboard = () => {
 
                 {currentTab === 'documents' && hasAccess('business_documents') && (
                   <BusinessDocuments businessId={selectedBusinessId} />
+                )}
+
+                {currentTab === 'guides' && (
+                  <BusinessGuides businessId={selectedBusinessId} />
                 )}
 
                 {currentTab === 'settings' && (

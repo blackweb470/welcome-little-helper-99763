@@ -155,6 +155,50 @@ export type Database = {
           },
         ]
       }
+      business_guides: {
+        Row: {
+          business_id: string
+          content: string
+          created_at: string
+          display_order: number | null
+          enabled: boolean | null
+          icon: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          content: string
+          created_at?: string
+          display_order?: number | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          content?: string
+          created_at?: string
+          display_order?: number | null
+          enabled?: boolean | null
+          icon?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_guides_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_learnings: {
         Row: {
           business_id: string
