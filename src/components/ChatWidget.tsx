@@ -30,6 +30,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
   const [proactiveShown, setProactiveShown] = useState(false);
+  const [proactiveMessage, setProactiveMessage] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [liveChatSession, setLiveChatSession] = useState<any>(null);
   const [textInput, setTextInput] = useState("");
@@ -144,8 +145,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       if (hasTriggered || proactiveShown) return;
       hasTriggered = true;
       setProactiveShown(true);
-      handleTranscript(message, 'assistant');
-      setTimeout(() => setIsOpen(true), 100);
+      setProactiveMessage(message);
     };
 
     const runProactiveChecks = async () => {
@@ -1064,10 +1064,45 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
     </div>
   );
 
+  const handleProactiveClick = () => {
+    setProactiveMessage(null);
+    handleTranscript(proactiveMessage || '', 'assistant');
+    setActiveTab('chat');
+  };
+
   return (
     <div className="w-full h-full flex flex-col">
+      {/* Proactive message popup - appears above widget */}
+      {proactiveMessage && (
+        <div 
+          className="mb-3 p-4 bg-background rounded-lg shadow-lg border cursor-pointer animate-fade-in"
+          onClick={handleProactiveClick}
+          style={{ borderColor: primaryColor }}
+        >
+          <div className="flex items-start gap-3">
+            <div 
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {agentName.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium mb-1">{agentName}</p>
+              <p className="text-sm text-muted-foreground">{proactiveMessage}</p>
+            </div>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
+              className="text-muted-foreground hover:text-foreground p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">Click to start chatting</p>
+        </div>
+      )}
+
       {!isMinimized ? (
-        <Card className="w-full h-full shadow-2xl flex flex-col overflow-hidden">
+        <Card className="w-full h-full shadow-2xl flex flex-col overflow-hidden flex-1">
           <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center gap-2 sm:gap-3">
               <div 
