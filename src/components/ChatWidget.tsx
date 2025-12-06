@@ -133,6 +133,32 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
     };
   }, [businessId]);
 
+  // Auto-trigger proactive on page load if no rules exist (fallback)
+  useEffect(() => {
+    if (!businessId || proactiveShown) return;
+    
+    // Wait 3 seconds then show a default proactive message if no rules triggered
+    const timer = setTimeout(async () => {
+      if (proactiveShown) return;
+      
+      // Check if there are any enabled rules first
+      const { data: rules } = await supabase
+        .from('proactive_chat_rules')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('enabled', true)
+        .limit(1);
+      
+      // If no rules exist, show a default welcome message
+      if (!rules?.length) {
+        setProactiveShown(true);
+        setProactiveMessage("👋 Hi there! How can I help you today?");
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [businessId, proactiveShown]);
+
   // Check proactive rules when parent URL is available
   useEffect(() => {
     if (!businessId) return;
@@ -1130,7 +1156,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           {/* Proactive message popup - appears above minimized widget icon */}
           {proactiveMessage && (
             <div 
-              className="p-3 bg-background rounded-lg shadow-lg border cursor-pointer animate-fade-in max-w-[280px]"
+              className="p-3 bg-background rounded-lg shadow-lg border cursor-pointer animate-bounce-in max-w-[280px]"
               onClick={handleProactiveClick}
               style={{ borderColor: primaryColor }}
             >
