@@ -1066,41 +1066,13 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
 
   const handleProactiveClick = () => {
     setProactiveMessage(null);
+    setIsMinimized(false);
     handleTranscript(proactiveMessage || '', 'assistant');
     setActiveTab('chat');
   };
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Proactive message popup - appears above widget */}
-      {proactiveMessage && (
-        <div 
-          className="mb-3 p-4 bg-background rounded-lg shadow-lg border cursor-pointer animate-fade-in"
-          onClick={handleProactiveClick}
-          style={{ borderColor: primaryColor }}
-        >
-          <div className="flex items-start gap-3">
-            <div 
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
-              style={{ backgroundColor: primaryColor }}
-            >
-              {agentName.charAt(0)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium mb-1">{agentName}</p>
-              <p className="text-sm text-muted-foreground">{proactiveMessage}</p>
-            </div>
-            <button 
-              onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
-              className="text-muted-foreground hover:text-foreground p-1"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">Click to start chatting</p>
-        </div>
-      )}
-
+    <div className="w-full h-full flex flex-col items-end justify-end">
       {!isMinimized ? (
         <Card className="w-full h-full shadow-2xl flex flex-col overflow-hidden flex-1">
           <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
@@ -1154,13 +1126,44 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           </CardContent>
         </Card>
       ) : (
-        <Button
-          onClick={() => setIsMinimized(false)}
-          className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-        </Button>
+        <div className="flex flex-col items-end gap-3">
+          {/* Proactive message popup - appears above minimized widget icon */}
+          {proactiveMessage && (
+            <div 
+              className="p-3 bg-background rounded-lg shadow-lg border cursor-pointer animate-fade-in max-w-[280px]"
+              onClick={handleProactiveClick}
+              style={{ borderColor: primaryColor }}
+            >
+              <div className="flex items-start gap-2">
+                <div 
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {agentName.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{agentName}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{proactiveMessage}</p>
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
+                  className="text-muted-foreground hover:text-foreground p-1 shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2 text-center">Click to chat</p>
+            </div>
+          )}
+          
+          <Button
+            onClick={() => { setIsMinimized(false); setProactiveMessage(null); }}
+            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </Button>
+        </div>
       )}
     </div>
   );
