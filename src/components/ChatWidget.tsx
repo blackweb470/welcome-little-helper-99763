@@ -23,8 +23,8 @@ interface Guide {
 }
 
 export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
-  const [isOpen, setIsOpen] = useState(true);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
   const [settings, setSettings] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
