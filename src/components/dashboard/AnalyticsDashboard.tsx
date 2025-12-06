@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { TrendingUp, MessageSquare, Users, Clock, Smile, Meh, Frown, AlertTriangle, Activity } from "lucide-react";
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { TrendingUp, MessageSquare, Users, Clock, Smile, Meh, Frown, Activity, BarChart3, PieChartIcon, Zap } from "lucide-react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -10,11 +10,20 @@ interface AnalyticsDashboardProps {
   businessId: string;
 }
 
+// Premium monochrome palette
+const CHART_COLORS = {
+  primary: "#000000",
+  secondary: "#404040",
+  tertiary: "#808080",
+  quaternary: "#b0b0b0",
+  light: "#e0e0e0",
+};
+
 const SENTIMENT_COLORS = {
-  positive: "hsl(var(--chart-1))",
-  neutral: "hsl(var(--chart-2))",
-  negative: "hsl(var(--chart-3))",
-  frustrated: "hsl(var(--chart-4))",
+  positive: "#000000",
+  neutral: "#808080",
+  negative: "#404040",
+  frustrated: "#606060",
 };
 
 export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
@@ -34,29 +43,30 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
 
   if (isLoading) {
     return (
-      <div className="space-y-4 p-6 bg-muted/20">
+      <div className="space-y-6 p-6 bg-background">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-0 shadow-sm">
+            <Card key={i} className="border border-border/50 bg-card">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-8 w-8 rounded-lg" />
+                <Skeleton className="h-4 w-24 bg-muted" />
+                <Skeleton className="h-10 w-10 rounded-xl bg-muted" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-8 w-20 mb-1" />
-                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-9 w-20 mb-2 bg-muted" />
+                <Skeleton className="h-3 w-32 bg-muted" />
               </CardContent>
             </Card>
           ))}
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {[1, 2].map((i) => (
-            <Card key={i} className="border-0 shadow-sm">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border border-border/50 bg-card">
               <CardHeader>
-                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-5 w-40 bg-muted" />
+                <Skeleton className="h-4 w-56 bg-muted" />
               </CardHeader>
               <CardContent>
-                <Skeleton className="h-[280px] w-full" />
+                <Skeleton className="h-[280px] w-full bg-muted" />
               </CardContent>
             </Card>
           ))}
@@ -67,14 +77,14 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
 
   if (!analytics || analytics.length === 0) {
     return (
-      <div className="p-6 bg-muted/20 min-h-[600px] flex items-center justify-center">
-        <Card className="border-0 shadow-sm max-w-md">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Activity className="h-8 w-8 text-primary" />
+      <div className="p-6 bg-background min-h-[600px] flex items-center justify-center">
+        <Card className="border border-border/50 bg-card max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="h-20 w-20 rounded-2xl bg-foreground/5 flex items-center justify-center mb-6">
+              <Activity className="h-10 w-10 text-foreground" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No Data Available</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="text-2xl font-bold text-foreground mb-3">No Data Available</h3>
+            <p className="text-muted-foreground max-w-xs">
               Start having conversations with your visitors to see analytics and insights here.
             </p>
           </CardContent>
@@ -97,7 +107,7 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
   }, {} as Record<string, number>);
 
   const sentimentData = Object.entries(sentimentDist).map(([name, value]) => ({
-    name,
+    name: name.charAt(0).toUpperCase() + name.slice(1),
     value,
     color: SENTIMENT_COLORS[name as keyof typeof SENTIMENT_COLORS] || SENTIMENT_COLORS.neutral
   }));
@@ -130,7 +140,7 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
   }, {} as Record<string, number>);
 
   const deviceData = Object.entries(deviceDist).map(([name, value]) => ({
-    name,
+    name: name.charAt(0).toUpperCase() + name.slice(1),
     value
   }));
 
@@ -142,319 +152,335 @@ export const AnalyticsDashboard = ({ businessId }: AnalyticsDashboardProps) => {
   }, {} as Record<number, number>);
 
   const hourlyData = Array.from({ length: 24 }, (_, i) => ({
-    hour: `${i}:00`,
+    hour: `${i.toString().padStart(2, '0')}:00`,
     conversations: hourlyDist[i] || 0
   }));
 
-  return (
-    <div className="space-y-6 p-6">
-      {/* Summary Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/40 bg-gradient-to-br from-card to-primary/5 hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Conversations</CardTitle>
-            <div className="p-2 rounded-lg bg-primary/10">
-              <MessageSquare className="h-4 w-4 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold tracking-tight">{totalConversations}</div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              All time
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-card border border-border rounded-lg px-4 py-3 shadow-xl">
+          <p className="text-sm font-semibold text-foreground mb-1">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm text-muted-foreground">
+              {entry.name}: <span className="font-medium text-foreground">{entry.value}</span>
             </p>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950/20 dark:to-amber-900/20">
+  return (
+    <div className="space-y-8 p-6 bg-background">
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Analytics Dashboard</h1>
+        <p className="text-muted-foreground">Monitor your conversation performance and customer sentiment</p>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300 group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Avg. Messages</CardTitle>
-            <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <Users className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Conversations</CardTitle>
+            <div className="h-11 w-11 rounded-xl bg-foreground flex items-center justify-center group-hover:scale-105 transition-transform">
+              <MessageSquare className="h-5 w-5 text-background" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{avgMessages.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Per conversation</p>
+            <div className="text-4xl font-bold tracking-tight text-foreground">{totalConversations}</div>
+            <div className="flex items-center gap-1.5 mt-2">
+              <TrendingUp className="h-3.5 w-3.5 text-foreground" />
+              <span className="text-xs text-muted-foreground">All time total</span>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/20">
+        <Card className="border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300 group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Avg. Duration</CardTitle>
-            <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg. Messages</CardTitle>
+            <div className="h-11 w-11 rounded-xl bg-foreground/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Users className="h-5 w-5 text-foreground" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{Math.floor(avgDuration / 60)}:{String(Math.floor(avgDuration % 60)).padStart(2, '0')}</div>
-            <p className="text-xs text-muted-foreground mt-1">Minutes per chat</p>
+            <div className="text-4xl font-bold tracking-tight text-foreground">{avgMessages.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground mt-2">Per conversation</p>
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+        <Card className="border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300 group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sentiment Score</CardTitle>
-            <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg. Duration</CardTitle>
+            <div className="h-11 w-11 rounded-xl bg-foreground/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Clock className="h-5 w-5 text-foreground" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold tracking-tight text-foreground">
+              {Math.floor(avgDuration / 60)}:{String(Math.floor(avgDuration % 60)).padStart(2, '0')}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Minutes per chat</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border/50 bg-card hover:border-foreground/20 transition-all duration-300 group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sentiment Score</CardTitle>
+            <div className="h-11 w-11 rounded-xl bg-foreground/10 flex items-center justify-center group-hover:scale-105 transition-transform">
               {avgSentiment > 0.3 ? (
-                <Smile className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <Smile className="h-5 w-5 text-foreground" />
               ) : avgSentiment > -0.3 ? (
-                <Meh className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <Meh className="h-5 w-5 text-foreground" />
               ) : (
-                <Frown className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <Frown className="h-5 w-5 text-foreground" />
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{(avgSentiment * 100).toFixed(0)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {avgSentiment > 0.3 ? 'Positive feedback' : avgSentiment > -0.3 ? 'Neutral' : 'Needs attention'}
+            <div className="text-4xl font-bold tracking-tight text-foreground">{(avgSentiment * 100).toFixed(0)}%</div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {avgSentiment > 0.3 ? 'Positive feedback' : avgSentiment > -0.3 ? 'Neutral sentiment' : 'Needs attention'}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="border-border/40 hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Conversations Over Time
-            </CardTitle>
-            <CardDescription>Daily conversation volume for the last 7 days</CardDescription>
+      {/* Main Charts Row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Conversations Over Time - Area Chart */}
+        <Card className="border border-border/50 bg-card hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-foreground flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-background" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold text-foreground">Conversation Volume</CardTitle>
+                <CardDescription className="text-muted-foreground">Last 7 days activity</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="pt-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={last7Days}>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={280}>
+              <AreaChart data={last7Days}>
                 <defs>
-                  <linearGradient id="colorConversations" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                  <linearGradient id="colorConv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  stroke="#999"
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
                 />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
+                <YAxis 
+                  stroke="#999"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
                 />
-                <Line 
+                <Tooltip content={<CustomTooltip />} />
+                <Area 
                   type="monotone" 
-                  dataKey="conversations" 
-                  stroke="hsl(var(--chart-1))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--chart-1))', r: 4 }}
-                  activeDot={{ r: 6 }}
-                  fillOpacity={1}
-                  fill="url(#colorConversations)"
+                  dataKey="conversations"
+                  name="Conversations"
+                  stroke={CHART_COLORS.primary}
+                  strokeWidth={2.5}
+                  fill="url(#colorConv)"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-border/40 hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Smile className="h-5 w-5" style={{ color: 'hsl(var(--chart-2))' }} />
-              Sentiment Distribution
-            </CardTitle>
-            <CardDescription>Breakdown of customer sentiment</CardDescription>
+        {/* Sentiment Distribution - Donut Chart */}
+        <Card className="border border-border/50 bg-card hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-foreground/10 flex items-center justify-center">
+                <PieChartIcon className="h-5 w-5 text-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold text-foreground">Sentiment Distribution</CardTitle>
+                <CardDescription className="text-muted-foreground">Customer mood breakdown</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="pt-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={sentimentData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                  strokeWidth={2}
-                  stroke="hsl(var(--background))"
-                >
-                  {sentimentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          <CardContent>
+            <div className="flex items-center justify-center">
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={sentimentData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={110}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {sentimentData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    formatter={(value) => <span className="text-foreground text-sm">{value}</span>}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card className="border-border/40 hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" style={{ color: 'hsl(var(--chart-3))' }} />
-              Device Types
-            </CardTitle>
-            <CardDescription>Visitor device distribution</CardDescription>
+      {/* Secondary Charts Row */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Peak Hours */}
+        <Card className="border border-border/50 bg-card hover:shadow-lg transition-shadow lg:col-span-2">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-foreground/10 flex items-center justify-center">
+                <Zap className="h-5 w-5 text-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold text-foreground">Peak Hours</CardTitle>
+                <CardDescription className="text-muted-foreground">Conversation distribution by hour</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="pt-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={deviceData}>
-                <defs>
-                  <linearGradient id="colorDevice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0.3}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={hourlyData} barCategoryGap="15%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
                 <XAxis 
-                  dataKey="name" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  dataKey="hour" 
+                  stroke="#999"
+                  fontSize={10}
                   tickLine={false}
+                  axisLine={false}
+                  interval={2}
                 />
                 <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  stroke="#999"
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
                 />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar 
-                  dataKey="value" 
-                  fill="url(#colorDevice)" 
-                  radius={[8, 8, 0, 0]}
+                  dataKey="conversations"
+                  name="Conversations"
+                  fill={CHART_COLORS.primary}
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="border-border/40 hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Meh className="h-5 w-5" style={{ color: 'hsl(var(--chart-4))' }} />
-              Sentiment Trend
-            </CardTitle>
-            <CardDescription>Average sentiment over the last 7 days</CardDescription>
+        {/* Device Distribution */}
+        <Card className="border border-border/50 bg-card hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-foreground/10 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold text-foreground">Devices</CardTitle>
+                <CardDescription className="text-muted-foreground">Visitor platforms</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="pt-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={last7Days}>
-                <defs>
-                  <linearGradient id="colorSentiment" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <CardContent>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={deviceData} layout="vertical" barCategoryGap="25%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" horizontal={false} />
                 <XAxis 
-                  dataKey="date" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis 
-                  domain={[-1, 1]} 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  type="number"
+                  stroke="#999"
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
                 />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="avgSentiment" 
-                  stroke="hsl(var(--chart-4))" 
-                  strokeWidth={3}
-                  dot={{ fill: 'hsl(var(--chart-4))', r: 4 }}
-                  activeDot={{ r: 6 }}
-                  fillOpacity={1}
-                  fill="url(#colorSentiment)"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/40 hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" style={{ color: 'hsl(var(--chart-5))' }} />
-              Peak Conversation Hours
-            </CardTitle>
-            <CardDescription>Distribution of conversations by hour of day</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={hourlyData}>
-                <defs>
-                  <linearGradient id="colorHourly" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--chart-5))" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="hsl(var(--chart-5))" stopOpacity={0.3}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                <XAxis 
-                  dataKey="hour" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
-                  tickLine={false}
-                  interval={2}
-                />
                 <YAxis 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  type="category"
+                  dataKey="name" 
+                  stroke="#999"
+                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
+                  width={70}
                 />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar 
-                  dataKey="conversations" 
-                  fill="url(#colorHourly)" 
-                  radius={[8, 8, 0, 0]}
+                  dataKey="value"
+                  name="Visitors"
+                  fill={CHART_COLORS.secondary}
+                  radius={[0, 4, 4, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
+
+      {/* Sentiment Trend */}
+      <Card className="border border-border/50 bg-card hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-foreground/10 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold text-foreground">Sentiment Trend</CardTitle>
+              <CardDescription className="text-muted-foreground">Average customer sentiment over the last 7 days</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={last7Days}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#999"
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis 
+                domain={[-1, 1]} 
+                stroke="#999"
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                ticks={[-1, -0.5, 0, 0.5, 1]}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Line 
+                type="monotone" 
+                dataKey="avgSentiment"
+                name="Sentiment"
+                stroke={CHART_COLORS.primary}
+                strokeWidth={2.5}
+                dot={{ fill: CHART_COLORS.primary, strokeWidth: 0, r: 4 }}
+                activeDot={{ r: 6, fill: CHART_COLORS.primary }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };
