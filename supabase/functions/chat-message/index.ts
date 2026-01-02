@@ -175,6 +175,13 @@ Deno.serve(async (req) => {
       .eq('business_id', businessId)
       .eq('status', 'ready');
 
+    // Fetch website content for AI training
+    const { data: websiteContent } = await supabase
+      .from('business_website_content')
+      .select('title, content, url')
+      .eq('business_id', businessId)
+      .limit(10);
+
     const { data: learnings } = await supabase
       .from('business_learnings')
       .select('content')
@@ -195,14 +202,24 @@ Deno.serve(async (req) => {
     systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
     
     if (documents && documents.length > 0) {
-      systemPrompt += '\n\nBusiness Knowledge:\n' + documents.map((d: any) => 
+      systemPrompt += '\n\nBusiness Knowledge (from documents):\n' + documents.map((d: any) => 
         `${d.file_name}:\n${d.content_text}`
       ).join('\n\n');
+    }
+
+    // Add website content to system prompt
+    if (websiteContent && websiteContent.length > 0) {
+      systemPrompt += '\n\nBusiness Website Content:\n' + websiteContent.map((w: any) => 
+        `Page: ${w.title} (${w.url})\n${w.content?.substring(0, 2000)}`
+      ).join('\n\n---\n\n');
     }
 
     if (learnings && learnings.length > 0) {
       systemPrompt += '\n\nLearned Insights:\n' + learnings.map((l: any) => l.content).join('\n');
     }
+
+    // Add fallback instruction for when AI can't find answers
+    systemPrompt += '\n\nIMPORTANT: If you cannot find the answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, politely let them know and offer to connect them with a human agent who can assist further.';
 
     // Call AI
     const aiMessages = [
