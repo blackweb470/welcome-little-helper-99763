@@ -16,6 +16,7 @@ import { TicketsList } from "@/components/dashboard/TicketsList";
 import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
+import { WebsiteCrawler } from "@/components/dashboard/WebsiteCrawler";
 import AgentPerformance from "@/components/dashboard/AgentPerformance";
 import { CannedResponses } from "@/components/dashboard/CannedResponses";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
@@ -268,7 +269,10 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'documents' && hasAccess('business_documents') && (
-                  <BusinessDocuments businessId={selectedBusinessId} />
+                  <div className="space-y-6">
+                    <WebsiteCrawler businessId={selectedBusinessId} />
+                    <BusinessDocuments businessId={selectedBusinessId} />
+                  </div>
                 )}
 
                 {currentTab === 'guides' && (
