@@ -73,7 +73,7 @@ const businessItems = [
   { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat", permission: "can_manage_settings" },
   { title: "Products", path: "products", icon: Package, feature: "product_catalog", permission: "can_manage_settings" },
   { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
-  { title: "Guides", path: "guides", icon: BookOpen, ownerOnly: true },
+  
   { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking", permission: "can_view_analytics" },
   { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
   { title: "Customize Bot", path: "customize-bot", icon: Bot, ownerOnly: true },
