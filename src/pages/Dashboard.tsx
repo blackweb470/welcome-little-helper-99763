@@ -9,7 +9,7 @@ import ConversationsList from "@/components/dashboard/ConversationsList";
 import { BusinessConversationAnalysis } from "@/components/dashboard/BusinessConversationAnalysis";
 import WidgetSettings from "@/components/dashboard/WidgetSettings";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
-import { ProductCatalog } from "@/components/dashboard/ProductCatalog";
+
 import { BehavioralScoring } from "@/components/dashboard/BehavioralScoring";
 import { FeaturesDocumentation } from "@/components/dashboard/FeaturesDocumentation";
 import { TicketsList } from "@/components/dashboard/TicketsList";
@@ -176,7 +176,7 @@ const Dashboard = () => {
                  currentTab === 'canned-responses' ? 'Canned Responses' :
                  currentTab === 'notifications' ? 'Notifications' :
                  currentTab === 'notification-settings' ? 'Notification Settings' :
-                  currentTab === 'products' ? 'Products' :
+                  
                   currentTab === 'documents' ? 'Business Documents' :
                   
                   currentTab === 'scoring' ? 'Behavioral Scoring' :
@@ -258,11 +258,6 @@ const Dashboard = () => {
                   <ProactiveChatRules businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'products' && hasAccess('product_catalog') && (
-                  <Card className="p-8 shadow-elegant">
-                    <ProductCatalog businessId={selectedBusinessId} />
-                  </Card>
-                )}
 
                 {currentTab === 'scoring' && hasAccess('visitor_tracking') && (
                   <BehavioralScoring businessId={selectedBusinessId} />
