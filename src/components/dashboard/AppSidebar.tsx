@@ -6,7 +6,7 @@ import {
   Ticket,
   Users,
   Zap,
-  Package,
+  
   Target,
   Settings,
   BookOpen,
@@ -71,7 +71,7 @@ const businessItems = [
   { title: "Notification Settings", path: "notification-settings", icon: Settings, permission: "can_chat" },
   { title: "Agent Performance", path: "agent-performance", icon: TrendingUp, feature: "advanced_analytics", permission: "can_view_analytics" },
   { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat", permission: "can_manage_settings" },
-  { title: "Products", path: "products", icon: Package, feature: "product_catalog", permission: "can_manage_settings" },
+  
   { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
   
   { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking", permission: "can_view_analytics" },
