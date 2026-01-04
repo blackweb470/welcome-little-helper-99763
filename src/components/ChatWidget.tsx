@@ -14,7 +14,7 @@ type WidgetTab = "faq" | "chat";
 export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
-  const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
+  const [activeTab, setActiveTab] = useState<WidgetTab>("faq");
   const [settings, setSettings] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
   const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
@@ -48,6 +48,10 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
         // Check if we should show pre-chat form
         if (data.pre_chat_enabled && !conversationId) {
           setShowPreChatForm(true);
+        }
+        // Set default tab based on FAQ visibility
+        if (!data.show_qa_to_visitors) {
+          setActiveTab("chat");
         }
       }
     };
@@ -987,32 +991,35 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             </div>
           </CardHeader>
 
-          <div className="border-b shrink-0">
-            <div className="flex">
-              {[
-                { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
-                { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-colors text-[10px] sm:text-xs ${
-                    activeTab === tab.id
-                      ? "border-b-2 text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                  style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
-                >
-                  <tab.icon className="w-4 h-4 mb-0.5" />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+          {/* Only show tabs if FAQ is enabled, otherwise just show chat */}
+          {settings?.show_qa_to_visitors && qaPairs.length > 0 && (
+            <div className="border-b shrink-0">
+              <div className="flex">
+                {[
+                  { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
+                  { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-colors text-[10px] sm:text-xs ${
+                      activeTab === tab.id
+                        ? "border-b-2 text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                    style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
+                  >
+                    <tab.icon className="w-4 h-4 mb-0.5" />
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
-            {activeTab === "faq" && renderFaqContent()}
-            {activeTab === "chat" && renderChatContent()}
+            {activeTab === "faq" && settings?.show_qa_to_visitors && renderFaqContent()}
+            {(activeTab === "chat" || !settings?.show_qa_to_visitors) && renderChatContent()}
           </CardContent>
         </Card>
       ) : (
