@@ -990,7 +990,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           <div className="border-b shrink-0">
             <div className="flex">
               {[
-                { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
+                ...(settings?.show_qa_to_visitors !== false && qaPairs.length > 0 ? [{ id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" }] : []),
                 { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
               ].map((tab) => (
                 <button
@@ -1011,8 +1011,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           </div>
 
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
-            {activeTab === "faq" && renderFaqContent()}
-            {activeTab === "chat" && renderChatContent()}
+            {activeTab === "faq" && settings?.show_qa_to_visitors !== false && qaPairs.length > 0 && renderFaqContent()}
+            {(activeTab === "chat" || settings?.show_qa_to_visitors === false || qaPairs.length === 0) && renderChatContent()}
           </CardContent>
         </Card>
       ) : (
