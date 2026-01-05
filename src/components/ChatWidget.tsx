@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, HelpCircle, MessageSquare } from "lucide-react";
+import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -33,6 +34,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [agentTyping, setAgentTyping] = useState(false);
   const [requestingAgent, setRequestingAgent] = useState(false);
   const [qaPairs, setQaPairs] = useState<any[]>([]);
+  const [faqSearch, setFaqSearch] = useState("");
+  const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -799,37 +802,139 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const welcomeMessage = settings?.welcome_message || "Hi! How can I help you today?";
   const maxInputChars = settings?.max_input_characters || 500;
 
+  // Filter FAQ pairs based on search
+  const filteredFaqPairs = qaPairs.filter(pair => 
+    faqSearch === "" || 
+    pair.question.toLowerCase().includes(faqSearch.toLowerCase()) ||
+    pair.answer.toLowerCase().includes(faqSearch.toLowerCase()) ||
+    pair.keywords?.some((kw: string) => kw.toLowerCase().includes(faqSearch.toLowerCase()))
+  );
+
   // Render FAQ Tab Content
   const renderFaqContent = () => (
-    <div className="p-4 space-y-4">
-      <div className="text-center mb-4">
-        <HelpCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-        <h3 className="font-semibold text-lg mb-2">Frequently Asked Questions</h3>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b bg-gradient-to-b from-muted/30 to-transparent">
+        <div className="flex items-center gap-3 mb-3">
+          <div 
+            className="w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: `${primaryColor}15` }}
+          >
+            <HelpCircle className="w-5 h-5" style={{ color: primaryColor }} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-base">Help Center</h3>
+            <p className="text-xs text-muted-foreground">Find answers to common questions</p>
+          </div>
+        </div>
+        
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search for answers..."
+            value={faqSearch}
+            onChange={(e) => setFaqSearch(e.target.value)}
+            className="pl-9 h-9 text-sm bg-background border-muted-foreground/20 focus-visible:ring-1"
+            style={{ 
+              '--tw-ring-color': primaryColor 
+            } as React.CSSProperties}
+          />
+        </div>
       </div>
-      <ScrollArea className="h-[300px]">
+
+      {/* FAQ List */}
+      <ScrollArea className="flex-1 p-3">
         <div className="space-y-2">
-          {qaPairs.length > 0 ? (
-            qaPairs.map((pair) => (
-              <div
-                key={pair.id}
-                className="p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => {
-                  setActiveTab("chat");
-                  handleTranscript(pair.question, 'user');
-                  handleTranscript(pair.answer, 'assistant');
-                }}
-              >
-                <p className="font-medium text-sm">{pair.question}</p>
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{pair.answer}</p>
-              </div>
-            ))
+          {filteredFaqPairs.length > 0 ? (
+            filteredFaqPairs.map((pair) => {
+              const isExpanded = expandedFaqId === pair.id;
+              return (
+                <div
+                  key={pair.id}
+                  className="rounded-lg border bg-card overflow-hidden transition-all duration-200 hover:shadow-sm"
+                  style={{ 
+                    borderColor: isExpanded ? primaryColor : undefined,
+                    boxShadow: isExpanded ? `0 0 0 1px ${primaryColor}20` : undefined
+                  }}
+                >
+                  {/* Question Header */}
+                  <button
+                    className="w-full p-3 flex items-start justify-between gap-2 text-left hover:bg-muted/50 transition-colors"
+                    onClick={() => setExpandedFaqId(isExpanded ? null : pair.id)}
+                  >
+                    <span className="font-medium text-sm leading-tight flex-1">{pair.question}</span>
+                    <div 
+                      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors"
+                      style={{ backgroundColor: isExpanded ? `${primaryColor}15` : 'transparent' }}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4" style={{ color: primaryColor }} />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                  </button>
+                  
+                  {/* Answer Content */}
+                  {isExpanded && (
+                    <div className="px-3 pb-3 border-t bg-muted/20">
+                      <p className="text-sm text-muted-foreground leading-relaxed pt-3 whitespace-pre-wrap">
+                        {pair.answer}
+                      </p>
+                      
+                      {/* Action Button */}
+                      <button
+                        className="mt-3 text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+                        style={{ 
+                          backgroundColor: `${primaryColor}10`,
+                          color: primaryColor
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveTab("chat");
+                          handleTranscript(pair.question, 'user');
+                          handleTranscript(pair.answer, 'assistant');
+                          setExpandedFaqId(null);
+                        }}
+                      >
+                        Continue in chat →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           ) : (
-            <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">No FAQs available yet.</p>
-              <p className="text-xs text-muted-foreground mt-1">Check back later for helpful answers!</p>
+            <div className="text-center py-12">
+              <div 
+                className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                style={{ backgroundColor: `${primaryColor}10` }}
+              >
+                <HelpCircle className="w-8 h-8" style={{ color: primaryColor }} />
+              </div>
+              {faqSearch ? (
+                <>
+                  <p className="text-sm font-medium mb-1">No results found</p>
+                  <p className="text-xs text-muted-foreground">Try searching with different keywords</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium mb-1">No FAQs available</p>
+                  <p className="text-xs text-muted-foreground">Check back later for helpful answers</p>
+                </>
+              )}
             </div>
           )}
         </div>
+
+        {/* Results count */}
+        {filteredFaqPairs.length > 0 && (
+          <p className="text-xs text-muted-foreground text-center mt-4 pb-2">
+            {filteredFaqPairs.length} {filteredFaqPairs.length === 1 ? 'article' : 'articles'} found
+          </p>
+        )}
       </ScrollArea>
     </div>
   );
