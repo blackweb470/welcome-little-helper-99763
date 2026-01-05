@@ -1126,16 +1126,16 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
         </Card>
       ) : (
         <div className="flex flex-col items-end gap-3">
-          {/* Proactive message popup - appears above minimized widget icon */}
+          {/* Proactive popup - appears automatically above the icon */}
           {proactiveMessage && (
             <div 
-              className="p-3 bg-background rounded-lg shadow-lg border cursor-pointer animate-bounce-in max-w-[280px]"
               onClick={handleProactiveClick}
+              className="bg-card border rounded-xl shadow-lg p-3 max-w-[280px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
               style={{ borderColor: primaryColor }}
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-3">
                 <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm shrink-0"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0"
                   style={{ backgroundColor: primaryColor }}
                 >
                   {agentName.charAt(0)}
@@ -1151,7 +1151,6 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">Click to chat</p>
             </div>
           )}
           
