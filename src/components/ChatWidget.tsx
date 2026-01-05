@@ -14,7 +14,6 @@ interface ChatWidgetProps {
 type WidgetTab = "faq" | "chat";
 export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(true);
   const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
   const [settings, setSettings] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
@@ -1065,14 +1064,13 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
 
   const handleProactiveClick = () => {
     setProactiveMessage(null);
-    setIsMinimized(false);
-    handleTranscript(proactiveMessage || '', 'assistant');
+    setIsOpen(true);
     setActiveTab('chat');
   };
 
   return (
     <div className="w-full h-full flex flex-col items-end justify-end">
-      {!isMinimized ? (
+      {isOpen ? (
         <Card className="w-full h-full shadow-2xl flex flex-col overflow-hidden flex-1">
           <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -1089,6 +1087,12 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
                   <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
                 </div>
               </div>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="text-muted-foreground hover:text-foreground p-1 shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </CardHeader>
 
@@ -1152,7 +1156,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           )}
           
           <Button
-            onClick={() => { setIsMinimized(false); setProactiveMessage(null); }}
+            onClick={() => { setIsOpen(true); setProactiveMessage(null); }}
             className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
             style={{ backgroundColor: primaryColor }}
           >
