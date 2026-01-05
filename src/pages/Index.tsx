@@ -2,19 +2,22 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { 
   MessageSquare, 
   Brain, 
   Users, 
   BarChart3, 
-  ShieldCheck,
-  Target,
-  Mic,
+  Globe,
+  Zap,
+  Clock,
+  FileText,
   Bot,
   Menu,
   Check,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  Shield,
+  Headphones
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -22,70 +25,51 @@ const Index = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const features = [
-    {
-      icon: <Mic className="w-6 h-6" />,
-      title: "Voice AI Chat",
-      description: "Natural conversations with voice support using OpenAI's Realtime API"
-    },
-    {
-      icon: <Brain className="w-6 h-6" />,
-      title: "AI Conversation Analysis",
-      description: "Automatic analysis of customer conversations to identify issues, questions, and complaints"
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: "Team Management",
-      description: "Invite team members with role-based permissions and pending invitation tracking"
-    },
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: "Advanced Analytics",
-      description: "Track conversations, sentiment, and customer insights with AI-powered insights"
-    },
-    {
-      icon: <Target className="w-6 h-6" />,
-      title: "AI Chat Suggestions",
-      description: "Contextual response suggestions for live agents powered by conversation history"
-    },
-    {
-      icon: <MessageSquare className="w-6 h-6" />,
-      title: "Live Agent Handoff",
-      description: "Seamlessly transfer complex queries to human agents with full context"
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Subtle grid background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(to right, hsl(var(--border) / 0.3) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--border) / 0.3) 1px, transparent 1px)
+          `,
+          backgroundSize: '80px 80px'
+        }} />
+        {/* Decorative corner brackets */}
+        <div className="absolute top-32 left-[10%] w-20 h-20 border-l-2 border-t-2 border-border/40 rounded-tl-lg" />
+        <div className="absolute top-32 right-[10%] w-20 h-20 border-r-2 border-t-2 border-border/40 rounded-tr-lg" />
+        <div className="absolute top-[60%] left-[5%] w-16 h-16 border-l-2 border-b-2 border-border/30 rounded-bl-lg" />
+        <div className="absolute top-[40%] right-[8%] w-12 h-12 border-r-2 border-b-2 border-border/30 rounded-br-lg" />
+      </div>
+
       {/* Header */}
-      <header className="border-b sticky top-0 z-50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <header className="border-b sticky top-0 z-50 bg-background/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 font-display font-bold text-xl group">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-glow transition-all group-hover:scale-110 group-hover:shadow-glow-lg">
-              <Bot className="w-5 h-5" />
+          <Link to="/" className="flex items-center gap-2.5 font-display font-bold text-xl">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-foreground rounded-sm" />
+              <div className="w-2 h-2 bg-foreground rounded-sm opacity-60" />
             </div>
-            <span className="text-gradient">
-              LYQN AI
-            </span>
+            <span>LYQN</span>
           </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <Link to="/features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group">
+            <Link to="/features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
             </Link>
-            <Link to="/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group">
+            <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Pricing
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
             </Link>
-            <Link to="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group">
-              Documentation
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
+            <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Docs
             </Link>
-            <Button onClick={() => navigate("/auth")} size="lg">
-              Get Started
-              <ArrowRight className="w-4 h-4 ml-1" />
+            <Button variant="ghost" onClick={() => navigate("/auth")}>
+              Login
+            </Button>
+            <Button onClick={() => navigate("/auth")}>
+              Book a Demo
             </Button>
           </nav>
 
@@ -117,7 +101,7 @@ const Index = () => {
                   className="text-lg hover:text-primary transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Documentation
+                  Docs
                 </Link>
                 <Button 
                   className="mt-4"
@@ -134,444 +118,321 @@ const Index = () => {
         </div>
       </header>
 
-      <main>
+      <main className="relative">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 py-32 md:py-40 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/[0.02] to-transparent pointer-events-none" />
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-primary-glow/10 rounded-full blur-3xl" />
+        <section className="container mx-auto px-4 pt-24 pb-16 text-center relative">
+          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight mb-6 leading-[1.1]">
+            Automate your
+            <br />
+            <span className="text-foreground">Customer Support & Sales</span>
+          </h1>
           
-          <div className="relative animate-fade-in">
-            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border-2 border-primary/20 bg-primary/5 backdrop-blur-sm mb-8 shadow-glow">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary shadow-glow"></span>
-              </span>
-              <span className="text-sm font-semibold text-primary">AI-Powered Conversation Analysis & Team Collaboration</span>
-            </div>
-            
-            <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8 leading-[1.1]">
-              AI-Powered Customer Support
-              <br />
-              <span className="text-gradient">
-                That Actually Learns
-              </span>
-            </h1>
-            
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed">
-              Intelligent chat platform with AI conversation analysis, team collaboration tools,
-              and contextual agent assistance—all in one unified dashboard.
-            </p>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+            Train a secure AI on your technical resources that answers customer
+            questions so your team doesn't have to.
+          </p>
 
-            <div className="flex flex-wrap gap-4 justify-center mb-20 animate-slide-up">
-              <Button size="lg" onClick={() => navigate("/auth")}>
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/docs")}>
-                View Documentation
-              </Button>
-            </div>
+          <Button size="lg" onClick={() => navigate("/auth")} className="px-8 py-6 text-base">
+            Build my Bot
+          </Button>
+
+          {/* Floating stat badge */}
+          <div className="mt-12 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/60 border text-sm">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-muted-foreground">resolves <strong className="text-foreground">90%</strong> of your customer support</span>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto relative">
-            <div className="group cursor-default">
-              <div className="text-5xl font-display font-bold mb-3 text-gradient">24/7</div>
-              <div className="text-sm text-muted-foreground font-medium">Always Available</div>
-            </div>
-            <div className="group cursor-default">
-              <div className="text-5xl font-display font-bold mb-3 text-gradient">10x</div>
-              <div className="text-sm text-muted-foreground font-medium">Faster Responses</div>
-            </div>
-            <div className="group cursor-default">
-              <div className="text-5xl font-display font-bold mb-3 text-gradient">85%</div>
-              <div className="text-sm text-muted-foreground font-medium">Cost Reduction</div>
-            </div>
-            <div className="group cursor-default">
-              <div className="text-5xl font-display font-bold mb-3 text-gradient">1 mo</div>
-              <div className="text-sm text-muted-foreground font-medium">Free Trial</div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="border-t bg-gradient-to-b from-muted/30 to-background py-32">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-20">
-              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
-                Everything You Need
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                A complete AI platform for modern customer support
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {features.map((feature, i) => (
-                <Card key={i} className="p-8 hover:shadow-glow hover:border-primary/30 transition-all duration-300 group cursor-pointer relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative">
-                    <div className="mb-6 inline-flex p-4 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl text-primary group-hover:scale-110 group-hover:shadow-glow transition-all">
-                      {feature.icon}
-                    </div>
-                    <h3 className="font-display font-semibold text-xl mb-3 group-hover:text-primary transition-colors">{feature.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {feature.description}
+          {/* Chat Widget Demo */}
+          <div className="max-w-md mx-auto mt-16">
+            <Card className="p-6 text-left shadow-lg border-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-foreground rounded-sm" />
+                  <div className="w-2 h-2 bg-foreground rounded-sm opacity-60" />
+                </div>
+                <span className="font-semibold text-sm">LYQN AI Assistant</span>
+              </div>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Bot className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm">Hi there! 👋</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      I'm an AI assistant trained to help you with any Support related issues.
                     </p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* New Features Highlight */}
-        <section className="py-32 border-t">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-20">
-              <div className="inline-block px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-bold mb-6 shadow-glow">
-                Latest Updates
-              </div>
-              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
-                New AI-Powered Features
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Recent improvements to help you deliver better customer support
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-              <Card className="p-10 border-2 border-primary/20 hover:border-primary/40 hover:shadow-glow-lg transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="mb-6 inline-flex p-5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary shadow-glow">
-                    <Brain className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-display font-bold text-2xl mb-4">AI Conversation Analysis</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
-                    Automatically analyze all customer conversations to identify common issues, 
-                    frequently asked questions, and customer complaints. Get actionable insights 
-                    with severity ratings and suggested responses.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="font-medium">Pattern Detection</Badge>
-                    <Badge variant="secondary" className="font-medium">Issue Categorization</Badge>
-                    <Badge variant="secondary" className="font-medium">Time-based Filtering</Badge>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-10 border-2 border-primary/20 hover:border-primary/40 hover:shadow-glow-lg transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="mb-6 inline-flex p-5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary shadow-glow">
-                    <Target className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-display font-bold text-2xl mb-4">AI Chat Suggestions for Agents</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
-                    Live agents get real-time AI-powered response suggestions based on conversation 
-                    context, customer sentiment, and chat history. Simply click to insert the 
-                    suggested response and personalize as needed.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="font-medium">Context-Aware</Badge>
-                    <Badge variant="secondary" className="font-medium">One-Click Insert</Badge>
-                    <Badge variant="secondary" className="font-medium">Sentiment Analysis</Badge>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-10 border-2 border-primary/20 hover:border-primary/40 hover:shadow-glow-lg transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="mb-6 inline-flex p-5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary shadow-glow">
-                    <Users className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-display font-bold text-2xl mb-4">Enhanced Team Management</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
-                    Invite team members with customizable role-based permissions. Track pending 
-                    invitations and manage active team members from a unified dashboard. Email 
-                    notifications keep everyone in the loop.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="font-medium">Role-Based Access</Badge>
-                    <Badge variant="secondary" className="font-medium">Pending Invites</Badge>
-                    <Badge variant="secondary" className="font-medium">Email Notifications</Badge>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-10 border-2 border-primary/20 hover:border-primary/40 hover:shadow-glow-lg transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative">
-                  <div className="mb-6 inline-flex p-5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl text-primary shadow-glow">
-                    <BarChart3 className="w-8 h-8" />
-                  </div>
-                  <h3 className="font-display font-bold text-2xl mb-4">Business Intelligence Reports</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
-                    Get detailed reports on top customer issues, most frequent questions, and 
-                    complaint trends. Filter by date range (24h, 7d, 30d) to track improvements 
-                    and identify areas needing attention.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="font-medium">Frequency Analysis</Badge>
-                    <Badge variant="secondary" className="font-medium">Priority Ranking</Badge>
-                    <Badge variant="secondary" className="font-medium">Date Filtering</Badge>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Premium Analytics Section */}
-        <section className="py-32 bg-gradient-to-b from-background via-muted/20 to-background border-t relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsl(var(--primary)/0.05),transparent_50%)]" />
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
-          
-          <div className="container mx-auto px-4 relative">
-            <div className="text-center mb-16">
-              <div className="inline-block px-5 py-2.5 rounded-full bg-primary/10 text-primary text-sm font-bold mb-6 shadow-glow">
-                Premium Analytics
-              </div>
-              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
-                Insights That Drive Growth
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Powerful analytics dashboard to understand your customers better
-              </p>
-            </div>
-
-            {/* Analytics Dashboard Preview */}
-            <div className="max-w-6xl mx-auto">
-              <Card className="p-8 md:p-12 border-2 border-primary/10 shadow-elegant-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent" />
-                
-                <div className="relative grid lg:grid-cols-3 gap-8">
-                  {/* Left Stats */}
-                  <div className="space-y-6">
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium text-muted-foreground">Total Conversations</span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-semibold">+24%</span>
-                      </div>
-                      <div className="text-4xl font-display font-bold mb-2">12,847</div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full w-3/4 rounded-full bg-gradient-to-r from-primary to-primary/60 animate-pulse" />
-                      </div>
-                    </div>
-                    
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium text-muted-foreground">AI Resolution Rate</span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-semibold">+12%</span>
-                      </div>
-                      <div className="text-4xl font-display font-bold mb-2">87.3%</div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-primary to-primary/60" />
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10">
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm font-medium text-muted-foreground">Customer Satisfaction</span>
-                        <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-600 font-semibold">+8%</span>
-                      </div>
-                      <div className="text-4xl font-display font-bold mb-2">4.9/5</div>
-                      <div className="flex gap-1">
-                        {[1,2,3,4,5].map((star) => (
-                          <div key={star} className={`w-6 h-6 rounded-full ${star <= 4 ? 'bg-primary' : 'bg-primary/60'} flex items-center justify-center`}>
-                            <span className="text-xs text-primary-foreground">★</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Center - Bar Chart */}
-                  <div className="lg:col-span-2 p-6 rounded-2xl bg-gradient-to-br from-muted/50 to-transparent border border-primary/10">
-                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <h3 className="font-display font-bold text-lg mb-1">Conversation Volume</h3>
-                        <p className="text-sm text-muted-foreground">Last 7 days performance</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">Weekly</span>
-                        <span className="px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-xs font-semibold">Monthly</span>
-                      </div>
-                    </div>
-                    
-                    {/* Premium Animated Bar Chart */}
-                    <div className="flex items-end justify-between gap-3 h-48 mb-6">
-                      {[
-                        { day: 'Mon', height: '60%', value: '1,234' },
-                        { day: 'Tue', height: '75%', value: '1,567' },
-                        { day: 'Wed', height: '45%', value: '987' },
-                        { day: 'Thu', height: '90%', value: '1,892' },
-                        { day: 'Fri', height: '85%', value: '1,756' },
-                        { day: 'Sat', height: '55%', value: '1,123' },
-                        { day: 'Sun', height: '70%', value: '1,445' },
-                      ].map((item, i) => (
-                        <div key={item.day} className="flex-1 flex flex-col items-center gap-2 group">
-                          <div className="relative w-full">
-                            <div 
-                              className="w-full rounded-t-xl bg-gradient-to-t from-primary via-primary to-primary/80 shadow-glow transition-all duration-500 ease-out group-hover:from-primary-glow group-hover:shadow-glow-lg cursor-pointer relative overflow-hidden"
-                              style={{ 
-                                height: item.height,
-                                animationDelay: `${i * 100}ms`
-                              }}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10" />
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <span className="text-xs font-bold text-primary-foreground">{item.value}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <span className="text-xs font-medium text-muted-foreground">{item.day}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Chart Legend */}
-                    <div className="flex items-center justify-center gap-8 pt-4 border-t border-border/50">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-primary" />
-                        <span className="text-sm text-muted-foreground">AI Handled</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-primary/40" />
-                        <span className="text-sm text-muted-foreground">Agent Handled</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500" />
-                        <span className="text-sm text-muted-foreground">Converted</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Stats Row */}
-                <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-border/50">
-                  {[
-                    { label: 'Avg Response Time', value: '< 2s', icon: '⚡' },
-                    { label: 'Messages Today', value: '3,421', icon: '💬' },
-                    { label: 'Active Visitors', value: '847', icon: '👥' },
-                    { label: 'Tickets Resolved', value: '156', icon: '✅' },
-                  ].map((stat) => (
-                    <div key={stat.label} className="text-center p-4 rounded-xl hover:bg-muted/50 transition-colors cursor-default group">
-                      <div className="text-2xl mb-2 group-hover:scale-110 transition-transform">{stat.icon}</div>
-                      <div className="text-2xl font-display font-bold mb-1">{stat.value}</div>
-                      <div className="text-xs text-muted-foreground">{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works */}
-        <section className="py-32 bg-gradient-to-b from-background to-muted/30">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-20">
-              <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
-                Simple Setup
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Get started in minutes, not days
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
-              <div className="text-center group">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground flex items-center justify-center text-3xl font-display font-bold mx-auto mb-6 shadow-glow group-hover:shadow-glow-lg group-hover:scale-110 transition-all">
-                  1
-                </div>
-                <h3 className="font-display font-semibold text-xl mb-3">Create Account</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Sign up and create your first business profile in seconds
-                </p>
-              </div>
-              
-              <div className="text-center group">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground flex items-center justify-center text-3xl font-display font-bold mx-auto mb-6 shadow-glow group-hover:shadow-glow-lg group-hover:scale-110 transition-all">
-                  2
-                </div>
-                <h3 className="font-display font-semibold text-xl mb-3">Customize Widget</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Configure colors, messages, and AI behavior to match your brand
-                </p>
-              </div>
-              
-              <div className="text-center group">
-                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary to-primary-glow text-primary-foreground flex items-center justify-center text-3xl font-display font-bold mx-auto mb-6 shadow-glow group-hover:shadow-glow-lg group-hover:scale-110 transition-all">
-                  3
-                </div>
-                <h3 className="font-display font-semibold text-xl mb-3">Add to Site</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Copy the embed code and paste it into your website—done!
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="border-t py-32 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/5 via-transparent to-transparent pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-3xl" />
-          
-          <div className="container mx-auto px-4 relative">
-            <Card className="p-16 md:p-20 text-center max-w-4xl mx-auto border-2 border-primary/20 shadow-glow-lg relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-              <div className="relative">
-                <h2 className="font-display text-4xl md:text-5xl font-bold mb-6">
-                  Ready to Transform Your Support?
-                </h2>
-                <p className="text-lg md:text-xl text-muted-foreground mb-10">
-                  Start your 1-month free trial today. No credit card required.
-                </p>
-                <div className="flex flex-wrap gap-4 justify-center mb-8">
-                  <Button size="lg" onClick={() => navigate("/auth")}>
-                    Start Free Trial
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                  <Button size="lg" variant="outline" onClick={() => navigate("/pricing")}>
-                    View Pricing
-                  </Button>
-                </div>
-                <div className="flex items-center justify-center gap-8 text-sm text-muted-foreground font-medium">
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-primary" />
-                    No credit card
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-primary" />
-                    Cancel anytime
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="w-5 h-5 text-primary" />
-                    Full features
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Ask me anything about LYQN.
+                    </p>
                   </div>
                 </div>
               </div>
             </Card>
           </div>
         </section>
+
+        {/* 3 Steps Section */}
+        <section className="py-24 border-t">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-display text-3xl md:text-4xl font-medium mb-4">
+                Just 3 simple steps
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                to create your personalised AI powered chatbot
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {/* Step 1 */}
+              <Card className="p-8 text-center border-2 hover:border-primary/30 transition-colors group">
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/10 transition-colors">
+                  <Globe className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-xl mb-3">Sync your website's data</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Enter your Company URL for the bot to scan & see it brew magic as it syncs with your data.
+                </p>
+              </Card>
+
+              {/* Step 2 */}
+              <Card className="p-8 text-center border-2 hover:border-primary/30 transition-colors group">
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/10 transition-colors">
+                  <Sparkles className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-xl mb-3">Customise your chat widget</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Personalise your chat widget by adding your company logo and brand colour.
+                </p>
+              </Card>
+
+              {/* Step 3 */}
+              <Card className="p-8 text-center border-2 hover:border-primary/30 transition-colors group">
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/10 transition-colors">
+                  <FileText className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-xl mb-3">Install on your website</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Embed the chatbot on as many sites as you want — your marketing site, in-app, help center.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section - Collaborate with AI */}
+        <section className="py-24 bg-muted/30 border-t">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-display text-3xl md:text-4xl font-medium mb-4">
+                Collaborate with an AI bot
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                trained to talk and behave like you, for your users.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {/* Feature Cards */}
+              <Card className="p-6 border-2 hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Clock className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">24X7 Non-Stop Support</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Provide 24/7 automated support drastically reducing response times to enhance customer satisfaction.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Globe className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">Multilingual Support</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  The bot is capable of understanding over 150+ languages - surpassing lingual boundaries.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <FileText className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">Unlimited Training Data</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  There is no limit to how much your bot can learn. Provide links, files or manually write content.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Headphones className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">Intelligent Agent Handoff</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Understand that customers often require a human touch. Assign relevant tickets to your support agents.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <Brain className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">AI Conversation Analysis</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Automatically analyze customer conversations to identify issues, questions, and complaints.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 hover:shadow-md transition-all">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">Real-Time Analytics</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Dive deeper into your customers to gather statistical insights on their behaviour.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Team & Analytics Section */}
+        <section className="py-24 border-t">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-display text-3xl md:text-4xl font-medium mb-4">
+                Collaborate with your team
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                to ensure no customer is ever unheard
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+              <Card className="p-8 border-2">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-xl mb-3">Add Team Members</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Provide designated access to your team members to enable human intervention - when required. 
+                  Manage roles and permissions from a unified dashboard.
+                </p>
+              </Card>
+
+              <Card className="p-8 border-2">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold text-xl mb-3">Measure your Output</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Keep track of how you and your team members are doing in requests where human assistance was required. 
+                  Get detailed performance reports.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Enterprise Features */}
+        <section className="py-24 bg-muted/30 border-t">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="font-display text-3xl md:text-4xl font-medium mb-4">
+                Enterprise tools to power your workflow
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                Streamline workflows with integrations & authentication services
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              <Card className="p-6 border-2 text-center">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold mb-2">Providing Instructions</h3>
+                <p className="text-muted-foreground text-sm">
+                  Create guidelines that dictate how your bot will respond to customer queries.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 text-center">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Zap className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold mb-2">Creating Custom Actions</h3>
+                <p className="text-muted-foreground text-sm">
+                  Integrate with any platform. Stay connected with your customers - ALWAYS.
+                </p>
+              </Card>
+
+              <Card className="p-6 border-2 text-center">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display font-semibold mb-2">Secure & Compliant</h3>
+                <p className="text-muted-foreground text-sm">
+                  Enterprise-grade security with data encryption and compliance standards.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-24 border-t">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto text-center">
+              <h2 className="font-display text-3xl md:text-4xl font-medium mb-4">
+                Simple pricing that scales with your business
+              </h2>
+              <p className="text-muted-foreground text-lg mb-8">
+                A code-free chatbot builder to seamlessly build and train a customer service chatbot for your business
+              </p>
+              
+              <div className="flex flex-wrap gap-4 justify-center mb-8">
+                <Button size="lg" onClick={() => navigate("/auth")} className="px-8">
+                  Start Free Trial
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                <Button size="lg" variant="outline" onClick={() => navigate("/pricing")}>
+                  View Pricing
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  1 month free trial
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  No credit card required
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-primary" />
+                  Cancel anytime
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-12 bg-muted/30">
+      <footer className="border-t py-12 bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 font-semibold mb-4">
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-primary/60 text-primary-foreground">
-                  <Bot className="w-4 h-4" />
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-foreground rounded-sm" />
+                  <div className="w-2 h-2 bg-foreground rounded-sm opacity-60" />
                 </div>
-                <span>LYQN AI</span>
+                <span>LYQN</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Intelligent customer support platform powered by AI
