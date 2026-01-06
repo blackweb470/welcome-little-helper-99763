@@ -22,6 +22,7 @@ import {
   UsersRound,
   User,
   Bot,
+  MessageCircle,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,7 @@ const businessItems = [
   { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking", permission: "can_view_analytics" },
   { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
   { title: "Customize Bot", path: "customize-bot", icon: Bot, ownerOnly: true },
+  { title: "WhatsApp", path: "whatsapp", icon: MessageCircle, ownerOnly: true },
 ];
 
 export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatureClick, businessId, hasPermission, isOwner }: AppSidebarProps) {
