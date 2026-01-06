@@ -1,0 +1,336 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// WhatsApp Cloud API webhook verification and message handling
+Deno.serve(async (req) => {
+  const url = new URL(req.url);
+  
+  // Handle webhook verification (GET request from Meta)
+  if (req.method === 'GET') {
+    const mode = url.searchParams.get('hub.mode');
+    const token = url.searchParams.get('hub.verify_token');
+    const challenge = url.searchParams.get('hub.challenge');
+
+    console.log('WhatsApp webhook verification request:', { mode, token, challenge });
+
+    if (mode === 'subscribe' && token && challenge) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Look up the business by verify_token
+      const { data: settings } = await supabase
+        .from('whatsapp_settings')
+        .select('*')
+        .eq('verify_token', token)
+        .maybeSingle();
+
+      if (settings) {
+        console.log('Webhook verified for business:', settings.business_id);
+        return new Response(challenge, { 
+          status: 200,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
+    }
+
+    console.log('Webhook verification failed');
+    return new Response('Forbidden', { status: 403 });
+  }
+
+  // Handle OPTIONS for CORS
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Handle incoming messages (POST request)
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      console.log('WhatsApp webhook payload:', JSON.stringify(body, null, 2));
+
+      // Extract message data from WhatsApp payload
+      const entry = body.entry?.[0];
+      const changes = entry?.changes?.[0];
+      const value = changes?.value;
+      
+      if (!value?.messages?.[0]) {
+        // This might be a status update, not a message
+        console.log('No message in payload, might be status update');
+        return new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const message = value.messages[0];
+      const phoneNumberId = value.metadata?.phone_number_id;
+      const senderPhone = message.from;
+      const messageText = message.text?.body || '';
+      const messageType = message.type;
+
+      console.log('Processing WhatsApp message:', { 
+        phoneNumberId, 
+        senderPhone, 
+        messageText: messageText.substring(0, 100),
+        messageType 
+      });
+
+      // Only handle text messages for now
+      if (messageType !== 'text' || !messageText) {
+        console.log('Non-text message received, skipping');
+        return new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Find business by phone_number_id
+      const { data: waSettings, error: settingsError } = await supabase
+        .from('whatsapp_settings')
+        .select('*')
+        .eq('phone_number_id', phoneNumberId)
+        .eq('enabled', true)
+        .maybeSingle();
+
+      if (settingsError || !waSettings) {
+        console.error('No WhatsApp settings found for phone_number_id:', phoneNumberId);
+        return new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const businessId = waSettings.business_id;
+      const visitorId = `whatsapp_${senderPhone}`;
+
+      // Create or get conversation
+      let conversationId: string;
+      
+      const { data: existingConv } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('business_id', businessId)
+        .eq('visitor_id', visitorId)
+        .eq('channel', 'whatsapp')
+        .is('ended_at', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingConv) {
+        conversationId = existingConv.id;
+        console.log('Using existing WhatsApp conversation:', conversationId);
+      } else {
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            business_id: businessId,
+            visitor_id: visitorId,
+            channel: 'whatsapp',
+            channel_metadata: { 
+              phone_number: senderPhone,
+              phone_number_id: phoneNumberId 
+            },
+            started_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (convError) {
+          console.error('Error creating conversation:', convError);
+          throw convError;
+        }
+
+        conversationId = newConv.id;
+        console.log('Created new WhatsApp conversation:', conversationId);
+      }
+
+      // Save user message
+      await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          role: 'user',
+          content: messageText
+        });
+
+      // Check if there's an active live chat session
+      const { data: liveSession } = await supabase
+        .from('live_chat_sessions')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (liveSession) {
+        console.log('Human agent active, skipping AI response');
+        return new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Get AI response using the same logic as chat-message
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY not configured');
+      }
+
+      // Fetch widget settings and context
+      const { data: settings } = await supabase
+        .from('widget_settings')
+        .select('*')
+        .eq('business_id', businessId)
+        .maybeSingle();
+
+      const { data: documents } = await supabase
+        .from('business_documents')
+        .select('content_text, file_name')
+        .eq('business_id', businessId)
+        .eq('status', 'ready');
+
+      const { data: websiteContent } = await supabase
+        .from('business_website_content')
+        .select('title, content, url')
+        .eq('business_id', businessId)
+        .limit(10);
+
+      const { data: learnings } = await supabase
+        .from('business_learnings')
+        .select('content')
+        .eq('business_id', businessId)
+        .order('confidence_score', { ascending: false })
+        .limit(5);
+
+      const { data: history } = await supabase
+        .from('messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      // Build system prompt
+      let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant.';
+      systemPrompt += '\n\nYou are responding via WhatsApp. Keep responses concise and mobile-friendly.';
+      systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
+      
+      if (documents && documents.length > 0) {
+        systemPrompt += '\n\nBusiness Knowledge (from documents):\n' + documents.map((d: any) => 
+          `${d.file_name}:\n${d.content_text}`
+        ).join('\n\n');
+      }
+
+      if (websiteContent && websiteContent.length > 0) {
+        systemPrompt += '\n\nBusiness Website Content:\n' + websiteContent.map((w: any) => 
+          `Page: ${w.title} (${w.url})\n${w.content?.substring(0, 2000)}`
+        ).join('\n\n---\n\n');
+      }
+
+      if (learnings && learnings.length > 0) {
+        systemPrompt += '\n\nLearned Insights:\n' + learnings.map((l: any) => l.content).join('\n');
+      }
+
+      systemPrompt += '\n\nIMPORTANT: If you cannot find the answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, politely let them know and offer to connect them with a human agent who can assist further.';
+
+      const aiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...(history || []).map((m: any) => ({ role: m.role, content: m.content }))
+      ];
+
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: aiMessages,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error('AI API error:', aiResponse.status, errorText);
+        throw new Error(`AI service error: ${aiResponse.status}`);
+      }
+
+      const aiData = await aiResponse.json();
+      let reply = aiData.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+      
+      const shouldEscalate = reply.includes('ESCALATE_TO_AGENT');
+      let cleanReply = reply.replace('ESCALATE_TO_AGENT', '').trim();
+
+      // Save assistant message
+      await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          role: 'assistant',
+          content: cleanReply
+        });
+
+      // Send WhatsApp response
+      const whatsappResponse = await fetch(
+        `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${waSettings.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: senderPhone,
+            type: 'text',
+            text: { body: cleanReply }
+          }),
+        }
+      );
+
+      if (!whatsappResponse.ok) {
+        const errorText = await whatsappResponse.text();
+        console.error('WhatsApp API error:', whatsappResponse.status, errorText);
+      } else {
+        console.log('WhatsApp message sent successfully');
+      }
+
+      // Handle escalation if needed
+      if (shouldEscalate) {
+        const { error: escalationError } = await supabase
+          .from('live_chat_sessions')
+          .insert({
+            conversation_id: conversationId,
+            status: 'queued',
+            queued_at: new Date().toISOString(),
+            transfer_reason: 'Customer requested live agent via WhatsApp'
+          });
+
+        if (escalationError) {
+          console.error('Error creating escalation:', escalationError);
+        } else {
+          console.log('Created live chat session for escalation');
+        }
+      }
+
+      return new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
+    } catch (error) {
+      console.error('Error processing WhatsApp webhook:', error);
+      // Always return 200 to prevent Meta from retrying
+      return new Response(JSON.stringify({ status: 'error' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  return new Response('Method not allowed', { status: 405 });
+});

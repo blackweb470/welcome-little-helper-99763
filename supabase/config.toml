@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.crawl-website]
 verify_jwt = true
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.whatsapp-send-message]
+verify_jwt = false

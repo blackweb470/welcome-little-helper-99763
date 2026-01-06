@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,15 +31,25 @@ interface ChatSession {
   created_at: string;
 }
 
+interface Conversation {
+  id: string;
+  channel: string;
+  channel_metadata: any;
+  visitor_id: string | null;
+  visitor_name: string | null;
+}
+
 interface LiveChatQueueProps {
   businessId: string;
 }
 
 export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [sessionConversations, setSessionConversations] = useState<Record<string, Conversation>>({});
   const [agentStatus, setAgentStatus] = useState<string>('offline');
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<ChatSession | null>(null);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -122,12 +132,17 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     try {
       const { data: conversations } = await supabase
         .from('conversations')
-        .select('id')
+        .select('id, channel, channel_metadata, visitor_id, visitor_name')
         .eq('business_id', businessId);
 
       if (!conversations) return;
 
       const conversationIds = conversations.map(c => c.id);
+      
+      // Store conversation data for reference
+      const convMap: Record<string, Conversation> = {};
+      conversations.forEach(c => { convMap[c.id] = c; });
+      setSessionConversations(convMap);
 
       const { data, error } = await supabase
         .from('live_chat_sessions')
@@ -242,6 +257,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         const updatedSession = { ...session, ...data };
         setMessages([]);
         setSelectedSession(updatedSession);
+        setSelectedConversation(sessionConversations[session.conversation_id] || null);
         fetchMessages(session.conversation_id);
       }
 
@@ -279,6 +295,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
       // Clear state when ending chat
       setSelectedSession(null);
+      setSelectedConversation(null);
       setMessages([]);
       setMessageInput("");
       fetchSessions();
@@ -333,27 +350,51 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     try {
       setSendingMessage(true);
       const { data: { user } } = await supabase.auth.getUser();
+      const conversation = selectedConversation || sessionConversations[selectedSession.conversation_id];
       
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: selectedSession.conversation_id,
-          role: 'assistant',
-          content: messageInput.trim()
+      // Check if this is a WhatsApp conversation
+      if (conversation?.channel === 'whatsapp') {
+        // Send via WhatsApp API
+        const { data, error } = await supabase.functions.invoke('whatsapp-send-message', {
+          body: {
+            businessId: businessId,
+            conversationId: selectedSession.conversation_id,
+            message: messageInput.trim()
+          }
         });
 
-      if (error) {
-        console.error('Error inserting message:', error);
-        throw error;
+        if (error) {
+          console.error('Error sending WhatsApp message:', error);
+          throw error;
+        }
+
+        toast({
+          title: "Message sent",
+          description: "Your message has been delivered via WhatsApp"
+        });
+      } else {
+        // Send via regular database insert
+        const { error } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: selectedSession.conversation_id,
+            role: 'assistant',
+            content: messageInput.trim()
+          });
+
+        if (error) {
+          console.error('Error inserting message:', error);
+          throw error;
+        }
+
+        toast({
+          title: "Message sent",
+          description: "Your message has been delivered"
+        });
       }
 
       setMessageInput("");
       await fetchMessages(selectedSession.conversation_id);
-      
-      toast({
-        title: "Message sent",
-        description: "Your message has been delivered"
-      });
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -370,6 +411,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     // Clear previous messages before loading new conversation
     setMessages([]);
     setSelectedSession(session);
+    setSelectedConversation(sessionConversations[session.conversation_id] || null);
     fetchMessages(session.conversation_id);
   };
 
@@ -465,17 +507,34 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSelectedSession(null)}
+                onClick={() => {
+                  setSelectedSession(null);
+                  setSelectedConversation(null);
+                }}
               >
                 <ArrowLeft className="w-4 h-4" />
               </Button>
-              <MessageSquare className="w-5 h-5" />
-              Active Chat
+              {selectedConversation?.channel === 'whatsapp' ? (
+                <MessageCircle className="w-5 h-5 text-green-500" />
+              ) : (
+                <MessageSquare className="w-5 h-5" />
+              )}
+              <span>
+                {selectedConversation?.channel === 'whatsapp' ? 'WhatsApp Chat' : 'Active Chat'}
+              </span>
+              {selectedConversation?.channel === 'whatsapp' && (
+                <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                  <Phone className="w-3 h-3 mr-1" />
+                  {selectedConversation.channel_metadata?.phone_number || 
+                   selectedConversation.visitor_id?.replace('whatsapp_', '')}
+                </Badge>
+              )}
             </div>
             <Button
               onClick={() => {
                 endChat(selectedSession.id);
                 setSelectedSession(null);
+                setSelectedConversation(null);
               }}
               size="sm"
               variant="outline"
@@ -689,15 +748,33 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 queuedSessions.map((session) => (
                   <div key={session.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium">Chat Request</p>
-                        {session.transfer_reason && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Reason: {session.transfer_reason}
-                          </p>
+                      <div className="flex items-center gap-2">
+                        {sessionConversations[session.conversation_id]?.channel === 'whatsapp' ? (
+                          <MessageCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <MessageSquare className="w-4 h-4 text-primary" />
                         )}
+                        <div>
+                          <p className="font-medium">
+                            {sessionConversations[session.conversation_id]?.channel === 'whatsapp' 
+                              ? 'WhatsApp Request' 
+                              : 'Chat Request'}
+                          </p>
+                          {session.transfer_reason && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Reason: {session.transfer_reason}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <Badge variant="outline">Queued</Badge>
+                      <div className="flex items-center gap-2">
+                        {sessionConversations[session.conversation_id]?.channel === 'whatsapp' && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                            WhatsApp
+                          </Badge>
+                        )}
+                        <Badge variant="outline">Queued</Badge>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
                       <Clock className="w-4 h-4" />
@@ -727,13 +804,31 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 activeSessions.map((session) => (
                   <div key={session.id} className="border rounded-lg p-4 bg-primary/5">
                     <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium">Active Chat</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Started: {session.accepted_at && new Date(session.accepted_at).toLocaleTimeString()}
-                        </p>
+                      <div className="flex items-center gap-2">
+                        {sessionConversations[session.conversation_id]?.channel === 'whatsapp' ? (
+                          <MessageCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <MessageSquare className="w-4 h-4 text-primary" />
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {sessionConversations[session.conversation_id]?.channel === 'whatsapp' 
+                              ? 'WhatsApp Chat' 
+                              : 'Active Chat'}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Started: {session.accepted_at && new Date(session.accepted_at).toLocaleTimeString()}
+                          </p>
+                        </div>
                       </div>
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      <div className="flex items-center gap-2">
+                        {sessionConversations[session.conversation_id]?.channel === 'whatsapp' && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                            WhatsApp
+                          </Badge>
+                        )}
+                        <Badge className="bg-green-100 text-green-800">Active</Badge>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button 

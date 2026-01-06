@@ -11,7 +11,7 @@ import { AIAssist } from "./AIAssist";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, MessageSquare, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ConversationsListProps {
@@ -23,10 +23,11 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sentimentFilter, setSentimentFilter] = useState<string>("all");
+  const [channelFilter, setChannelFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
   
   const { data: conversations, isLoading } = useQuery({
-    queryKey: ['conversations', businessId, searchQuery, statusFilter, sentimentFilter],
+    queryKey: ['conversations', businessId, searchQuery, statusFilter, sentimentFilter, channelFilter],
     queryFn: async () => {
       // Use the search function if filters are applied
       if (searchQuery || statusFilter !== 'all' || sentimentFilter !== 'all') {
@@ -59,7 +60,7 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
       }
 
       // Default query without filters
-      const { data, error } = await supabase
+      let query = supabase
         .from('conversations')
         .select(`
           *,
@@ -76,6 +77,13 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
         .eq('business_id', businessId)
         .order('started_at', { ascending: false });
 
+      // Apply channel filter
+      if (channelFilter !== 'all') {
+        query = query.eq('channel', channelFilter);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       return data;
     }
@@ -85,12 +93,14 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
     setSearchQuery("");
     setStatusFilter("all");
     setSentimentFilter("all");
+    setChannelFilter("all");
   };
 
   const activeFiltersCount = [
     searchQuery,
     statusFilter !== 'all',
-    sentimentFilter !== 'all'
+    sentimentFilter !== 'all',
+    channelFilter !== 'all'
   ].filter(Boolean).length;
 
   // Calculate conversation sentiment
@@ -141,7 +151,18 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Select value={channelFilter} onValueChange={setChannelFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Channel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Channels</SelectItem>
+                    <SelectItem value="web">Web Widget</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
                     <SelectValue placeholder="Status" />
@@ -199,8 +220,16 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
+                          {conversation.channel === 'whatsapp' ? (
+                            <MessageCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <MessageSquare className="w-4 h-4 text-primary" />
+                          )}
                           <span className="text-sm font-medium">
-                            {conversation.visitor_name || conversation.visitor_email || conversation.visitor_id || 'Anonymous'}
+                            {conversation.visitor_name || conversation.visitor_email || 
+                             (conversation.channel === 'whatsapp' 
+                               ? conversation.channel_metadata?.phone_number || conversation.visitor_id?.replace('whatsapp_', '')
+                               : conversation.visitor_id) || 'Anonymous'}
                           </span>
                           {sentiment && (
                             <SentimentIndicator 
@@ -212,6 +241,11 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
                           {conversation.status && (
                             <Badge variant="outline" className="text-xs">
                               {conversation.status}
+                            </Badge>
+                          )}
+                          {conversation.channel === 'whatsapp' && (
+                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+                              WhatsApp
                             </Badge>
                           )}
                         </div>

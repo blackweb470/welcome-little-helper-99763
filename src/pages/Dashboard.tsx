@@ -23,6 +23,7 @@ import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { BotCustomization } from "@/components/dashboard/BotCustomization";
+import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
 
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
@@ -181,7 +182,8 @@ const Dashboard = () => {
                   
                   currentTab === 'scoring' ? 'Behavioral Scoring' :
                   currentTab === 'agent-performance' ? 'Agent Performance' :
-                  currentTab === 'settings' ? 'Widget Settings' : 'Dashboard'}
+                  currentTab === 'settings' ? 'Widget Settings' :
+                  currentTab === 'whatsapp' ? 'WhatsApp Integration' : 'Dashboard'}
               </h1>
               {isAdmin && (
                 <span className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-elegant whitespace-nowrap">
@@ -281,6 +283,10 @@ const Dashboard = () => {
                   <Card className="p-8 shadow-elegant">
                     <BotCustomization businessId={selectedBusinessId} />
                   </Card>
+                )}
+
+                {currentTab === 'whatsapp' && (
+                  <WhatsAppSettings businessId={selectedBusinessId} />
                 )}
               </>
             )}
