@@ -18,6 +18,39 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if visitor already has an active live chat session (queued or active)
+    const { data: existingSession } = await supabase
+      .from('live_chat_sessions')
+      .select('id, status, conversation_id')
+      .eq('status', 'queued')
+      .or(`status.eq.active`)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    // Filter by visitor's conversations
+    if (existingSession && existingSession.length > 0) {
+      // Get visitor's conversations
+      const { data: visitorConversations } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('visitor_id', visitorId)
+        .eq('business_id', businessId);
+
+      const visitorConvIds = visitorConversations?.map(c => c.id) || [];
+      const activeSession = existingSession.find(s => visitorConvIds.includes(s.conversation_id));
+
+      if (activeSession) {
+        console.log('Visitor already has active session:', activeSession.id);
+        return new Response(
+          JSON.stringify({ 
+            error: 'You already have an active request. Please wait for an agent to respond.',
+            existingSession: activeSession 
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Create conversation if not exists
     let finalConversationId = conversationId;
     
