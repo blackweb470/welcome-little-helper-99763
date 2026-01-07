@@ -689,14 +689,18 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
         }
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Live agent request error:', response.status, errorText);
-        throw new Error(`Service error: ${response.status}`);
-      }
-
       const data = await response.json();
       console.log('Live agent request response:', data);
+
+      if (!response.ok) {
+        // Check if visitor already has an active request
+        if (data.existingSession) {
+          handleTranscript("You already have a pending request to speak with an agent. Please wait - someone will be with you shortly! 🙏", 'assistant');
+          setLiveChatSession(data.existingSession);
+          return;
+        }
+        throw new Error(data.error || `Service error: ${response.status}`);
+      }
       
       if (data.session) {
         setLiveChatSession(data.session);
