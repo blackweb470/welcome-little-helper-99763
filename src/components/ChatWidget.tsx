@@ -32,6 +32,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [visitorInfo, setVisitorInfo] = useState<any>({});
   const [agentTyping, setAgentTyping] = useState(false);
   const [requestingAgent, setRequestingAgent] = useState(false);
+  const [queuePosition, setQueuePosition] = useState<number | null>(null);
+  const [estimatedWaitMinutes, setEstimatedWaitMinutes] = useState<number | null>(null);
   const [qaPairs, setQaPairs] = useState<any[]>([]);
   const [faqSearch, setFaqSearch] = useState("");
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
@@ -704,6 +706,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       
       if (data.session) {
         setLiveChatSession(data.session);
+        setQueuePosition(data.queuePosition || 1);
+        setEstimatedWaitMinutes(data.estimatedWaitMinutes || 3);
         handleTranscript('Your request has been sent to our team. An agent will join shortly.', 'assistant');
       } else {
         throw new Error('Failed to create live chat session');
@@ -1010,8 +1014,21 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           {/* Chat Input */}
           <div className="border-t bg-background shrink-0">
             {liveChatSession && liveChatSession.status === 'queued' && (
-              <div className="m-2 sm:m-3 p-2 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">⏳ Waiting for agent...</p>
+              <div className="m-2 sm:m-3 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                  <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">Waiting for agent</p>
+                </div>
+                <div className="flex items-center gap-3 text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-300">
+                  {queuePosition !== null && (
+                    <span className="flex items-center gap-1">
+                      <span className="font-semibold">#{queuePosition}</span> in queue
+                    </span>
+                  )}
+                  {estimatedWaitMinutes !== null && (
+                    <span>~{estimatedWaitMinutes} min wait</span>
+                  )}
+                </div>
               </div>
             )}
             {liveChatSession?.status === 'active' && (

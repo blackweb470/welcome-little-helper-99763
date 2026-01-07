@@ -97,7 +97,29 @@ Deno.serve(async (req) => {
       throw sessionError;
     }
 
-    // Get business owner owner_id
+    // Get queue position (count of queued sessions before this one for this business)
+    // First get all conversation IDs for this business
+    const { data: businessConversations } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('business_id', businessId);
+    
+    const businessConvIds = businessConversations?.map(c => c.id) || [];
+    
+    let position = 1;
+    let estimatedWaitMinutes = 3;
+    
+    if (businessConvIds.length > 0) {
+      const { count: queuePosition } = await supabase
+        .from('live_chat_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'queued')
+        .lt('queued_at', session.queued_at)
+        .in('conversation_id', businessConvIds);
+      
+      position = (queuePosition || 0) + 1;
+      estimatedWaitMinutes = position * 3;
+    }
     const { data: business } = await supabase
       .from('businesses')
       .select('owner_id')
@@ -145,10 +167,15 @@ Deno.serve(async (req) => {
       },
     });
 
-    console.log('Live agent request created successfully');
+    console.log('Live agent request created successfully, queue position:', position);
 
     return new Response(
-      JSON.stringify({ session, conversationId: finalConversationId }),
+      JSON.stringify({ 
+        session, 
+        conversationId: finalConversationId,
+        queuePosition: position,
+        estimatedWaitMinutes
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
