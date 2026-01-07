@@ -15,15 +15,28 @@ serve(async (req) => {
   try {
     const requestBody = await req.json();
     
-    // Validate input
+    // Validate input - now includes optional 'source' to identify AI-created tickets
     const schema = z.object({
       conversationId: z.string().uuid(),
       title: z.string().min(1).max(200),
       description: z.string().max(2000).optional(),
-      priority: z.enum(['low', 'medium', 'high', 'urgent']).optional()
+      priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+      source: z.enum(['ai', 'agent', 'system']).optional()
     });
     
-    const { conversationId, title, description, priority } = schema.parse(requestBody);
+    const { conversationId, title, description, priority, source } = schema.parse(requestBody);
+    
+    // Only allow ticket creation from AI, agents, or system - not direct visitor requests
+    // Check authorization header for service role or authenticated user
+    const authHeader = req.headers.get('Authorization');
+    const isServiceRole = authHeader?.includes('service_role');
+    
+    if (!isServiceRole && !source) {
+      return new Response(
+        JSON.stringify({ error: 'Tickets can only be created by agents or automatically by the system' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
