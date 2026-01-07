@@ -17,7 +17,9 @@ import {
   Phone,
   Key,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  XCircle
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -33,6 +35,7 @@ export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [wabaId, setWabaId] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const webhookUrl = `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/whatsapp-webhook`;
 
@@ -134,6 +137,54 @@ export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
     }
   });
 
+  // Test connection mutation
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      if (!settings) {
+        throw new Error("Please save your settings first");
+      }
+
+      // Call Meta's Graph API to validate the access token and phone number ID
+      const response = await fetch(
+        `https://graph.facebook.com/v18.0/${settings.phone_number_id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${settings.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || "Failed to connect to WhatsApp API");
+      }
+
+      const data = await response.json();
+      return data;
+    },
+    onSuccess: (data) => {
+      setTestResult({
+        success: true,
+        message: `Connected! Phone: ${data.display_phone_number || data.verified_name || "Verified"}`
+      });
+      toast({ 
+        title: "Connection successful!", 
+        description: "Your WhatsApp integration is working correctly" 
+      });
+    },
+    onError: (error: any) => {
+      setTestResult({
+        success: false,
+        message: error.message
+      });
+      toast({ 
+        title: "Connection failed", 
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
     setCopied(type);
@@ -151,6 +202,7 @@ export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
       return;
     }
 
+    setTestResult(null); // Clear previous test result
     saveMutation.mutate({
       phone_number_id: phoneNumberId,
       access_token: accessToken,
@@ -373,7 +425,7 @@ export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
           <CardHeader>
             <CardTitle className="text-lg">Connection Status</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className={`w-3 h-3 rounded-full ${settings.enabled ? 'bg-green-500' : 'bg-gray-400'}`} />
               <div>
@@ -385,6 +437,32 @@ export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
                 </p>
               </div>
             </div>
+
+            {testResult && (
+              <Alert variant={testResult.success ? "default" : "destructive"}>
+                {testResult.success ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
+                <AlertTitle>{testResult.success ? "Connection Verified" : "Connection Failed"}</AlertTitle>
+                <AlertDescription>{testResult.message}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() => testConnectionMutation.mutate()}
+              disabled={testConnectionMutation.isPending}
+              className="w-full"
+            >
+              {testConnectionMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4 mr-2" />
+              )}
+              Test Connection
+            </Button>
           </CardContent>
         </Card>
       )}
