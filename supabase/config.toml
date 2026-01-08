@@ -48,6 +48,9 @@ verify_jwt = false
 [functions.cancel-live-agent]
 verify_jwt = false
 
+[functions.visitor-upload-image]
+verify_jwt = false
+
 [functions.analyze-conversations]
 verify_jwt = true
 

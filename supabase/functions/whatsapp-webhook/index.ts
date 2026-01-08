@@ -80,19 +80,11 @@ Deno.serve(async (req) => {
         messageType 
       });
 
-      // Only handle text messages for now
-      if (messageType !== 'text' || !messageText) {
-        console.log('Non-text message received, skipping');
-        return new Response(JSON.stringify({ status: 'ok' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Find business by phone_number_id
+      // Find business by phone_number_id first (need for image downloads)
       const { data: waSettings, error: settingsError } = await supabase
         .from('whatsapp_settings')
         .select('*')
@@ -109,6 +101,75 @@ Deno.serve(async (req) => {
 
       const businessId = waSettings.business_id;
       const visitorId = `whatsapp_${senderPhone}`;
+
+      // Handle image messages
+      let imageUrl: string | null = null;
+      let messageContent = messageText;
+
+      if (messageType === 'image') {
+        const imageId = message.image?.id;
+        const imageCaption = message.image?.caption || '';
+        
+        if (imageId) {
+          try {
+            // Get image URL from WhatsApp
+            const mediaResponse = await fetch(
+              `https://graph.facebook.com/v19.0/${imageId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${waSettings.access_token}`,
+                }
+              }
+            );
+            
+            if (mediaResponse.ok) {
+              const mediaData = await mediaResponse.json();
+              const mediaUrl = mediaData.url;
+              
+              // Download the image
+              const imageDownloadResponse = await fetch(mediaUrl, {
+                headers: {
+                  'Authorization': `Bearer ${waSettings.access_token}`,
+                }
+              });
+              
+              if (imageDownloadResponse.ok) {
+                const imageBlob = await imageDownloadResponse.blob();
+                const arrayBuffer = await imageBlob.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                
+                // Upload to Supabase storage
+                const fileName = `whatsapp/${businessId}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+                
+                const { error: uploadError } = await supabase.storage
+                  .from('message-attachments')
+                  .upload(fileName, uint8Array, {
+                    contentType: 'image/jpeg',
+                    upsert: false
+                  });
+                
+                if (!uploadError) {
+                  const { data: urlData } = supabase.storage
+                    .from('message-attachments')
+                    .getPublicUrl(fileName);
+                  
+                  imageUrl = urlData.publicUrl;
+                  messageContent = imageCaption || '[Image]';
+                  console.log('WhatsApp image saved:', imageUrl);
+                }
+              }
+            }
+          } catch (imgError) {
+            console.error('Error processing WhatsApp image:', imgError);
+            messageContent = '[Image - failed to process]';
+          }
+        }
+      } else if (messageType !== 'text' || !messageText) {
+        console.log('Unsupported message type, skipping');
+        return new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
       // Create or get conversation
       let conversationId: string;
@@ -152,14 +213,30 @@ Deno.serve(async (req) => {
         console.log('Created new WhatsApp conversation:', conversationId);
       }
 
-      // Save user message
-      await supabase
+      // Save user message with image URL if present
+      const { data: savedMessage } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           role: 'user',
-          content: messageText
-        });
+          content: messageContent,
+          audio_url: imageUrl // Reusing audio_url field for image URL
+        })
+        .select()
+        .single();
+
+      // If image was uploaded, create attachment record
+      if (imageUrl && savedMessage) {
+        await supabase
+          .from('message_attachments')
+          .insert({
+            message_id: savedMessage.id,
+            file_name: 'whatsapp-image.jpg',
+            file_path: imageUrl,
+            file_size: 0,
+            mime_type: 'image/jpeg'
+          });
+      }
 
       // Check if there's an active live chat session
       const { data: liveSession } = await supabase
@@ -176,6 +253,41 @@ Deno.serve(async (req) => {
         });
       }
 
+      // If it's an image without text, acknowledge receipt but don't process with AI
+      if (messageType === 'image' && !messageText) {
+        const imageAckReply = "I've received your image. How can I help you with this?";
+        
+        await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'assistant',
+            content: imageAckReply
+          });
+
+        await fetch(
+          `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${waSettings.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messaging_product: 'whatsapp',
+              recipient_type: 'individual',
+              to: senderPhone,
+              type: 'text',
+              text: { body: imageAckReply }
+            }),
+          }
+        );
+
+        return new Response(JSON.stringify({ status: 'ok' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       // Get AI response using the same logic as chat-message
       const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
       if (!LOVABLE_API_KEY) {
@@ -183,7 +295,7 @@ Deno.serve(async (req) => {
       }
 
       // Fetch widget settings and context
-      const { data: settings } = await supabase
+      const { data: widgetSettings } = await supabase
         .from('widget_settings')
         .select('*')
         .eq('business_id', businessId)
@@ -215,7 +327,7 @@ Deno.serve(async (req) => {
         .order('created_at', { ascending: true });
 
       // Build system prompt
-      let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant.';
+      let systemPrompt = widgetSettings?.system_prompt || 'You are a helpful AI assistant.';
       systemPrompt += '\n\nYou are responding via WhatsApp. Keep responses concise and mobile-friendly.';
       systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
       
