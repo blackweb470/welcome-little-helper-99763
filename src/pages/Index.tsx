@@ -249,9 +249,9 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                   <Globe className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-display font-semibold text-lg mb-2">Multilingual Support</h3>
+                <h3 className="font-display font-semibold text-lg mb-2">Omnichannel Support</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  The bot is capable of understanding over 150+ languages - surpassing lingual boundaries.
+                  Connect with customers on your website and WhatsApp from a single unified dashboard. Share images and files seamlessly.
                 </p>
               </Card>
 
@@ -259,9 +259,9 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                   <FileText className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-display font-semibold text-lg mb-2">Unlimited Training Data</h3>
+                <h3 className="font-display font-semibold text-lg mb-2">Rich Media Sharing</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  There is no limit to how much your bot can learn. Provide links, files or manually write content.
+                  Visitors can share images directly in chat - perfect for screenshots, product issues, or visual context.
                 </p>
               </Card>
 

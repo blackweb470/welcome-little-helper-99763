@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +21,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
   const [settings, setSettings] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
-  const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant" }>>([]);
+  const [transcript, setTranscript] = useState<Array<{ text: string; role: "user" | "assistant"; imageUrl?: string }>>([]);
   const [proactiveShown, setProactiveShown] = useState(false);
   const [proactiveMessage, setProactiveMessage] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -42,6 +42,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [qaPairs, setQaPairs] = useState<any[]>([]);
   const [faqSearch, setFaqSearch] = useState("");
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Restore session state from localStorage on mount
   useEffect(() => {
@@ -922,8 +924,78 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
     }
   };
 
-  const handleTranscript = (text: string, role: "user" | "assistant") => {
-    setTranscript(prev => [...prev, { text, role }]);
+  const handleTranscript = (text: string, role: "user" | "assistant", imageUrl?: string) => {
+    setTranscript(prev => [...prev, { text, role, imageUrl }]);
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      handleTranscript('Please upload a valid image (JPEG, PNG, GIF, or WebP).', 'assistant');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      handleTranscript('Image is too large. Maximum size is 5MB.', 'assistant');
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      let visitorId = localStorage.getItem('visitor_id');
+      if (!visitorId) {
+        visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('visitor_id', visitorId);
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('businessId', businessId);
+      formData.append('visitorId', visitorId);
+      if (conversationId) {
+        formData.append('conversationId', conversationId);
+      }
+
+      const response = await fetch(
+        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/visitor-upload-image`,
+        {
+          method: 'POST',
+          body: formData
+        }
+      );
+
+      const data = await response.json();
+      console.log('Image upload response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload image');
+      }
+
+      // Update conversation ID if returned
+      if (data.conversationId && !conversationId) {
+        setConversationId(data.conversationId);
+      }
+
+      // Add image to transcript
+      handleTranscript(`📷 ${file.name}`, 'user', data.imageUrl);
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      handleTranscript('Failed to upload image. Please try again.', 'assistant');
+    } finally {
+      setUploadingImage(false);
+      // Reset the input
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
   };
 
   // Auto-scroll to bottom when transcript changes
@@ -1192,6 +1264,15 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
                     }`}
                     style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
                   >
+                    {item.imageUrl && (
+                      <img 
+                        src={item.imageUrl} 
+                        alt="Uploaded image" 
+                        className="max-w-full rounded-md mb-1 max-h-48 object-contain"
+                        onClick={() => window.open(item.imageUrl, '_blank')}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    )}
                     <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{item.text}</p>
                   </div>
                 </div>
@@ -1254,7 +1335,31 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             )}
             
             <div className="px-2 sm:px-3 pt-2 pb-2">
-              <div className="flex gap-1.5 sm:gap-2">
+              <div className="flex gap-1.5 sm:gap-2 items-center">
+                {/* Image upload button */}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 shrink-0"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={uploadingImage}
+                  title="Send image"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4" />
+                  )}
+                </Button>
+                
                 <input
                   type="text"
                   value={textInput}
