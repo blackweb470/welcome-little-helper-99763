@@ -45,6 +45,9 @@ verify_jwt = false
 [functions.request-live-agent]
 verify_jwt = false
 
+[functions.cancel-live-agent]
+verify_jwt = false
+
 [functions.analyze-conversations]
 verify_jwt = true
 
@@ -61,4 +64,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.whatsapp-send-message]
+verify_jwt = false
+
+[functions.agent-performance-stats]
+verify_jwt = false
+
+[functions.invite-team-member]
 verify_jwt = false

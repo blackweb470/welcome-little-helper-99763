@@ -12,6 +12,10 @@ interface ChatWidgetProps {
 }
 
 type WidgetTab = "faq" | "chat";
+
+// Storage keys for persistence
+const getStorageKey = (businessId: string, key: string) => `lyqn_chat_${businessId}_${key}`;
+
 export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
@@ -32,11 +36,128 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   const [visitorInfo, setVisitorInfo] = useState<any>({});
   const [agentTyping, setAgentTyping] = useState(false);
   const [requestingAgent, setRequestingAgent] = useState(false);
+  const [cancelingRequest, setCancelingRequest] = useState(false);
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [estimatedWaitMinutes, setEstimatedWaitMinutes] = useState<number | null>(null);
   const [qaPairs, setQaPairs] = useState<any[]>([]);
   const [faqSearch, setFaqSearch] = useState("");
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
+
+  // Restore session state from localStorage on mount
+  useEffect(() => {
+    const storedConversationId = localStorage.getItem(getStorageKey(businessId, 'conversationId'));
+    const storedSessionId = localStorage.getItem(getStorageKey(businessId, 'sessionId'));
+    const storedTranscript = localStorage.getItem(getStorageKey(businessId, 'transcript'));
+    const storedEmail = localStorage.getItem(getStorageKey(businessId, 'visitorEmail'));
+    
+    if (storedConversationId) {
+      setConversationId(storedConversationId);
+    }
+    
+    if (storedTranscript) {
+      try {
+        setTranscript(JSON.parse(storedTranscript));
+      } catch (e) {
+        console.error('Error parsing stored transcript:', e);
+      }
+    }
+    
+    if (storedEmail) {
+      setVisitorEmail(storedEmail);
+    }
+    
+    // Restore live chat session from database if we have a conversation
+    if (storedConversationId) {
+      restoreLiveChatSession(storedConversationId);
+    }
+  }, [businessId]);
+
+  // Persist conversationId
+  useEffect(() => {
+    if (conversationId) {
+      localStorage.setItem(getStorageKey(businessId, 'conversationId'), conversationId);
+    }
+  }, [conversationId, businessId]);
+
+  // Persist transcript
+  useEffect(() => {
+    if (transcript.length > 0) {
+      localStorage.setItem(getStorageKey(businessId, 'transcript'), JSON.stringify(transcript));
+    }
+  }, [transcript, businessId]);
+
+  // Persist visitor email
+  useEffect(() => {
+    if (visitorEmail) {
+      localStorage.setItem(getStorageKey(businessId, 'visitorEmail'), visitorEmail);
+    }
+  }, [visitorEmail, businessId]);
+
+  // Persist session ID
+  useEffect(() => {
+    if (liveChatSession?.id) {
+      localStorage.setItem(getStorageKey(businessId, 'sessionId'), liveChatSession.id);
+    } else if (liveChatSession === null) {
+      localStorage.removeItem(getStorageKey(businessId, 'sessionId'));
+    }
+  }, [liveChatSession, businessId]);
+
+  // Restore live chat session from database
+  const restoreLiveChatSession = async (convId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('live_chat_sessions')
+        .select('*')
+        .eq('conversation_id', convId)
+        .in('status', ['queued', 'active'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        console.log('Restored live chat session:', data);
+        setLiveChatSession(data);
+        
+        // Update queue position if queued
+        if (data.status === 'queued') {
+          await updateQueuePosition(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error restoring live chat session:', error);
+    }
+  };
+
+  // Update queue position
+  const updateQueuePosition = async (session: any) => {
+    if (!session || session.status !== 'queued') return;
+    
+    try {
+      // Get all business conversations
+      const { data: businessConversations } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('business_id', businessId);
+      
+      const businessConvIds = businessConversations?.map(c => c.id) || [];
+      
+      if (businessConvIds.length > 0) {
+        const { count } = await supabase
+          .from('live_chat_sessions')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'queued')
+          .lt('queued_at', session.queued_at)
+          .in('conversation_id', businessConvIds);
+        
+        const position = (count || 0) + 1;
+        setQueuePosition(position);
+        setEstimatedWaitMinutes(position * 3);
+      }
+    } catch (error) {
+      console.error('Error updating queue position:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -478,9 +599,19 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             setLiveChatSession(newSession);
             
             // Notify visitor when agent accepts
-            if (newSession.status === 'active') {
+            if (newSession.status === 'active' && liveChatSession?.status === 'queued') {
               console.log('Agent has joined - status is now active');
-              handleTranscript('An agent has joined the chat!', 'assistant');
+              handleTranscript('🎉 An agent has accepted your request and joined the chat!', 'assistant');
+              // Clear queue position when agent accepts
+              setQueuePosition(null);
+              setEstimatedWaitMinutes(null);
+            }
+            
+            // Handle cancelled status
+            if (newSession.status === 'cancelled') {
+              setLiveChatSession(null);
+              setQueuePosition(null);
+              setEstimatedWaitMinutes(null);
             }
           }
         }
@@ -510,7 +641,34 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       console.log('Cleaning up live chat session subscription');
       supabase.removeChannel(channel);
     };
-  }, [conversationId]);
+  }, [conversationId, liveChatSession?.status]);
+
+  // Real-time subscription for queue position updates (listen to all session changes)
+  useEffect(() => {
+    if (!liveChatSession || liveChatSession.status !== 'queued') return;
+
+    console.log('Setting up queue position subscription');
+
+    const channel = supabase
+      .channel('queue-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'live_chat_sessions'
+        },
+        () => {
+          // Recalculate queue position when any session changes
+          updateQueuePosition(liveChatSession);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [liveChatSession?.id, liveChatSession?.status]);
 
   // Real-time subscription for new messages
   useEffect(() => {
@@ -717,6 +875,50 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       handleTranscript('Sorry, unable to connect to a live agent right now. Please try again.', 'assistant');
     } finally {
       setRequestingAgent(false);
+    }
+  };
+
+  // Cancel live agent request
+  const cancelLiveAgentRequest = async () => {
+    if (!liveChatSession || cancelingRequest) return;
+    
+    try {
+      setCancelingRequest(true);
+      
+      const visitorId = localStorage.getItem('visitor_id');
+      
+      const response = await fetch(
+        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/cancel-live-agent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId: liveChatSession.id,
+            visitorId: visitorId,
+            businessId: businessId
+          })
+        }
+      );
+
+      const data = await response.json();
+      console.log('Cancel request response:', data);
+
+      if (response.ok) {
+        setLiveChatSession(null);
+        setQueuePosition(null);
+        setEstimatedWaitMinutes(null);
+        localStorage.removeItem(getStorageKey(businessId, 'sessionId'));
+        handleTranscript('Your request has been cancelled. Feel free to request an agent again if you need help!', 'assistant');
+      } else {
+        throw new Error(data.error || 'Failed to cancel request');
+      }
+    } catch (error) {
+      console.error('Error canceling live agent request:', error);
+      handleTranscript('Sorry, unable to cancel the request. Please try again.', 'assistant');
+    } finally {
+      setCancelingRequest(false);
     }
   };
 
@@ -1015,9 +1217,20 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           <div className="border-t bg-background shrink-0">
             {liveChatSession && liveChatSession.status === 'queued' && (
               <div className="m-2 sm:m-3 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                  <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">Waiting for agent</p>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200 text-xs sm:text-sm">Waiting for agent</p>
+                  </div>
+                  <Button
+                    onClick={cancelLiveAgentRequest}
+                    disabled={cancelingRequest}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[10px] sm:text-xs text-yellow-700 hover:text-yellow-900 dark:text-yellow-300 dark:hover:text-yellow-100 hover:bg-yellow-100 dark:hover:bg-yellow-900/40"
+                  >
+                    {cancelingRequest ? 'Canceling...' : 'Cancel'}
+                  </Button>
                 </div>
                 <div className="flex items-center gap-3 text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-300">
                   {queuePosition !== null && (
@@ -1032,8 +1245,11 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
               </div>
             )}
             {liveChatSession?.status === 'active' && (
-              <div className="m-2 sm:m-3 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                <p className="font-medium text-green-800 dark:text-green-200 text-xs sm:text-sm">✅ Speaking with agent</p>
+              <div className="m-2 sm:m-3 p-2 sm:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <p className="font-medium text-green-800 dark:text-green-200 text-xs sm:text-sm">✅ Agent has accepted - Speaking with live agent</p>
+                </div>
               </div>
             )}
             
