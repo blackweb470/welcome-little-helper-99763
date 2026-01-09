@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2 } from "lucide-react";
+import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { playNotificationSound } from "@/utils/notificationSound";
 interface ChatWidgetProps {
   businessId: string;
   parentPageUrl?: string;
@@ -603,6 +604,8 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             // Check if status changed from queued to active (agent accepted)
             if (newSession.status === 'active' && oldSession?.status === 'queued') {
               console.log('Agent has joined - status changed from queued to active');
+              // Play notification sound
+              playNotificationSound();
               setTranscript(prev => [...prev, { 
                 text: '🎉 An agent has accepted your request and joined the chat!', 
                 role: 'assistant' as const 
@@ -1497,13 +1500,27 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
             </div>
           )}
           
-          <Button
-            onClick={() => { setIsOpen(true); setProactiveMessage(null); }}
-            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Test proactive popup button */}
+            <Button
+              onClick={() => {
+                setProactiveMessage("👋 Hi! Need any help today? Click to chat with us!");
+              }}
+              className="rounded-full w-10 h-10 sm:w-12 sm:h-12 shadow-lg bg-muted hover:bg-muted/80"
+              variant="outline"
+              title="Test proactive popup"
+            >
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+            </Button>
+            
+            <Button
+              onClick={() => { setIsOpen(true); setProactiveMessage(null); }}
+              className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </Button>
+          </div>
         </div>
       )}
     </div>
