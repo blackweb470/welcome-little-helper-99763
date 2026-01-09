@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       // Cancel by session ID
       const { data, error } = await supabase
         .from('live_chat_sessions')
-        .update({ status: 'cancelled', ended_at: new Date().toISOString() })
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
         .eq('id', sessionId)
         .eq('status', 'queued')
         .select()
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
       if (convIds.length > 0) {
         const { data, error } = await supabase
           .from('live_chat_sessions')
-          .update({ status: 'cancelled', ended_at: new Date().toISOString() })
+          .update({ status: 'ended', ended_at: new Date().toISOString() })
           .eq('status', 'queued')
           .in('conversation_id', convIds)
           .select()
