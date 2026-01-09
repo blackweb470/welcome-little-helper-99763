@@ -1467,31 +1467,26 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           </CardContent>
         </Card>
       ) : (
-        <div className="flex flex-col items-end gap-3">
-          {/* Proactive popup - appears automatically above the icon */}
+        <div className="relative flex flex-col items-end">
+          {/* Proactive speech bubble - appears above the icon with pointer */}
           {proactiveMessage && (
-            <div 
-              onClick={handleProactiveClick}
-              className="bg-card border rounded-xl shadow-lg p-3 max-w-[280px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
-              style={{ borderColor: primaryColor }}
-            >
-              <div className="flex items-start gap-3">
-                <div 
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium shrink-0"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  {agentName.charAt(0)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{agentName}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{proactiveMessage}</p>
-                </div>
+            <div className="absolute bottom-full right-0 mb-3">
+              <div 
+                onClick={handleProactiveClick}
+                className="relative bg-card border rounded-2xl shadow-lg py-2.5 px-4 max-w-[220px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
+              >
+                <p className="text-sm text-foreground leading-snug">{proactiveMessage}</p>
                 <button 
                   onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
-                  className="text-muted-foreground hover:text-foreground p-1 shrink-0"
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md hover:bg-destructive/90"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                 </button>
+                {/* Speech bubble pointer/arrow */}
+                <div 
+                  className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b rotate-45"
+                  style={{ borderColor: 'hsl(var(--border))' }}
+                />
               </div>
             </div>
           )}
