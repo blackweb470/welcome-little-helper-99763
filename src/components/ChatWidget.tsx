@@ -597,24 +597,30 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           console.log('Live chat session UPDATE received:', payload);
           if (payload.new) {
             const newSession = payload.new as any;
-            console.log('Updating liveChatSession state to:', newSession);
-            setLiveChatSession(newSession);
+            const oldSession = payload.old as any;
+            console.log('Updating liveChatSession state to:', newSession, 'from:', oldSession);
             
-            // Notify visitor when agent accepts
-            if (newSession.status === 'active' && liveChatSession?.status === 'queued') {
-              console.log('Agent has joined - status is now active');
-              handleTranscript('🎉 An agent has accepted your request and joined the chat!', 'assistant');
+            // Check if status changed from queued to active (agent accepted)
+            if (newSession.status === 'active' && oldSession?.status === 'queued') {
+              console.log('Agent has joined - status changed from queued to active');
+              setTranscript(prev => [...prev, { 
+                text: '🎉 An agent has accepted your request and joined the chat!', 
+                role: 'assistant' as const 
+              }]);
               // Clear queue position when agent accepts
               setQueuePosition(null);
               setEstimatedWaitMinutes(null);
             }
             
-            // Handle cancelled status
-            if (newSession.status === 'cancelled') {
+            // Handle ended status (session cancelled or ended)
+            if (newSession.status === 'ended' && oldSession?.status === 'queued') {
+              // Session was cancelled while in queue
               setLiveChatSession(null);
               setQueuePosition(null);
               setEstimatedWaitMinutes(null);
             }
+            
+            setLiveChatSession(newSession);
           }
         }
       )
@@ -643,7 +649,7 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
       console.log('Cleaning up live chat session subscription');
       supabase.removeChannel(channel);
     };
-  }, [conversationId, liveChatSession?.status]);
+  }, [conversationId]);
 
   // Real-time subscription for queue position updates (listen to all session changes)
   useEffect(() => {
