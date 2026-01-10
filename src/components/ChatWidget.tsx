@@ -10,6 +10,7 @@ import { playNotificationSound } from "@/utils/notificationSound";
 interface ChatWidgetProps {
   businessId: string;
   parentPageUrl?: string;
+  isEmbedded?: boolean; // When true, opens directly without button (for iframe embed)
 }
 
 type WidgetTab = "faq" | "chat";
@@ -17,8 +18,9 @@ type WidgetTab = "faq" | "chat";
 // Storage keys for persistence
 const getStorageKey = (businessId: string, key: string) => `lyqn_chat_${businessId}_${key}`;
 
-export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: ChatWidgetProps) => {
+  // When embedded in iframe, always open directly
+  const [isOpen, setIsOpen] = useState(isEmbedded);
   const [activeTab, setActiveTab] = useState<WidgetTab>("chat");
   const [settings, setSettings] = useState<any>(null);
   const [businessInfo, setBusinessInfo] = useState<{ name: string; logo_url: string | null } | null>(null);
@@ -1422,6 +1424,60 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
   // Demo: Show proactive message on load if not shown yet
   const showDemoProactive = !isOpen && !proactiveShown;
 
+  // When embedded in iframe, render full-size card directly without button
+  if (isEmbedded) {
+    return (
+      <Card className="w-full h-full shadow-none border-0 flex flex-col overflow-hidden rounded-none">
+        <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div 
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-base shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            >
+              {agentName.charAt(0)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-xs sm:text-base truncate">{agentName}</h3>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        <div className="border-b shrink-0">
+          <div className="flex">
+            {[
+              { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
+              { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-colors text-[10px] sm:text-xs ${
+                  activeTab === tab.id
+                    ? "border-b-2 text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                }`}
+                style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
+              >
+                <tab.icon className="w-4 h-4 mb-0.5" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
+          {activeTab === "faq" && renderFaqContent()}
+          {activeTab === "chat" && renderChatContent()}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Standalone widget with button (for demo page or direct use)
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
       {isOpen ? (
