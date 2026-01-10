@@ -1419,10 +1419,13 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
     setActiveTab('chat');
   };
 
+  // Demo: Show proactive message on load if not shown yet
+  const showDemoProactive = !isOpen && !proactiveShown;
+
   return (
-    <div className="w-full h-full flex flex-col items-end justify-end">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
       {isOpen ? (
-        <Card className="w-full h-full shadow-2xl flex flex-col overflow-hidden flex-1">
+        <Card className="w-[360px] sm:w-[400px] h-[550px] sm:h-[600px] shadow-2xl flex flex-col overflow-hidden">
           <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center gap-2 sm:gap-3">
               <div 
@@ -1476,38 +1479,48 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
           </CardContent>
         </Card>
       ) : (
-        <div className="relative flex flex-col items-end">
-          {/* Proactive speech bubble - DEMO: Always visible for testing */}
-          <div className="absolute bottom-full right-0 mb-3">
-            <div 
-              onClick={handleProactiveClick}
-              className="relative bg-card border rounded-2xl shadow-lg py-2.5 px-4 max-w-[220px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
-            >
-              <p className="text-sm text-foreground leading-snug">
-                {proactiveMessage || "👋 Hi there! How can I help you today?"}
-              </p>
-              <button 
-                onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
-                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md hover:bg-destructive/90"
-              >
-                <X className="w-3 h-3" />
-              </button>
-              {/* Speech bubble pointer/arrow */}
+        <>
+          {/* Proactive speech bubble - appears above the button */}
+          {(showDemoProactive || proactiveMessage) && (
+            <div className="mb-3">
               <div 
-                className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b rotate-45"
-                style={{ borderColor: 'hsl(var(--border))' }}
-              />
+                onClick={handleProactiveClick}
+                className="relative bg-card border rounded-2xl shadow-lg py-2.5 px-4 max-w-[220px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
+              >
+                <p className="text-sm text-foreground leading-snug">
+                  {proactiveMessage || "👋 Hi there! How can I help you today?"}
+                </p>
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    setProactiveMessage(null); 
+                    setProactiveShown(true);
+                  }}
+                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md hover:bg-destructive/90"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+                {/* Speech bubble pointer/arrow */}
+                <div 
+                  className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b rotate-45"
+                  style={{ borderColor: 'hsl(var(--border))' }}
+                />
+              </div>
             </div>
-          </div>
+          )}
           
           <Button
-            onClick={() => { setIsOpen(true); setProactiveMessage(null); }}
+            onClick={() => { 
+              setIsOpen(true); 
+              setProactiveMessage(null);
+              setProactiveShown(true);
+            }}
             className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
             style={{ backgroundColor: primaryColor }}
           >
             <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </Button>
-        </div>
+        </>
       )}
     </div>
   );
