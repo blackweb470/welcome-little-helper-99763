@@ -1477,50 +1477,36 @@ export const ChatWidget = ({ businessId, parentPageUrl }: ChatWidgetProps) => {
         </Card>
       ) : (
         <div className="relative flex flex-col items-end">
-          {/* Proactive speech bubble - appears above the icon with pointer */}
-          {proactiveMessage && (
-            <div className="absolute bottom-full right-0 mb-3">
-              <div 
-                onClick={handleProactiveClick}
-                className="relative bg-card border rounded-2xl shadow-lg py-2.5 px-4 max-w-[220px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
+          {/* Proactive speech bubble - DEMO: Always visible for testing */}
+          <div className="absolute bottom-full right-0 mb-3">
+            <div 
+              onClick={handleProactiveClick}
+              className="relative bg-card border rounded-2xl shadow-lg py-2.5 px-4 max-w-[220px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
+            >
+              <p className="text-sm text-foreground leading-snug">
+                {proactiveMessage || "👋 Hi there! How can I help you today?"}
+              </p>
+              <button 
+                onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md hover:bg-destructive/90"
               >
-                <p className="text-sm text-foreground leading-snug">{proactiveMessage}</p>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setProactiveMessage(null); }}
-                  className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center shadow-md hover:bg-destructive/90"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                {/* Speech bubble pointer/arrow */}
-                <div 
-                  className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b rotate-45"
-                  style={{ borderColor: 'hsl(var(--border))' }}
-                />
-              </div>
+                <X className="w-3 h-3" />
+              </button>
+              {/* Speech bubble pointer/arrow */}
+              <div 
+                className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b rotate-45"
+                style={{ borderColor: 'hsl(var(--border))' }}
+              />
             </div>
-          )}
-          
-          <div className="flex items-center gap-2">
-            {/* Test proactive popup button */}
-            <Button
-              onClick={() => {
-                setProactiveMessage("👋 Hi! Need any help today? Click to chat with us!");
-              }}
-              className="rounded-full w-10 h-10 sm:w-12 sm:h-12 shadow-lg bg-muted hover:bg-muted/80"
-              variant="outline"
-              title="Test proactive popup"
-            >
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-            </Button>
-            
-            <Button
-              onClick={() => { setIsOpen(true); setProactiveMessage(null); }}
-              className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
-              style={{ backgroundColor: primaryColor }}
-            >
-              <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </Button>
           </div>
+          
+          <Button
+            onClick={() => { setIsOpen(true); setProactiveMessage(null); }}
+            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </Button>
         </div>
       )}
     </div>
