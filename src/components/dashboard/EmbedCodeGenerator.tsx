@@ -15,24 +15,24 @@ export const EmbedCodeGenerator = ({ businessId }: EmbedCodeGeneratorProps) => {
 
   const baseUrl = window.location.origin;
   
-  // Standard iframe embed - uses /embed/ route for full-size widget
+  // Standard iframe embed
   const iframeCode = `<!-- LYQN Chat Widget -->
 <div id="lyqn-widget-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
   <iframe 
-    src="${baseUrl}/embed/${businessId}"
+    src="${baseUrl}/widget/${businessId}"
     style="width: 400px; height: 600px; border: none; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);"
     allow="microphone"
     title="Chat Widget"
   ></iframe>
 </div>`;
 
-  // JavaScript embed with popup - uses /embed/ route for widget without extra button
+  // JavaScript embed with popup
   const jsEmbedCode = `<!-- LYQN Chat Widget -->
 <script>
 (function() {
   // Configuration
   var businessId = "${businessId}";
-  var widgetUrl = "${baseUrl}/embed/" + businessId;
+  var widgetUrl = "${baseUrl}/widget/" + businessId;
   
   // Create toggle button
   var btn = document.createElement('div');
@@ -76,7 +76,7 @@ export const EmbedCodeGenerator = ({ businessId }: EmbedCodeGeneratorProps) => {
 })();
 </script>`;
 
-  // React component embed - uses /embed/ route
+  // React component embed
   const reactCode = `// Install: npm install @supabase/supabase-js
 import { useEffect, useRef } from 'react';
 
@@ -115,7 +115,7 @@ export const LYQNChatWidget = ({ position = 'bottom-right' }) => {
     }}>
       <iframe
         ref={iframeRef}
-        src={\`${baseUrl}/embed/\${businessId}\`}
+        src={\`${baseUrl}/widget/\${businessId}\`}
         style={{ width: '100%', height: '100%', border: 'none' }}
         allow="microphone"
         title="LYQN Chat"
