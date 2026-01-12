@@ -237,16 +237,17 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
   // Auto-trigger proactive on page load (demo: always show after 3 seconds)
   useEffect(() => {
-    if (!businessId || proactiveShown || isEmbedded || isOpen) return;
+    if (!businessId || isEmbedded || isOpen) return;
     
     // Wait 3 seconds then show a default proactive message
     const timer = setTimeout(() => {
-      if (proactiveShown || isOpen) return;
+      if (isOpen) return;
+      console.log('Showing proactive popup after 3 seconds');
       setProactiveMessage("👋 Hi there! How can I help you today?");
     }, 3000);
     
     return () => clearTimeout(timer);
-  }, [businessId, proactiveShown, isEmbedded, isOpen]);
+  }, [businessId, isEmbedded, isOpen]);
 
   // Check proactive rules when parent URL is available
   useEffect(() => {
