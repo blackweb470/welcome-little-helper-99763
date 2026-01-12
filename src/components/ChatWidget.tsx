@@ -235,31 +235,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     };
   }, [businessId]);
 
-  // Auto-trigger proactive on page load if no rules exist (fallback)
+  // Auto-trigger proactive on page load (demo: always show after 3 seconds)
   useEffect(() => {
-    if (!businessId || proactiveShown) return;
+    if (!businessId || proactiveShown || isEmbedded || isOpen) return;
     
-    // Wait 3 seconds then show a default proactive message if no rules triggered
-    const timer = setTimeout(async () => {
-      if (proactiveShown) return;
-      
-      // Check if there are any enabled rules first
-      const { data: rules } = await supabase
-        .from('proactive_chat_rules')
-        .select('id')
-        .eq('business_id', businessId)
-        .eq('enabled', true)
-        .limit(1);
-      
-      // If no rules exist, show a default welcome message
-      if (!rules?.length) {
-        setProactiveShown(true);
-        setProactiveMessage("👋 Hi there! How can I help you today?");
-      }
+    // Wait 3 seconds then show a default proactive message
+    const timer = setTimeout(() => {
+      if (proactiveShown || isOpen) return;
+      setProactiveMessage("👋 Hi there! How can I help you today?");
     }, 3000);
     
     return () => clearTimeout(timer);
-  }, [businessId, proactiveShown]);
+  }, [businessId, proactiveShown, isEmbedded, isOpen]);
 
   // Check proactive rules when parent URL is available
   useEffect(() => {
@@ -1421,8 +1408,8 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     setActiveTab('chat');
   };
 
-  // Demo: Show proactive message on load if not shown yet
-  const showDemoProactive = !isOpen && !proactiveShown;
+  // Show proactive popup when message is set
+  const showProactivePopup = !isOpen && proactiveMessage;
 
   // When embedded in iframe, render full-size card directly without button
   if (isEmbedded) {
@@ -1537,7 +1524,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       ) : (
         <>
           {/* Proactive speech bubble - appears above the button */}
-          {(showDemoProactive || proactiveMessage) && (
+          {showProactivePopup && (
             <div className="mb-3">
               <div 
                 onClick={handleProactiveClick}
