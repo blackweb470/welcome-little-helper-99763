@@ -26,13 +26,31 @@ export const EmbedCodeGenerator = ({ businessId }: EmbedCodeGeneratorProps) => {
   ></iframe>
 </div>`;
 
-  // JavaScript embed with popup
+  // JavaScript embed with popup and proactive message
   const jsEmbedCode = `<!-- LYQN Chat Widget -->
 <script>
 (function() {
   // Configuration
   var businessId = "${businessId}";
   var widgetUrl = "${baseUrl}/widget/" + businessId;
+  var proactiveDelay = 3000; // Show proactive message after 3 seconds
+  var proactiveMessage = "👋 Hi there! How can I help you today?";
+  
+  // Create proactive popup
+  var popup = document.createElement('div');
+  popup.id = 'lyqn-proactive';
+  popup.innerHTML = '<span style="flex:1;">' + proactiveMessage + '</span><button style="background:none;border:none;cursor:pointer;font-size:16px;color:#666;margin-left:8px;" onclick="this.parentElement.style.display=\\'none\\'">&times;</button>';
+  popup.style.cssText = 'position:fixed;bottom:90px;right:20px;max-width:280px;padding:12px 16px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15);z-index:9997;display:none;font-size:14px;line-height:1.4;cursor:pointer;animation:lyqnBounce 0.5s ease;align-items:flex-start;';
+  
+  // Add arrow pointer
+  var arrow = document.createElement('div');
+  arrow.style.cssText = 'position:absolute;bottom:-8px;right:30px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid #fff;';
+  popup.appendChild(arrow);
+  
+  // Add animation styles
+  var style = document.createElement('style');
+  style.textContent = '@keyframes lyqnBounce{0%{opacity:0;transform:translateY(10px)scale(0.95)}100%{opacity:1;transform:translateY(0)scale(1)}}';
+  document.head.appendChild(style);
   
   // Create toggle button
   var btn = document.createElement('div');
@@ -54,14 +72,31 @@ export const EmbedCodeGenerator = ({ businessId }: EmbedCodeGeneratorProps) => {
   iframe.allow = 'microphone';
   
   container.appendChild(iframe);
+  document.body.appendChild(popup);
   document.body.appendChild(container);
   document.body.appendChild(btn);
+  
+  // Show proactive popup after delay
+  setTimeout(function() {
+    if (!isOpen) {
+      popup.style.display = 'flex';
+    }
+  }, proactiveDelay);
+  
+  // Click on popup opens widget
+  popup.onclick = function(e) {
+    if (e.target.tagName !== 'BUTTON') {
+      popup.style.display = 'none';
+      btn.click();
+    }
+  };
   
   // Toggle widget
   var isOpen = false;
   btn.onclick = function() {
     isOpen = !isOpen;
     container.style.display = isOpen ? 'block' : 'none';
+    popup.style.display = 'none'; // Hide proactive when widget opens
     btn.innerHTML = isOpen 
       ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
       : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
