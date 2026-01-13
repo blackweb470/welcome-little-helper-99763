@@ -3,12 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { 
-  Bot, Mic, MessageSquare, Users, TrendingUp, BarChart3, 
+  Bot, MessageSquare, Users, TrendingUp, BarChart3, 
   Package, Bell, FileText, Settings, Shield, Zap, 
   Brain, Target, Clock, Eye, Activity, Globe,
   Database, Server, Code, Sparkles, Heart, 
   CheckCircle, AlertCircle, ArrowLeft, Layers,
-  Volume2, HeadphonesIcon, Timer, UserCheck,
+  Timer, UserCheck,
   PieChart, TrendingDown, Filter, Search,
   Calendar, Mail, Phone, MapPin, Smartphone,
   Monitor, Tablet, Chrome, Layout, Palette
@@ -22,9 +22,6 @@ export default function FeaturesList() {
       color: "text-purple-500",
       items: [
         { name: "GPT-4 Powered AI Agent", icon: Bot, description: "Advanced conversational AI using OpenAI's latest model" },
-        { name: "Real-Time Voice Chat", icon: Mic, description: "OpenAI Realtime API integration for natural voice conversations" },
-        { name: "Voice Input Recognition", icon: Volume2, description: "Speech-to-text for hands-free customer interactions" },
-        { name: "Voice Output Synthesis", icon: HeadphonesIcon, description: "Text-to-speech AI responses with natural voice" },
         { name: "Sentiment Analysis", icon: Heart, description: "Real-time emotion detection (positive/neutral/negative)" },
         { name: "Conversation Memory", icon: Database, description: "Contextual understanding across multiple messages" },
         { name: "Smart Product Recommendations", icon: Sparkles, description: "AI suggests relevant products based on conversation context" },
@@ -179,7 +176,7 @@ export default function FeaturesList() {
         { name: "Widget Position Control", icon: Layout, description: "Place widget anywhere on page" },
         { name: "Welcome Message", icon: MessageSquare, description: "Customize first message visitors see" },
         { name: "Agent Name Customization", icon: Users, description: "Set AI agent display name" },
-        { name: "Voice Enable/Disable", icon: Mic, description: "Toggle voice features on/off" },
+        { name: "System Prompt Configuration", icon: Settings, description: "Define AI personality and behavior" },
         { name: "System Prompt Configuration", icon: Settings, description: "Define AI personality and behavior" },
         { name: "Widget Embed Code", icon: Code, description: "Copy-paste code for any framework" },
         { name: "Framework Compatibility", icon: Globe, description: "Works with React, Next.js, Vue, Angular, HTML" },

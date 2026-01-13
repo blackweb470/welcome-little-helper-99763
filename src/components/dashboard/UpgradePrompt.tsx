@@ -31,7 +31,6 @@ const planFeatures: { [key: string]: string[] } = {
     'Live Agent Transfer',
     'Advanced Analytics',
     'Sentiment Analysis',
-    'Voice Chat',
     'Product Catalog',
   ],
   business: [

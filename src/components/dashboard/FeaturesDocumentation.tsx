@@ -10,12 +10,11 @@ export const FeaturesDocumentation = () => {
       icon: MessageSquare,
       items: [
         {
-          name: "Voice AI Assistant",
-          description: "Real-time voice conversations with your visitors using OpenAI's Realtime API",
+          name: "AI Chat Assistant",
+          description: "Real-time AI-powered chat with your visitors using GPT-4",
           howTo: [
-            "Enable voice in Widget Settings",
-            "Customize agent name and system prompt",
-            "Visitors click the mic button to start talking",
+            "Customize agent name and system prompt in Widget Settings",
+            "Visitors start conversations through the chat widget",
             "Conversations are automatically recorded and analyzed"
           ],
           badge: "Active"
@@ -144,7 +143,6 @@ export const FeaturesDocumentation = () => {
             "Go to Settings tab in dashboard",
             "Change agent name and welcome message",
             "Customize primary color and widget position",
-            "Toggle voice features on/off",
             "Set custom system prompts for AI behavior"
           ],
           badge: "Active"
