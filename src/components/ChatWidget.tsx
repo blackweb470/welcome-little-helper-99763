@@ -169,7 +169,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       // Only fetch public-safe fields (exclude system_prompt)
       const { data } = await supabase
         .from("widget_settings")
-        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, voice_enabled, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields, max_input_characters, show_qa_to_visitors")
+        .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields, max_input_characters, show_qa_to_visitors")
         .eq("business_id", businessId)
         .single();
       

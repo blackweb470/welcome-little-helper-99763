@@ -12,7 +12,6 @@ export type FeatureName =
   | 'advanced_analytics'
   | 'sentiment_analysis'
   | 'proactive_chat'
-  | 'voice_chat'
   | 'product_catalog'
   | 'business_documents'
   | 'ai_learning'
@@ -68,7 +67,6 @@ export const useFeatureAccess = (userId: string | undefined) => {
           'advanced_analytics',
           'sentiment_analysis',
           'proactive_chat',
-          'voice_chat',
           'product_catalog',
           'business_documents',
           'ai_learning',
@@ -114,7 +112,6 @@ export const useFeatureAccess = (userId: string | undefined) => {
       advanced_analytics: 'pro',
       sentiment_analysis: 'pro',
       proactive_chat: 'pro',
-      voice_chat: 'pro',
       product_catalog: 'pro',
       business_documents: 'business',
       ai_learning: 'business',

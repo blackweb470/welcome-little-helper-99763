@@ -728,7 +728,6 @@ export default function Documentation() {
                       <li>• <code className="text-xs bg-secondary px-1 py-0.5 rounded">analyze-sentiment</code> - Sentiment analysis</li>
                       <li>• <code className="text-xs bg-secondary px-1 py-0.5 rounded">conversation-memory</code> - Context management</li>
                       <li>• <code className="text-xs bg-secondary px-1 py-0.5 rounded">product-recommendations</code> - Product suggestions</li>
-                      <li>• <code className="text-xs bg-secondary px-1 py-0.5 rounded">realtime-session</code> - Voice chat handler</li>
                       <li>• <code className="text-xs bg-secondary px-1 py-0.5 rounded">track-visitor</code> - Behavioral tracking</li>
                     </ul>
                   </div>

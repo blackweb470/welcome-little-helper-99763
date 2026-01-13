@@ -100,37 +100,6 @@ export default function FeaturesTestingCenter() {
         ]
       }
     },
-    voiceChat: {
-      name: "Voice AI Interface",
-      category: "Core Features",
-      status: "checking",
-      message: "Checking...",
-      icon: MessageSquare,
-      testFunction: async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke('realtime-session');
-          if (error) throw error;
-          return { status: "working", message: "Voice AI session creation working" };
-        } catch (err) {
-          return { status: "warning", message: "Voice AI setup complete, requires user interaction to test" };
-        }
-      },
-      documentation: {
-        description: "OpenAI Realtime API integration for natural voice conversations",
-        howToUse: [
-          "Enable voice in Widget Settings",
-          "Users click mic button to start talking",
-          "AI responds with natural speech",
-          "Conversations auto-transcribed and saved"
-        ],
-        howToTest: [
-          "Go to Widget Demo page",
-          "Click the microphone icon",
-          "Allow microphone permissions",
-          "Speak a question and wait for voice response"
-        ]
-      }
-    },
     sentimentAnalysis: {
       name: "Sentiment Analysis",
       category: "Analytics",

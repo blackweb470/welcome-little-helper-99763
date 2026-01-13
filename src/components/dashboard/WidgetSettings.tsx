@@ -19,7 +19,6 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     widget_position: 'bottom-right',
     welcome_message: 'Hi! How can I help you today?',
     agent_name: 'AI Assistant',
-    voice_enabled: true,
     system_prompt: 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.',
     pre_chat_enabled: true,
     pre_chat_required_fields: ['name', 'email'],
@@ -221,15 +220,6 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
           <p className="text-xs text-muted-foreground">
             Set the maximum number of characters visitors can type in the chat input box.
           </p>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="voice_enabled"
-            checked={settings.voice_enabled}
-            onCheckedChange={(checked) => setSettings({ ...settings, voice_enabled: checked })}
-          />
-          <Label htmlFor="voice_enabled">Enable Voice Chat</Label>
         </div>
 
         <div className="flex items-center space-x-2">
