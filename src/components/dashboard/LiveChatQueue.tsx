@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
+import { WhatsAppInteractiveButtons, type InteractiveMessage } from "./WhatsAppInteractiveButtons";
 
 interface Message {
   id: string;
@@ -58,6 +59,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [cannedResponsesOpen, setCannedResponsesOpen] = useState(false);
   const [aiSuggestionsOpen, setAiSuggestionsOpen] = useState(false);
+  const [interactiveOpen, setInteractiveOpen] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const { toast } = useToast();
@@ -407,6 +409,55 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     }
   };
 
+  // Send interactive WhatsApp message
+  const sendInteractiveMessage = async (interactive: InteractiveMessage) => {
+    if (!selectedSession) return;
+
+    try {
+      setSendingMessage(true);
+      const conversation = selectedConversation || sessionConversations[selectedSession.conversation_id];
+      
+      if (conversation?.channel !== 'whatsapp') {
+        toast({
+          title: "Not supported",
+          description: "Interactive messages are only available for WhatsApp conversations",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('whatsapp-send-message', {
+        body: {
+          businessId: businessId,
+          conversationId: selectedSession.conversation_id,
+          interactive
+        }
+      });
+
+      if (error) {
+        console.error('Error sending interactive message:', error);
+        throw error;
+      }
+
+      setInteractiveOpen(false);
+      toast({
+        title: "Message sent",
+        description: `Interactive ${interactive.type === 'quick_reply' ? 'quick reply' : 'list'} message delivered`
+      });
+
+      await fetchMessages(selectedSession.conversation_id);
+    } catch (error) {
+      console.error('Error sending interactive message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send interactive message",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   const handleViewChat = (session: ChatSession) => {
     // Clear previous messages before loading new conversation
     setMessages([]);
@@ -693,6 +744,29 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                   </div>
                 </PopoverContent>
               </Popover>
+
+              {/* Interactive Messages Button - Only for WhatsApp */}
+              {selectedConversation?.channel === 'whatsapp' && (
+                <Popover open={interactiveOpen} onOpenChange={setInteractiveOpen}>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      type="button"
+                      disabled={sendingMessage}
+                      title="Interactive Messages"
+                    >
+                      <Reply className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-96" align="start" side="top">
+                    <WhatsAppInteractiveButtons
+                      onSend={sendInteractiveMessage}
+                      disabled={sendingMessage}
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
               
               <Input
                 value={messageInput}

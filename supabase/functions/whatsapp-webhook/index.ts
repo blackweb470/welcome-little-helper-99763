@@ -70,14 +70,44 @@ Deno.serve(async (req) => {
       const message = value.messages[0];
       const phoneNumberId = value.metadata?.phone_number_id;
       const senderPhone = message.from;
-      const messageText = message.text?.body || '';
       const messageType = message.type;
+      
+      // Handle different message types including interactive replies
+      let messageText = '';
+      let interactiveReply: { type: string; id: string; title: string } | null = null;
+      
+      if (messageType === 'text') {
+        messageText = message.text?.body || '';
+      } else if (messageType === 'interactive') {
+        // Handle quick reply button clicks
+        if (message.interactive?.type === 'button_reply') {
+          interactiveReply = {
+            type: 'button_reply',
+            id: message.interactive.button_reply.id,
+            title: message.interactive.button_reply.title
+          };
+          messageText = message.interactive.button_reply.title;
+        }
+        // Handle list selection
+        else if (message.interactive?.type === 'list_reply') {
+          interactiveReply = {
+            type: 'list_reply',
+            id: message.interactive.list_reply.id,
+            title: message.interactive.list_reply.title
+          };
+          messageText = message.interactive.list_reply.title;
+          if (message.interactive.list_reply.description) {
+            messageText += ` - ${message.interactive.list_reply.description}`;
+          }
+        }
+      }
 
       console.log('Processing WhatsApp message:', { 
         phoneNumberId, 
         senderPhone, 
         messageText: messageText.substring(0, 100),
-        messageType 
+        messageType,
+        interactiveReply
       });
 
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
