@@ -6,10 +6,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Schema for quick reply buttons
+const quickReplyButtonSchema = z.object({
+  id: z.string(),
+  title: z.string().max(20),
+});
+
+// Schema for list rows
+const listRowSchema = z.object({
+  id: z.string(),
+  title: z.string().max(24),
+  description: z.string().max(72).optional(),
+});
+
+// Schema for list sections
+const listSectionSchema = z.object({
+  title: z.string().max(24),
+  rows: z.array(listRowSchema).min(1).max(10),
+});
+
+// Schema for interactive messages
+const interactiveMessageSchema = z.object({
+  type: z.enum(['quick_reply', 'list']),
+  header: z.string().max(60).optional(),
+  body: z.string().min(1).max(1024),
+  footer: z.string().max(60).optional(),
+  buttons: z.array(quickReplyButtonSchema).max(3).optional(),
+  listButtonText: z.string().max(20).optional(),
+  sections: z.array(listSectionSchema).optional(),
+});
+
 const requestSchema = z.object({
   businessId: z.string().uuid('Invalid business ID'),
   conversationId: z.string().uuid('Invalid conversation ID'),
-  message: z.string().min(1, 'Message required').max(4096, 'Message too long'),
+  message: z.string().min(1, 'Message required').max(4096, 'Message too long').optional(),
+  interactive: interactiveMessageSchema.optional(),
+}).refine(data => data.message || data.interactive, {
+  message: 'Either message or interactive content is required',
 });
 
 Deno.serve(async (req) => {
@@ -36,8 +69,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { businessId, conversationId, message } = validationResult.data;
-    console.log('Sending WhatsApp message:', { businessId, conversationId, messageLength: message.length });
+    const { businessId, conversationId, message, interactive } = validationResult.data;
+    console.log('Sending WhatsApp message:', { 
+      businessId, 
+      conversationId, 
+      messageLength: message?.length,
+      interactiveType: interactive?.type 
+    });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -84,19 +122,122 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Prepare message content for database
+    let messageContent: string;
+    if (interactive) {
+      if (interactive.type === 'quick_reply') {
+        const buttonLabels = interactive.buttons?.map(b => b.title).join(', ') || '';
+        messageContent = `${interactive.body}\n[Quick Reply Options: ${buttonLabels}]`;
+      } else if (interactive.type === 'list') {
+        const options = interactive.sections?.flatMap(s => s.rows.map(r => r.title)).join(', ') || '';
+        messageContent = `${interactive.body}\n[List Menu: ${options}]`;
+      } else {
+        messageContent = interactive.body;
+      }
+    } else {
+      messageContent = message!;
+    }
+
     // Save the message to the database first
     const { error: msgError } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
         role: 'assistant',
-        content: message
+        content: messageContent
       });
 
     if (msgError) {
       console.error('Error saving message:', msgError);
       throw msgError;
     }
+
+    // Build WhatsApp API payload
+    let whatsappPayload: any;
+
+    if (interactive) {
+      // Interactive message payload
+      if (interactive.type === 'quick_reply') {
+        whatsappPayload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipientPhone,
+          type: 'interactive',
+          interactive: {
+            type: 'button',
+            body: { text: interactive.body },
+            action: {
+              buttons: interactive.buttons?.map(btn => ({
+                type: 'reply',
+                reply: {
+                  id: btn.id,
+                  title: btn.title
+                }
+              }))
+            }
+          }
+        };
+
+        // Add optional header
+        if (interactive.header) {
+          whatsappPayload.interactive.header = {
+            type: 'text',
+            text: interactive.header
+          };
+        }
+
+        // Add optional footer
+        if (interactive.footer) {
+          whatsappPayload.interactive.footer = { text: interactive.footer };
+        }
+      } else if (interactive.type === 'list') {
+        whatsappPayload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipientPhone,
+          type: 'interactive',
+          interactive: {
+            type: 'list',
+            body: { text: interactive.body },
+            action: {
+              button: interactive.listButtonText || 'View Options',
+              sections: interactive.sections?.map(section => ({
+                title: section.title,
+                rows: section.rows.map(row => ({
+                  id: row.id,
+                  title: row.title,
+                  description: row.description || undefined
+                }))
+              }))
+            }
+          }
+        };
+
+        // Add optional header
+        if (interactive.header) {
+          whatsappPayload.interactive.header = {
+            type: 'text',
+            text: interactive.header
+          };
+        }
+
+        // Add optional footer
+        if (interactive.footer) {
+          whatsappPayload.interactive.footer = { text: interactive.footer };
+        }
+      }
+    } else {
+      // Regular text message payload
+      whatsappPayload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipientPhone,
+        type: 'text',
+        text: { body: message }
+      };
+    }
+
+    console.log('Sending WhatsApp payload:', JSON.stringify(whatsappPayload, null, 2));
 
     // Send via WhatsApp Cloud API
     const whatsappResponse = await fetch(
@@ -107,13 +248,7 @@ Deno.serve(async (req) => {
           'Authorization': `Bearer ${waSettings.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: recipientPhone,
-          type: 'text',
-          text: { body: message }
-        }),
+        body: JSON.stringify(whatsappPayload),
       }
     );
 
@@ -135,7 +270,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        messageId: result.messages?.[0]?.id 
+        messageId: result.messages?.[0]?.id,
+        type: interactive ? interactive.type : 'text'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
