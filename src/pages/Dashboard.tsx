@@ -24,6 +24,7 @@ import { NotificationSettings } from "@/components/dashboard/NotificationSetting
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { BotCustomization } from "@/components/dashboard/BotCustomization";
 import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
+import { WhatsAppAdminSettings } from "@/components/dashboard/WhatsAppAdminSettings";
 
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
@@ -286,7 +287,10 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'whatsapp' && (
-                  <WhatsAppSettings businessId={selectedBusinessId} />
+                  <div className="space-y-6">
+                    <WhatsAppSettings businessId={selectedBusinessId} />
+                    <WhatsAppAdminSettings businessId={selectedBusinessId} />
+                  </div>
                 )}
               </>
             )}
