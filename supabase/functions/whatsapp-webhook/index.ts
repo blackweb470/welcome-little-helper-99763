@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       // Find business by phone_number_id first (need for image downloads)
       const { data: waSettings, error: settingsError } = await supabase
         .from('whatsapp_settings')
-        .select('*')
+        .select('*, admin_phone_numbers')
         .eq('phone_number_id', phoneNumberId)
         .eq('enabled', true)
         .maybeSingle();
@@ -131,6 +131,47 @@ Deno.serve(async (req) => {
 
       const businessId = waSettings.business_id;
       const visitorId = `whatsapp_${senderPhone}`;
+
+      // Check if sender is an admin and message is a command
+      const adminPhones: string[] = waSettings.admin_phone_numbers || [];
+      const isAdmin = adminPhones.some(phone => senderPhone.includes(phone.replace(/[^\d]/g, '')) || phone.replace(/[^\d]/g, '').includes(senderPhone));
+      const isCommand = messageText.trim().startsWith('/') || messageText.trim().startsWith('!');
+
+      if (isAdmin && isCommand) {
+        console.log('Processing admin command from:', senderPhone);
+        
+        // Call admin commands handler
+        try {
+          const adminResponse = await fetch(
+            `${supabaseUrl}/functions/v1/whatsapp-admin-commands`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                businessId,
+                senderPhone,
+                messageText,
+                phoneNumberId,
+                accessToken: waSettings.access_token
+              }),
+            }
+          );
+
+          const adminResult = await adminResponse.json();
+          console.log('Admin command result:', adminResult);
+
+          if (adminResult.handled) {
+            return new Response(JSON.stringify({ status: 'ok', admin: true }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
+        } catch (adminError) {
+          console.error('Error calling admin commands:', adminError);
+        }
+      }
 
       // Handle image messages
       let imageUrl: string | null = null;

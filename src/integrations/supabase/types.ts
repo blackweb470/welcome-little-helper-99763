@@ -1357,6 +1357,7 @@ export type Database = {
       whatsapp_settings: {
         Row: {
           access_token: string
+          admin_phone_numbers: string[] | null
           business_id: string
           created_at: string
           enabled: boolean
@@ -1369,6 +1370,7 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          admin_phone_numbers?: string[] | null
           business_id: string
           created_at?: string
           enabled?: boolean
@@ -1381,6 +1383,7 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          admin_phone_numbers?: string[] | null
           business_id?: string
           created_at?: string
           enabled?: boolean
