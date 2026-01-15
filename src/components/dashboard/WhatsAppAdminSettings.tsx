@@ -13,7 +13,10 @@ import {
   Trash2, 
   Phone,
   Loader2,
-  HelpCircle
+  HelpCircle,
+  Send,
+  CheckCircle2,
+  XCircle
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -32,6 +35,8 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
   const queryClient = useQueryClient();
   const [newPhoneNumber, setNewPhoneNumber] = useState("");
   const [adminPhones, setAdminPhones] = useState<string[]>([]);
+  const [testingPhone, setTestingPhone] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{phone: string; success: boolean; message: string} | null>(null);
 
   // Fetch existing settings
   const { data: settings, isLoading } = useQuery({
@@ -80,6 +85,65 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
       });
     }
   });
+  const testAdminMutation = useMutation({
+    mutationFn: async (phoneNumber: string) => {
+      if (!settings?.phone_number_id || !settings?.access_token) {
+        throw new Error("WhatsApp settings not configured");
+      }
+
+      // Send a test message directly to the admin's phone
+      const response = await fetch(
+        `https://graph.facebook.com/v19.0/${settings.phone_number_id}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${settings.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: phoneNumber.replace(/\+/g, ''),
+            type: 'text',
+            text: { 
+              body: `✅ *LYQN Admin Test Successful!*\n\nYour phone number is now configured as an admin.\n\n📱 *Available Commands:*\n• /help - Show all commands\n• /queue - View pending chats\n• /accept [id] - Accept a chat\n• /stats - View statistics\n\nReply with */help* to get started!` 
+            }
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error?.message || 'Failed to send test message');
+      }
+
+      return await response.json();
+    },
+    onSuccess: (_, phoneNumber) => {
+      setTestResult({ phone: phoneNumber, success: true, message: 'Test message sent! Check your WhatsApp.' });
+      toast({ 
+        title: "Test Successful", 
+        description: "Check your WhatsApp for the test message" 
+      });
+    },
+    onError: (error: any, phoneNumber) => {
+      setTestResult({ phone: phoneNumber, success: false, message: error.message });
+      toast({ 
+        title: "Test Failed", 
+        description: error.message,
+        variant: "destructive"
+      });
+    },
+    onSettled: () => {
+      setTestingPhone(null);
+    }
+  });
+
+  const handleTestAdmin = (phoneNumber: string) => {
+    setTestingPhone(phoneNumber);
+    setTestResult(null);
+    testAdminMutation.mutate(phoneNumber);
+  };
 
   const handleAddPhone = () => {
     const cleaned = newPhoneNumber.replace(/[^\d+]/g, '');
@@ -224,15 +288,54 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     <span className="font-mono text-sm">{phone}</span>
                     <Badge variant="secondary" className="text-xs">Admin</Badge>
+                    {testResult?.phone === phone && (
+                      testResult.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <XCircle className="w-4 h-4 text-destructive" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{testResult.message}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )
+                    )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemovePhone(phone)}
-                    disabled={saveMutation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleTestAdmin(phone)}
+                            disabled={testingPhone === phone}
+                          >
+                            {testingPhone === phone ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Send className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Send test message</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemovePhone(phone)}
+                      disabled={saveMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
