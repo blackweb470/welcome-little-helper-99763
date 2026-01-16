@@ -1389,7 +1389,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             <div className="px-2 sm:px-3 pb-2 space-y-1.5">
               <ContinueOnWhatsApp 
                 businessId={businessId}
-                conversationContext={transcript.length > 0 ? "active" : undefined}
+                conversationId={conversationId}
                 primaryColor={primaryColor}
               />
               

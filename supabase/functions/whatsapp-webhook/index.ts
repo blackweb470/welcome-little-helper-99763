@@ -271,6 +271,43 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Check for conversation link code in the message
+      const linkCodeMatch = messageContent.match(/\b([A-Z0-9]{6})\b/);
+      let linkedConversationId: string | null = null;
+      let linkedHistory: any[] = [];
+
+      if (linkCodeMatch) {
+        const potentialCode = linkCodeMatch[1];
+        console.log('Checking for link code:', potentialCode);
+        
+        // Look up the link code
+        const { data: linkData } = await supabase
+          .from('conversation_links')
+          .select('*, source_conversation_id')
+          .eq('link_code', potentialCode)
+          .eq('business_id', businessId)
+          .gt('expires_at', new Date().toISOString())
+          .maybeSingle();
+
+        if (linkData) {
+          linkedConversationId = linkData.source_conversation_id;
+          console.log('Found linked conversation:', linkedConversationId);
+
+          // Fetch history from the linked web conversation
+          const { data: prevHistory } = await supabase
+            .from('messages')
+            .select('role, content, created_at')
+            .eq('conversation_id', linkedConversationId)
+            .order('created_at', { ascending: true })
+            .limit(20);
+
+          if (prevHistory && prevHistory.length > 0) {
+            linkedHistory = prevHistory;
+            console.log('Fetched', linkedHistory.length, 'messages from linked conversation');
+          }
+        }
+      }
+
       // Create or get conversation
       let conversationId: string;
       
@@ -297,7 +334,8 @@ Deno.serve(async (req) => {
             channel: 'whatsapp',
             channel_metadata: { 
               phone_number: senderPhone,
-              phone_number_id: phoneNumberId 
+              phone_number_id: phoneNumberId,
+              linked_from: linkedConversationId || undefined
             },
             started_at: new Date().toISOString()
           })
@@ -311,6 +349,19 @@ Deno.serve(async (req) => {
 
         conversationId = newConv.id;
         console.log('Created new WhatsApp conversation:', conversationId);
+
+        // Update the link record with the target conversation
+        if (linkedConversationId && linkCodeMatch) {
+          await supabase
+            .from('conversation_links')
+            .update({
+              target_conversation_id: conversationId,
+              linked_at: new Date().toISOString()
+            })
+            .eq('link_code', linkCodeMatch[1]);
+          
+          console.log('Updated conversation link with target:', conversationId);
+        }
       }
 
       // Save user message with image URL if present
@@ -447,11 +498,23 @@ Deno.serve(async (req) => {
         systemPrompt += '\n\nLearned Insights:\n' + learnings.map((l: any) => l.content).join('\n');
       }
 
+      // Add context about linked conversation if available
+      if (linkedHistory.length > 0) {
+        systemPrompt += '\n\n📱 IMPORTANT: This visitor continued from a web chat. Here is their previous conversation for context - acknowledge that you remember their earlier discussion:\n';
+        systemPrompt += linkedHistory.map((m: any) => `${m.role === 'user' ? 'Visitor' : 'Assistant'}: ${m.content}`).join('\n');
+      }
+
       systemPrompt += '\n\nIMPORTANT: If you cannot find the answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, politely let them know and offer to connect them with a human agent who can assist further.';
+
+      // Build AI messages - include linked history first, then current WhatsApp history
+      const allHistory = [
+        ...linkedHistory.map((m: any) => ({ role: m.role, content: m.content })),
+        ...(history || []).map((m: any) => ({ role: m.role, content: m.content }))
+      ];
 
       const aiMessages = [
         { role: 'system', content: systemPrompt },
-        ...(history || []).map((m: any) => ({ role: m.role, content: m.content }))
+        ...allHistory
       ];
 
       const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
