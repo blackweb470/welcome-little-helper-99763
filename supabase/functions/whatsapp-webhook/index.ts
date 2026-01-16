@@ -137,39 +137,68 @@ Deno.serve(async (req) => {
       const isAdmin = adminPhones.some(phone => senderPhone.includes(phone.replace(/[^\d]/g, '')) || phone.replace(/[^\d]/g, '').includes(senderPhone));
       const isCommand = messageText.trim().startsWith('/') || messageText.trim().startsWith('!');
 
-      if (isAdmin && isCommand) {
-        console.log('Processing admin command from:', senderPhone);
-        
-        // Call admin commands handler
-        try {
-          const adminResponse = await fetch(
-            `${supabaseUrl}/functions/v1/whatsapp-admin-commands`,
+      if (isCommand) {
+        if (isAdmin) {
+          console.log('Processing admin command from:', senderPhone);
+          
+          // Call admin commands handler
+          try {
+            const adminResponse = await fetch(
+              `${supabaseUrl}/functions/v1/whatsapp-admin-commands`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`,
+                },
+                body: JSON.stringify({
+                  businessId,
+                  senderPhone,
+                  messageText,
+                  phoneNumberId,
+                  accessToken: waSettings.access_token
+                }),
+              }
+            );
+
+            const adminResult = await adminResponse.json();
+            console.log('Admin command result:', adminResult);
+
+            if (adminResult.handled) {
+              return new Response(JSON.stringify({ status: 'ok', admin: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              });
+            }
+          } catch (adminError) {
+            console.error('Error calling admin commands:', adminError);
+          }
+        } else {
+          // Non-admin tried to use a command - inform them it's not available
+          console.log('Non-admin attempted command:', senderPhone, messageText);
+          
+          const notAdminReply = "Hi! Commands are only available for business administrators. How can I help you with your questions today?";
+          
+          await fetch(
+            `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
             {
               method: 'POST',
               headers: {
+                'Authorization': `Bearer ${waSettings.access_token}`,
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`,
               },
               body: JSON.stringify({
-                businessId,
-                senderPhone,
-                messageText,
-                phoneNumberId,
-                accessToken: waSettings.access_token
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to: senderPhone,
+                type: 'text',
+                text: { body: notAdminReply }
               }),
             }
           );
 
-          const adminResult = await adminResponse.json();
-          console.log('Admin command result:', adminResult);
-
-          if (adminResult.handled) {
-            return new Response(JSON.stringify({ status: 'ok', admin: true }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-          }
-        } catch (adminError) {
-          console.error('Error calling admin commands:', adminError);
+          return new Response(JSON.stringify({ status: 'ok', command_blocked: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
         }
       }
 
