@@ -7,6 +7,7 @@ import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { playNotificationSound } from "@/utils/notificationSound";
+import { ContinueOnWhatsApp } from "./ContinueOnWhatsApp";
 interface ChatWidgetProps {
   businessId: string;
   parentPageUrl?: string;
@@ -1384,8 +1385,15 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               </div>
             </div>
 
-            {!liveChatSession && (
-              <div className="px-2 sm:px-3 pb-2">
+            {/* WhatsApp continuation and Live Agent buttons */}
+            <div className="px-2 sm:px-3 pb-2 space-y-1.5">
+              <ContinueOnWhatsApp 
+                businessId={businessId}
+                conversationContext={transcript.length > 0 ? "active" : undefined}
+                primaryColor={primaryColor}
+              />
+              
+              {!liveChatSession && (
                 <Button
                   onClick={() => requestLiveAgent('User requested live agent support')}
                   disabled={requestingAgent}
@@ -1395,8 +1403,8 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 >
                   {requestingAgent ? 'Requesting...' : 'Talk to Live Agent'}
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </>
       )}
