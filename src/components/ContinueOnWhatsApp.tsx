@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, ExternalLink, Check, Copy } from "lucide-react";
+import { ExternalLink, Check, Copy, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -10,27 +10,39 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface ContinueOnWhatsAppProps {
   businessId: string;
-  conversationContext?: string;
+  conversationId?: string | null;
   primaryColor?: string;
 }
 
+// Generate a short unique link code
+const generateLinkCode = (): string => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
 export const ContinueOnWhatsApp = ({ 
   businessId, 
-  conversationContext,
+  conversationId,
   primaryColor = "#6366f1" 
 }: ContinueOnWhatsAppProps) => {
   const [whatsappNumber, setWhatsappNumber] = useState<string | null>(null);
   const [isEnabled, setIsEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [creatingLink, setCreatingLink] = useState(false);
 
   useEffect(() => {
     const fetchWhatsAppSettings = async () => {
       try {
-        // Fetch WhatsApp settings for this business (only public fields needed)
         const { data, error } = await supabase
           .from("whatsapp_settings")
           .select("phone_number, enabled")
@@ -55,16 +67,60 @@ export const ContinueOnWhatsApp = ({
     fetchWhatsAppSettings();
   }, [businessId]);
 
+  // Create a conversation link when dialog opens
+  const createConversationLink = async () => {
+    if (!conversationId) {
+      console.log("No conversation to link");
+      return null;
+    }
+
+    setCreatingLink(true);
+    try {
+      const code = generateLinkCode();
+      
+      const { data, error } = await supabase
+        .from("conversation_links")
+        .insert({
+          link_code: code,
+          source_conversation_id: conversationId,
+          business_id: businessId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating conversation link:", error);
+        toast.error("Failed to create conversation link");
+        return null;
+      }
+
+      setLinkCode(code);
+      return code;
+    } catch (error) {
+      console.error("Error creating conversation link:", error);
+      return null;
+    } finally {
+      setCreatingLink(false);
+    }
+  };
+
+  const handleOpenDialog = async () => {
+    setIsOpen(true);
+    if (conversationId && !linkCode) {
+      await createConversationLink();
+    }
+  };
+
   if (!isEnabled || !whatsappNumber) {
     return null;
   }
 
-  // Clean the phone number (remove spaces, dashes, etc.)
+  // Clean the phone number
   const cleanPhone = whatsappNumber.replace(/[^\d+]/g, "").replace(/^\+/, "");
   
-  // Create a welcome message for WhatsApp
-  const welcomeMessage = conversationContext 
-    ? `Hi! I was chatting on your website and wanted to continue our conversation here.`
+  // Create welcome message with link code if available
+  const welcomeMessage = linkCode 
+    ? `Hi! I was chatting on your website and wanted to continue here. My chat code is: ${linkCode}`
     : `Hi! I'd like to chat with you.`;
   
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(welcomeMessage)}`;
@@ -86,6 +142,7 @@ export const ContinueOnWhatsApp = ({
         <Button
           variant="outline"
           size="sm"
+          onClick={handleOpenDialog}
           className="w-full h-8 text-[10px] sm:text-xs gap-1.5 border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20"
         >
           <svg
@@ -109,46 +166,69 @@ export const ContinueOnWhatsApp = ({
             Continue on WhatsApp
           </DialogTitle>
           <DialogDescription>
-            You can continue this conversation on WhatsApp for a more convenient mobile experience.
+            Continue this conversation on WhatsApp. Your chat history will be available to assist you.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div className="bg-muted/50 rounded-lg p-3 border">
-            <p className="text-sm text-muted-foreground mb-2">WhatsApp Number:</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 bg-background px-3 py-2 rounded text-sm font-mono">
-                {whatsappNumber}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyNumber}
-                className="shrink-0"
-              >
-                {copied ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+          {creatingLink ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Preparing your conversation...</span>
             </div>
-          </div>
+          ) : (
+            <>
+              {linkCode && (
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                  <p className="text-xs text-green-800 dark:text-green-200 mb-2">
+                    <strong>Your Chat Code:</strong>
+                  </p>
+                  <code className="block bg-white dark:bg-background px-3 py-2 rounded text-lg font-mono font-bold text-center tracking-widest">
+                    {linkCode}
+                  </code>
+                  <p className="text-[10px] text-green-700 dark:text-green-300 mt-2 text-center">
+                    This code links your conversation history
+                  </p>
+                </div>
+              )}
 
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-            <p className="text-xs text-yellow-800 dark:text-yellow-200">
-              <strong>Note:</strong> When you message us on WhatsApp, our AI assistant will help answer your questions. This is for customer support only.
-            </p>
-          </div>
+              <div className="bg-muted/50 rounded-lg p-3 border">
+                <p className="text-sm text-muted-foreground mb-2">WhatsApp Number:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-background px-3 py-2 rounded text-sm font-mono">
+                    {whatsappNumber}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyNumber}
+                    className="shrink-0"
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
 
-          <Button
-            onClick={handleOpenWhatsApp}
-            className="w-full gap-2"
-            style={{ backgroundColor: "#25D366" }}
-          >
-            <ExternalLink className="h-4 w-4" />
-            Open WhatsApp
-          </Button>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-blue-800 dark:text-blue-200">
+                  <strong>Tip:</strong> Click "Open WhatsApp" to automatically include your chat code. Our assistant will recognize you and continue where you left off!
+                </p>
+              </div>
+
+              <Button
+                onClick={handleOpenWhatsApp}
+                className="w-full gap-2"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Open WhatsApp
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

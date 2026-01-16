@@ -403,6 +403,75 @@ export type Database = {
           },
         ]
       }
+      conversation_links: {
+        Row: {
+          business_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          link_code: string
+          linked_at: string | null
+          source_conversation_id: string
+          target_conversation_id: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          link_code: string
+          linked_at?: string | null
+          source_conversation_id: string
+          target_conversation_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          link_code?: string
+          linked_at?: string | null
+          source_conversation_id?: string
+          target_conversation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_links_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_links_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "conversation_links_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_links_target_conversation_id_fkey"
+            columns: ["target_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "conversation_links_target_conversation_id_fkey"
+            columns: ["target_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           business_id: string
