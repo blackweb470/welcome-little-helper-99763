@@ -21,8 +21,8 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 export function showBrowserNotification(title: string, options?: NotificationOptions) {
   if (Notification.permission === "granted") {
     new Notification(title, {
-      icon: "/favicon.ico",
-      badge: "/favicon.ico",
+      icon: "/lyqn-icon.png",
+      badge: "/lyqn-icon.png",
       ...options,
     });
   }
