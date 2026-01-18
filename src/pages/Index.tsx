@@ -529,25 +529,25 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-16 bg-muted/10">
+      <footer className="border-t py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-5 gap-8 mb-12">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2.5 font-display font-bold text-xl mb-4">
+              <div className="flex items-center gap-2.5 font-display font-bold text-xl mb-4 text-foreground">
                 <div className="flex items-center gap-1">
                   <div className="w-2.5 h-2.5 bg-foreground rounded-sm" />
                   <div className="w-2.5 h-2.5 bg-foreground rounded-sm opacity-60" />
                 </div>
                 <span>LYQN</span>
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+              <p className="text-sm text-foreground/70 leading-relaxed max-w-xs">
                 AI-powered customer support platform that helps businesses deliver exceptional experiences across every channel.
               </p>
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-3 text-sm text-muted-foreground">
+              <h4 className="font-semibold mb-4 text-foreground">Product</h4>
+              <ul className="space-y-3 text-sm text-foreground/70">
                 <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
                 <li><Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
@@ -555,8 +555,8 @@ const Index = () => {
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-3 text-sm text-muted-foreground">
+              <h4 className="font-semibold mb-4 text-foreground">Company</h4>
+              <ul className="space-y-3 text-sm text-foreground/70">
                 <li><Link to="/" className="hover:text-foreground transition-colors">About</Link></li>
                 <li><Link to="/" className="hover:text-foreground transition-colors">Blog</Link></li>
                 <li><Link to="/" className="hover:text-foreground transition-colors">Contact</Link></li>
@@ -564,15 +564,15 @@ const Index = () => {
             </div>
             
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-3 text-sm text-muted-foreground">
+              <h4 className="font-semibold mb-4 text-foreground">Legal</h4>
+              <ul className="space-y-3 text-sm text-foreground/70">
                 <li><Link to="/" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
                 <li><Link to="/" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
           
-          <div className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+          <div className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-foreground/70">
             <p>© 2025 LYQN AI. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <a href="#" className="hover:text-foreground transition-colors">Twitter</a>
