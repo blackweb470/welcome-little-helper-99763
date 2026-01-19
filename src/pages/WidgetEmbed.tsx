@@ -64,8 +64,8 @@ const WidgetEmbed = () => {
   }
 
   return (
-    <div className="w-screen h-screen overflow-hidden">
-      <ChatWidget businessId={businessId} parentPageUrl={parentUrl} isEmbedded={true} />
+    <div className="w-screen h-screen overflow-visible">
+      <ChatWidget businessId={businessId} parentPageUrl={parentUrl} isEmbedded={false} />
     </div>
   );
 };
