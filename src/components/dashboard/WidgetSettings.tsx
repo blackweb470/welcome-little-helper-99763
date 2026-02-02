@@ -32,6 +32,12 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     fetchSettings();
   }, [businessId]);
 
+  useEffect(() => {
+    if (!businessId) return;
+    generateEmbedCode(businessId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId, settings.primary_color]);
+
   const fetchSettings = async () => {
     const { data, error } = await supabase
       .from('widget_settings')
@@ -74,64 +80,231 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
+    const primaryColor = settings.primary_color || '#000000';
     const code = `<!-- LYQN Chat Widget -->
 <style>
-  #chat-toggle {
+  /* Launcher button (matches LYQN landing page) */
+  #lyqn-toggle {
     position: fixed;
-    bottom: 25px;
-    right: 25px;
+    bottom: 16px;
+    right: 16px;
     z-index: 1000000;
-    background-color: #333;
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background: ${primaryColor};
     color: #fff;
-    width: 60px;
-    height: 60px;
-    border: none;
-    border-radius: 50%;
-    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.20);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    user-select: none;
   }
-  #chat-toggle:hover { background-color: #5C6BC0; transform: scale(1.05); }
-  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  #lyqn-chat-widget {
+  #lyqn-toggle:hover { transform: scale(1.06); box-shadow: 0 14px 36px rgba(0,0,0,0.24); }
+  #lyqn-toggle:active { transform: scale(0.98); }
+
+  @keyframes lyqnSlideIn {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Proactive bubble */
+  #lyqn-proactive {
     position: fixed;
-    bottom: 90px;
-    right: 25px;
-    width: 400px;
-    height: 550px;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+    bottom: 88px;
+    right: 16px;
     z-index: 999999;
+    max-width: 260px;
+    background: #fff;
+    color: #111;
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    padding: 10px 14px;
     display: none;
-    animation: slideUp 0.4s ease;
+    cursor: pointer;
+    animation: lyqnSlideIn 220ms ease-out;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
+  #lyqn-proactive p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  #lyqn-proactive-close {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    border: none;
+    background: #ef4444;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+  }
+  #lyqn-proactive-close:hover { filter: brightness(0.95); }
+  #lyqn-proactive-pointer {
+    position: absolute;
+    bottom: -8px;
+    right: 22px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-right: 1px solid rgba(0,0,0,0.10);
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    transform: rotate(45deg);
+  }
+
+  /* Widget container */
+  #lyqn-widget {
+    position: fixed;
+    bottom: 88px;
+    right: 16px;
+    width: 400px;
+    height: 600px;
+    z-index: 1000001;
+    display: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.22);
+    animation: lyqnSlideIn 220ms ease-out;
+    background: transparent;
+  }
+  #lyqn-widget iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  @media (min-width: 640px) {
+    #lyqn-toggle { width: 64px; height: 64px; }
+  }
+
   @media (max-width: 768px) {
-    #lyqn-chat-widget { width: 100%; height: 60%; right: 0; bottom: 0; border-radius: 0; }
-    #chat-toggle { bottom: 15px; right: 15px; width: 55px; height: 55px; font-size: 24px; }
+    #lyqn-widget {
+      width: 100%;
+      height: 60%;
+      right: 0;
+      bottom: 0;
+      border-radius: 0;
+    }
+    #lyqn-proactive { right: 12px; bottom: 86px; }
+    #lyqn-toggle { right: 12px; bottom: 12px; }
   }
 </style>
-<button id="chat-toggle" title="Chat with us">💬</button>
+
+<div id="lyqn-proactive" aria-label="Open chat">
+  <button id="lyqn-proactive-close" aria-label="Dismiss">×</button>
+  <p id="lyqn-proactive-text">👋 Hi there! How can I help you today?</p>
+  <div id="lyqn-proactive-pointer"></div>
+</div>
+
+<div id="lyqn-widget"></div>
+
+<div id="lyqn-toggle" aria-label="Chat with us" role="button" tabindex="0"></div>
 <script>
 (function() {
-  function initWidget() {
-    if (document.getElementById('lyqn-chat-widget')) return;
+  var businessId = '${id}';
+  var widgetUrl = '${appUrl}/widget/' + businessId;
+  var proactiveDelay = 3000;
+  var isOpen = false;
+
+  var btn = document.getElementById('lyqn-toggle');
+  var popup = document.getElementById('lyqn-proactive');
+  var popupClose = document.getElementById('lyqn-proactive-close');
+  var container = document.getElementById('lyqn-widget');
+
+  if (!btn || !popup || !container) return;
+
+  var icons = {
+    chat: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    close: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+  };
+  btn.innerHTML = icons.chat;
+
+  // Create iframe only once
+  function ensureIframe() {
+    if (container.querySelector('iframe')) return;
     var iframe = document.createElement('iframe');
-    iframe.src = '${appUrl}/widget/${id}';
-    iframe.id = 'lyqn-chat-widget';
+    iframe.src = widgetUrl;
     iframe.title = 'LYQN Chat Widget';
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
     iframe.setAttribute('allow', 'microphone');
-    document.body.appendChild(iframe);
-    iframe.onload = function() { iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*'); };
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+    container.appendChild(iframe);
+
+    // Send parent URL on load
+    iframe.onload = function() {
+      try {
+        iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*');
+      } catch (e) {}
+    };
+
+    // Listen for parent URL requests
     window.addEventListener('message', function(event) {
-      if (event.data.type === 'REQUEST_PARENT_URL') { iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*'); }
+      if (event && event.data && event.data.type === 'REQUEST_PARENT_URL') {
+        try {
+          iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*');
+        } catch (e) {}
+      }
     });
-    var btn = document.getElementById('chat-toggle');
-    btn.addEventListener('click', function() { iframe.style.display = (iframe.style.display === 'none' || iframe.style.display === '') ? 'block' : 'none'; });
   }
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initWidget); } else { initWidget(); }
+
+  function openWidget() {
+    ensureIframe();
+    isOpen = true;
+    container.style.display = 'block';
+    popup.style.display = 'none';
+    btn.innerHTML = icons.close;
+  }
+
+  function closeWidget() {
+    isOpen = false;
+    container.style.display = 'none';
+    popup.style.display = 'none';
+    btn.innerHTML = icons.chat;
+  }
+
+  function toggleWidget() {
+    if (isOpen) closeWidget();
+    else openWidget();
+  }
+
+  // Proactive popup after delay
+  setTimeout(function() {
+    if (!isOpen) popup.style.display = 'block';
+  }, proactiveDelay);
+
+  // Clicking bubble opens widget (except close button)
+  popup.addEventListener('click', function(e) {
+    if (e && e.target && e.target.id === 'lyqn-proactive-close') return;
+    openWidget();
+  });
+  if (popupClose) {
+    popupClose.addEventListener('click', function(e) {
+      if (e && e.stopPropagation) e.stopPropagation();
+      popup.style.display = 'none';
+    });
+  }
+
+  btn.addEventListener('click', function() {
+    toggleWidget();
+  });
+
+  btn.addEventListener('keydown', function(e) {
+    if (!e) return;
+    var key = e.key || e.code;
+    if (key === 'Enter' || key === ' ') {
+      e.preventDefault();
+      toggleWidget();
+    }
+  });
 })();
 </script>`;
     setEmbedCode(code);
