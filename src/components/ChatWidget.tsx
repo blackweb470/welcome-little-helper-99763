@@ -672,49 +672,6 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     };
   }, [liveChatSession?.id, liveChatSession?.status]);
 
-  // Real-time subscription for new messages
-  useEffect(() => {
-    if (!conversationId) return;
-
-    const channel = supabase
-      .channel(`messages-${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        async (payload) => {
-          console.log('New message received:', payload);
-          const newMessage = payload.new as any;
-          
-          // Check if this message is already in transcript to avoid duplicates
-          const isDuplicate = transcript.some(
-            msg => msg.text === newMessage.content && msg.role === newMessage.role
-          );
-          
-          if (!isDuplicate) {
-            handleTranscript(newMessage.content, newMessage.role);
-            
-            // Mark message as read by visitor when received
-            if (newMessage.role === 'assistant') {
-              await supabase
-                .from('messages')
-                .update({ read_at: new Date().toISOString() })
-                .eq('id', newMessage.id);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [conversationId, transcript]);
-
   const initializeTextConversation = async (preChatData?: any) => {
     try {
       const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
@@ -1007,6 +964,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const message = messageOverride || textInput.trim();
     if (!message || sendingMessage) return;
 
+    // If we already have a conversation, we'll rely on the realtime INSERT listener
+    // to append the assistant reply (prevents duplicate replies).
+    const hasActiveConversation = Boolean(conversationId);
+
     if (!messageOverride) setTextInput("");
     setSendingMessage(true);
     
@@ -1056,8 +1017,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         return;
       }
 
-      // Show AI response immediately (realtime subscription will filter duplicates)
-      if (data.reply) {
+      // If this is the first message (no conversation yet), we won't have an active
+      // realtime subscription in time—so render the reply immediately.
+      if (!hasActiveConversation && data.reply) {
         handleTranscript(data.reply, 'assistant');
       }
       
