@@ -81,6 +81,8 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
     const primaryColor = settings.primary_color || '#000000';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rjfpkwqsmtqmxnlwpljh.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqZnBrd3FzbXRxbXhubHdwbGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNTkzMjMsImV4cCI6MjA1OTczNTMyM30.mSs5fL97M2Hn5hCi5aa6PXRQ9kTqVnLFNFrqpzKtNKc';
     const code = `<!-- LYQN Chat Widget -->
 <style>
   /* Launcher button (matches LYQN landing page) */
@@ -213,11 +215,14 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 (function() {
   var businessId = '${id}';
   var widgetUrl = '${appUrl}/widget/' + businessId;
-  var proactiveDelay = 3000;
+  var supabaseUrl = '${supabaseUrl}';
+  var supabaseKey = '${supabaseKey}';
   var isOpen = false;
+  var proactiveLoaded = false;
 
   var btn = document.getElementById('lyqn-toggle');
   var popup = document.getElementById('lyqn-proactive');
+  var popupText = document.getElementById('lyqn-proactive-text');
   var popupClose = document.getElementById('lyqn-proactive-close');
   var container = document.getElementById('lyqn-widget');
 
@@ -228,6 +233,78 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     close: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
   };
   btn.innerHTML = icons.chat;
+
+  // Fetch proactive message from database
+  function loadProactiveMessage() {
+    if (proactiveLoaded) return;
+    proactiveLoaded = true;
+    
+    fetch(supabaseUrl + '/rest/v1/proactive_chat_rules?business_id=eq.' + businessId + '&enabled=eq.true&order=priority.desc&limit=1', {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': 'Bearer ' + supabaseKey
+      }
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(rules) {
+      if (rules && rules.length > 0) {
+        var rule = rules[0];
+        var message = rule.message || '👋 Hi there! How can I help you today?';
+        popupText.textContent = message;
+        
+        // Handle different trigger types
+        var triggerType = rule.trigger_type;
+        var triggerValue = rule.trigger_value || {};
+        
+        if (triggerType === 'time_on_page') {
+          var seconds = triggerValue.seconds || 3;
+          setTimeout(function() {
+            if (!isOpen) popup.style.display = 'block';
+          }, seconds * 1000);
+        } else if (triggerType === 'page_visit' || triggerType === 'specific_page') {
+          var targetUrl = triggerValue.url || '';
+          if (!targetUrl || window.location.href.toLowerCase().indexOf(targetUrl.toLowerCase()) !== -1) {
+            setTimeout(function() {
+              if (!isOpen) popup.style.display = 'block';
+            }, 1000);
+          }
+        } else if (triggerType === 'scroll_depth') {
+          var requiredDepth = triggerValue.percentage || 50;
+          window.addEventListener('scroll', function onScroll() {
+            var scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+            if (scrollDepth >= requiredDepth && !isOpen) {
+              popup.style.display = 'block';
+              window.removeEventListener('scroll', onScroll);
+            }
+          });
+        } else if (triggerType === 'exit_intent') {
+          document.addEventListener('mouseleave', function onLeave(e) {
+            if (e.clientY <= 0 && !isOpen) {
+              popup.style.display = 'block';
+              document.removeEventListener('mouseleave', onLeave);
+            }
+          });
+        } else {
+          // Default: show after 3 seconds
+          setTimeout(function() {
+            if (!isOpen) popup.style.display = 'block';
+          }, 3000);
+        }
+      } else {
+        // No rules - show default message after 3 seconds
+        setTimeout(function() {
+          if (!isOpen) popup.style.display = 'block';
+        }, 3000);
+      }
+    })
+    .catch(function(err) {
+      console.error('Failed to load proactive message:', err);
+      // Fallback: show default message
+      setTimeout(function() {
+        if (!isOpen) popup.style.display = 'block';
+      }, 3000);
+    });
+  }
 
   // Create iframe only once
   function ensureIframe() {
@@ -276,10 +353,8 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     else openWidget();
   }
 
-  // Proactive popup after delay
-  setTimeout(function() {
-    if (!isOpen) popup.style.display = 'block';
-  }, proactiveDelay);
+  // Load proactive message on page load
+  loadProactiveMessage();
 
   // Clicking bubble opens widget (except close button)
   popup.addEventListener('click', function(e) {
