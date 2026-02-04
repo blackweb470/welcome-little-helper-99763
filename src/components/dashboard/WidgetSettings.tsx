@@ -81,8 +81,9 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
     const primaryColor = settings.primary_color || '#000000';
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rjfpkwqsmtqmxnlwpljh.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqZnBrd3FzbXRxbXhubHdwbGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNTkzMjMsImV4cCI6MjA1OTczNTMyM30.mSs5fL97M2Hn5hCi5aa6PXRQ9kTqVnLFNFrqpzKtNKc';
+    // Use the correct Supabase project credentials
+    const supabaseUrl = 'https://rgczbabidcqvpyiiqjfv.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw';
     const code = `<!-- LYQN Chat Widget -->
 <style>
   /* Launcher button (matches LYQN landing page) */
