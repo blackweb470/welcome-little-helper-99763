@@ -25,11 +25,13 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      if (!LOVABLE_API_KEY) {
-        console.error('LOVABLE_API_KEY not configured');
-        throw new Error('LOVABLE_API_KEY is not configured');
+      const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+      if (!OPENAI_API_KEY) {
+        console.error('OPENAI_API_KEY not configured');
+        throw new Error('OPENAI_API_KEY is not configured');
       }
+
+      const OPENAI_MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-4o-mini';
       
       console.log('Fetching widget settings and documents...');
 
@@ -106,26 +108,27 @@ serve(async (req) => {
 
       console.log('Calling AI for chat response');
 
-      // Call Lovable AI
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      // Call OpenAI directly
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: OPENAI_MODEL,
           messages: [
             { role: 'system', content: systemPrompt },
             ...conversationHistory,
             { role: 'user', content: message }
           ],
+          temperature: 0.4,
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('AI API error:', response.status, errorText);
+        console.error('OpenAI API error:', response.status, errorText);
         return new Response(
           JSON.stringify({ error: `AI service error: ${response.status}` }),
           { 
@@ -157,10 +160,12 @@ serve(async (req) => {
     
     const validated = schema.parse({ action, context, lastMessage, sentiment, conversation });
     
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY not configured');
     }
+
+    const OPENAI_MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-4o-mini';
 
     if (validated.action === 'suggest_response') {
       const prompt = `You are an AI assistant helping a customer support agent. Based on the following conversation context and the customer's sentiment, suggest 3 helpful response options.
@@ -178,26 +183,27 @@ Provide 3 different response suggestions that:
 
 Format your response as a JSON object with a "responses" array containing the 3 suggestions.`;
 
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: OPENAI_MODEL,
           messages: [
             { role: 'system', content: 'You are a helpful AI assistant that provides customer support suggestions. Always respond with valid JSON.' },
             { role: 'user', content: prompt }
           ],
-          response_format: { type: "json_object" }
+          response_format: { type: "json_object" },
+          temperature: 0.2,
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Lovable AI error:', response.status, errorText);
-        throw new Error(`Lovable AI error: ${response.status}`);
+        console.error('OpenAI error:', response.status, errorText);
+        throw new Error(`OpenAI error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -221,26 +227,27 @@ Provide:
 
 Format your response as a JSON object with "topics", "summary", and "recommendations" fields.`;
 
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: OPENAI_MODEL,
           messages: [
             { role: 'system', content: 'You are a helpful AI assistant that analyzes customer conversations. Always respond with valid JSON.' },
             { role: 'user', content: prompt }
           ],
-          response_format: { type: "json_object" }
+          response_format: { type: "json_object" },
+          temperature: 0.2,
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Lovable AI error:', response.status, errorText);
-        throw new Error(`Lovable AI error: ${response.status}`);
+        console.error('OpenAI error:', response.status, errorText);
+        throw new Error(`OpenAI error: ${response.status}`);
       }
 
       const data = await response.json();

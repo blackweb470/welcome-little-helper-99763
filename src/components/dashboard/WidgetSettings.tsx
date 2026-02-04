@@ -81,9 +81,9 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
   const generateEmbedCode = (id: string) => {
     const appUrl = window.location.origin;
     const primaryColor = settings.primary_color || '#000000';
-    // Use the correct Supabase project credentials
-    const supabaseUrl = 'https://rgczbabidcqvpyiiqjfv.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw';
+    // Publishable (public) credentials used for anonymous widget reads
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rgczbabidcqvpyiiqjfv.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw';
     const code = `<!-- LYQN Chat Widget -->
 <style>
   /* Launcher button (matches LYQN landing page) */
@@ -221,13 +221,41 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
   var isOpen = false;
   var proactiveLoaded = false;
 
+  var root = document.body || document.documentElement;
   var btn = document.getElementById('lyqn-toggle');
   var popup = document.getElementById('lyqn-proactive');
-  var popupText = document.getElementById('lyqn-proactive-text');
-  var popupClose = document.getElementById('lyqn-proactive-close');
   var container = document.getElementById('lyqn-widget');
 
-  if (!btn || !popup || !container) return;
+  // Enterprise-grade hardening: if a customer pastes only the <script> part,
+  // we still create the required DOM nodes and keep the widget functional.
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'lyqn-proactive';
+    popup.setAttribute('aria-label', 'Open chat');
+    popup.innerHTML =
+      '<button id="lyqn-proactive-close" aria-label="Dismiss">×</button>' +
+      '<p id="lyqn-proactive-text">👋 Hi there! How can I help you today?</p>' +
+      '<div id="lyqn-proactive-pointer"></div>';
+    root.appendChild(popup);
+  }
+
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'lyqn-widget';
+    root.appendChild(container);
+  }
+
+  if (!btn) {
+    btn = document.createElement('div');
+    btn.id = 'lyqn-toggle';
+    btn.setAttribute('aria-label', 'Chat with us');
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('tabindex', '0');
+    root.appendChild(btn);
+  }
+
+  var popupText = document.getElementById('lyqn-proactive-text');
+  var popupClose = document.getElementById('lyqn-proactive-close');
 
   var icons = {
     chat: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
@@ -246,19 +274,26 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
         'Authorization': 'Bearer ' + supabaseKey
       }
     })
-    .then(function(res) { return res.json(); })
+    .then(function(res) {
+      if (!res || !res.ok) {
+        var status = res && res.status ? res.status : 0;
+        throw new Error('Proactive rules request failed (HTTP ' + status + ')');
+      }
+      return res.json();
+    })
     .then(function(rules) {
       if (rules && rules.length > 0) {
         var rule = rules[0];
         var message = rule.message || '👋 Hi there! How can I help you today?';
-        popupText.textContent = message;
+        if (popupText) popupText.textContent = message;
         
         // Handle different trigger types
         var triggerType = rule.trigger_type;
         var triggerValue = rule.trigger_value || {};
         
         if (triggerType === 'time_on_page') {
-          var seconds = triggerValue.seconds || 3;
+          var seconds = Number(triggerValue.seconds);
+          if (!isFinite(seconds) || seconds < 0) seconds = 3;
           setTimeout(function() {
             if (!isOpen) popup.style.display = 'block';
           }, seconds * 1000);
