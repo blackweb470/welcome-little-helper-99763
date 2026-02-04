@@ -35,7 +35,7 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
   }>({
     name: '',
     trigger_type: 'time_on_page',
-    trigger_value: { seconds: 30 },
+    trigger_value: { seconds: 3 },
     message: 'Hi! I noticed you\'ve been browsing for a while. Can I help you find something?'
   });
   const { toast } = useToast();
@@ -83,7 +83,7 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
       setFormData({
         name: '',
         trigger_type: 'time_on_page',
-        trigger_value: { seconds: 30 },
+        trigger_value: { seconds: 3 },
         message: 'Hi! I noticed you\'ve been browsing for a while. Can I help you find something?'
       });
       fetchRules();
@@ -167,7 +167,7 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
                 value={formData.trigger_type}
                 onValueChange={(value) => {
                   const defaultValues: any = {
-                    time_on_page: { seconds: 30 },
+                    time_on_page: { seconds: 3 },
                     exit_intent: {},
                     high_engagement: { score: 70 },
                     page_visit: { url: '/' },
@@ -198,12 +198,12 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
                 <Label>Seconds on Page</Label>
                 <Input
                   type="number"
-                  min="5"
+                  min="1"
                   max="300"
                   value={formData.trigger_value.seconds}
                   onChange={(e) => setFormData({ 
                     ...formData, 
-                    trigger_value: { seconds: parseInt(e.target.value) || 30 }
+                    trigger_value: { seconds: parseInt(e.target.value) || 3 }
                   })}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
