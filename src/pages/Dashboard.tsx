@@ -162,12 +162,12 @@ const Dashboard = () => {
           isOwner={selectedBusinessId ? isOwner(selectedBusinessId) : false}
         />
         
-      <main className="flex-1 overflow-auto bg-surface-subtle scrollbar-premium">
-        <header className="header-enterprise shadow-enterprise">
-          <div className="flex h-16 lg:h-20 items-center gap-4 lg:gap-6 px-4 lg:px-8">
-            <SidebarTrigger className="h-9 w-9 flex items-center justify-center rounded-lg hover:bg-muted/80 transition-all duration-200" />
-            <div className="flex-1 min-w-0 flex items-center gap-3 lg:gap-4">
-              <h1 className="text-xl lg:text-2xl xl:text-3xl font-display font-bold tracking-tight truncate text-foreground">
+      <main className="flex-1 overflow-auto bg-muted/30">
+        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
+          <div className="flex h-20 items-center gap-6 px-8">
+            <SidebarTrigger className="hover:bg-muted transition-colors" />
+            <div className="flex-1 min-w-0 flex items-center gap-4">
+              <h1 className="text-3xl font-display font-bold tracking-tight truncate">
                 {currentTab === 'businesses' ? 'Businesses' :
                  currentTab === 'analytics' ? 'Analytics' :
                  currentTab === 'conversations' ? 'Conversations' :
@@ -187,12 +187,12 @@ const Dashboard = () => {
                   currentTab === 'whatsapp' ? 'WhatsApp Integration' : 'Dashboard'}
               </h1>
               {isAdmin && (
-                <span className="hidden sm:inline-flex badge-enterprise bg-primary text-primary-foreground border-primary/30 whitespace-nowrap">
+                <span className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-elegant whitespace-nowrap">
                   ADMIN
                 </span>
               )}
               {selectedBusinessId && !isOwner(selectedBusinessId) && (
-                <span className="hidden sm:inline-flex badge-enterprise whitespace-nowrap uppercase">
+                <span className="hidden sm:inline-flex px-4 py-1.5 rounded-full text-xs font-semibold border border-border bg-card whitespace-nowrap">
                   {businesses.find(b => b.business_id === selectedBusinessId)?.role || 'TEAM MEMBER'}
                 </span>
               )}
@@ -200,9 +200,9 @@ const Dashboard = () => {
           </div>
         </header>
 
-          <div className="p-4 lg:p-6 xl:p-8 space-y-6 lg:space-y-8 max-w-[1600px] mx-auto page-transition">
+          <div className="p-8 space-y-8 max-w-[1600px] mx-auto animate-fade-in">
             {currentTab === 'businesses' && (
-              <Card className="card-enterprise p-4 lg:p-6 xl:p-8">
+              <Card className="p-8 shadow-elegant">
                 <BusinessList 
                   userId={user.id} 
                   onSelectBusiness={(id) => {
@@ -223,7 +223,7 @@ const Dashboard = () => {
                 {currentTab === 'conversations' && (
                   <div className="space-y-6">
                     <BusinessConversationAnalysis businessId={selectedBusinessId} />
-                    <Card className="card-enterprise p-4 lg:p-6 xl:p-8">
+                    <Card className="p-8 shadow-elegant">
                       <ConversationsList businessId={selectedBusinessId} />
                     </Card>
                   </div>
@@ -275,13 +275,13 @@ const Dashboard = () => {
 
 
                 {currentTab === 'settings' && (
-                  <Card className="card-enterprise p-4 lg:p-6 xl:p-8">
+                  <Card className="p-8 shadow-elegant">
                     <WidgetSettings businessId={selectedBusinessId} />
                   </Card>
                 )}
 
                 {currentTab === 'customize-bot' && (
-                  <Card className="card-enterprise p-4 lg:p-6 xl:p-8">
+                  <Card className="p-8 shadow-elegant">
                     <BotCustomization businessId={selectedBusinessId} />
                   </Card>
                 )}

@@ -63,19 +63,6 @@ All colors MUST be HSL.
     --shadow-glow-lg: 0 20px 60px hsl(0 0% 9% / 0.25);
     --shadow-elegant: 0 4px 20px hsl(0 0% 9% / 0.08);
     --shadow-elegant-lg: 0 12px 40px hsl(0 0% 9% / 0.12);
-    
-    /* Enterprise premium tokens */
-    --surface-elevated: 0 0% 100%;
-    --surface-subtle: 0 0% 98%;
-    --border-subtle: 0 0% 94%;
-    --text-primary: 0 0% 5%;
-    --text-secondary: 0 0% 35%;
-    --text-muted: 0 0% 55%;
-    
-    /* Premium accent for highlights */
-    --accent-success: 142 76% 36%;
-    --accent-warning: 38 92% 50%;
-    --accent-info: 217 91% 60%;
   }
 
   .dark {
@@ -132,19 +119,6 @@ All colors MUST be HSL.
     --shadow-glow-lg: 0 20px 60px hsl(0 0% 98% / 0.2);
     --shadow-elegant: 0 4px 20px hsl(0 0% 0% / 0.5);
     --shadow-elegant-lg: 0 12px 40px hsl(0 0% 0% / 0.7);
-    
-    /* Enterprise premium tokens - dark */
-    --surface-elevated: 0 0% 14%;
-    --surface-subtle: 0 0% 11%;
-    --border-subtle: 0 0% 20%;
-    --text-primary: 0 0% 98%;
-    --text-secondary: 0 0% 75%;
-    --text-muted: 0 0% 55%;
-    
-    /* Premium accent for highlights - dark */
-    --accent-success: 142 71% 45%;
-    --accent-warning: 38 92% 50%;
-    --accent-info: 217 91% 65%;
   }
 }
 
@@ -189,59 +163,5 @@ All colors MUST be HSL.
 
   .text-gradient {
     @apply bg-gradient-to-r from-primary via-primary to-primary-glow bg-clip-text text-transparent;
-  }
-  
-  /* Enterprise card styles */
-  .card-enterprise {
-    @apply bg-card border border-border/50 rounded-xl shadow-elegant transition-all duration-300;
-  }
-  
-  .card-enterprise:hover {
-    @apply shadow-elegant-lg border-border;
-  }
-  
-  /* Premium header styles */
-  .header-enterprise {
-    @apply sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border/50;
-  }
-  
-  /* Stat card with subtle gradient */
-  .stat-card {
-    @apply relative overflow-hidden bg-card border border-border/50 rounded-xl p-6;
-    @apply transition-all duration-300 hover:shadow-elegant hover:border-border;
-  }
-  
-  .stat-card::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent pointer-events-none;
-  }
-  
-  /* Premium badge styles */
-  .badge-enterprise {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide;
-    @apply bg-primary/10 text-primary border border-primary/20;
-  }
-  
-  /* Smooth page transitions */
-  .page-transition {
-    @apply animate-fade-in;
-  }
-  
-  /* Premium scrollbar */
-  .scrollbar-premium::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  
-  .scrollbar-premium::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-  
-  .scrollbar-premium::-webkit-scrollbar-thumb {
-    @apply bg-border/60 rounded-full;
-  }
-  
-  .scrollbar-premium::-webkit-scrollbar-thumb:hover {
-    @apply bg-border;
   }
 }
