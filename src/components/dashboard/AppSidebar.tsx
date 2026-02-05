@@ -90,24 +90,24 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
   const isActive = (path: string) => currentTab === path;
 
   return (
-    <Sidebar collapsible="icon" className="border-r bg-card">
-      <SidebarHeader className="border-b px-6 py-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
-            <MessageSquare className="w-5 h-5 text-primary-foreground" />
+    <Sidebar collapsible="icon" className="border-r border-border/50 bg-sidebar">
+      <SidebarHeader className="border-b border-border/50 px-4 lg:px-6 py-4 lg:py-5">
+        <div className="flex items-center gap-2.5 lg:gap-3">
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl gradient-primary flex items-center justify-center shadow-enterprise-md">
+            <MessageSquare className="w-4 h-4 lg:w-5 lg:h-5 text-primary-foreground" />
           </div>
           {open && (
-            <div>
-              <h2 className="font-display font-bold text-xl tracking-tight">LYQN</h2>
-              <p className="text-xs text-muted-foreground font-medium">AI Dashboard</p>
+            <div className="overflow-hidden">
+              <h2 className="font-display font-bold text-lg lg:text-xl tracking-tight text-foreground">LYQN</h2>
+              <p className="text-[11px] lg:text-xs text-muted-foreground font-medium tracking-wide">AI Dashboard</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="scrollbar-premium">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-bold tracking-wider">MAIN MENU</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] lg:text-xs font-bold tracking-widest text-muted-foreground/70 uppercase px-2">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -117,12 +117,12 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                       to={`/dashboard?tab=${item.path}`}
                       className={({ isActive }) => 
                         isActive 
-                          ? "bg-primary text-primary-foreground font-bold shadow-elegant" 
-                          : "bg-secondary/50 font-semibold hover:bg-muted transition-colors"
+                          ? "bg-primary text-primary-foreground font-semibold shadow-enterprise-md rounded-lg" 
+                          : "font-medium text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-lg transition-all duration-200"
                       }
                     >
-                      <item.icon className="w-5 h-5 text-foreground" />
-                      {open && <span className="text-foreground">{item.title}</span>}
+                      <item.icon className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                      {open && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -132,10 +132,10 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                   <SidebarMenuButton asChild>
                     <NavLink 
                       to={item.path}
-                      className="bg-secondary/50 font-semibold hover:bg-muted transition-colors"
+                      className="font-medium text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-lg transition-all duration-200"
                     >
-                      <item.icon className="w-5 h-5 text-foreground" />
-                      {open && <span className="text-foreground">{item.title}</span>}
+                      <item.icon className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
+                      {open && <span className="truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -146,7 +146,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
 
         {hasSelectedBusiness && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-bold tracking-wider">BUSINESS TOOLS</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] lg:text-xs font-bold tracking-widest text-muted-foreground/70 uppercase px-2">Business Tools</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {businessItems.map((item) => {
@@ -174,11 +174,11 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                         }}
                       >
                         {isLocked ? (
-                          <div className="flex items-center gap-2 bg-secondary/30 font-semibold opacity-50 cursor-pointer hover:opacity-70 transition-opacity">
-                            {item.icon && <item.icon className="w-5 h-5 text-foreground" />}
+                          <div className="flex items-center gap-2 font-medium opacity-40 cursor-pointer hover:opacity-60 transition-all duration-200 rounded-lg">
+                            {item.icon && <item.icon className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />}
                             {open && (
                               <>
-                                <span className="text-foreground">{item.title}</span>
+                                <span className="truncate flex-1">{item.title}</span>
                                 <Lock className="w-3 h-3 ml-auto" />
                               </>
                             )}
@@ -188,20 +188,20 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                             to={`/dashboard?tab=${item.path}`}
                             className={({ isActive }) => 
                               isActive 
-                                ? "bg-primary text-primary-foreground font-bold shadow-elegant" 
-                                : "bg-secondary/50 font-semibold hover:bg-muted transition-colors"
+                                ? "bg-primary text-primary-foreground font-semibold shadow-enterprise-md rounded-lg" 
+                                : "font-medium text-foreground/80 hover:bg-muted/80 hover:text-foreground rounded-lg transition-all duration-200"
                             }
                           >
                             {item.path === "notifications" && unreadCount > 0 ? (
-                              <BellDot className="w-5 h-5 text-foreground" />
+                              <BellDot className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
                             ) : (
-                              <item.icon className="w-5 h-5 text-foreground" />
+                              <item.icon className="w-4 h-4 lg:w-5 lg:h-5 shrink-0" />
                             )}
                             {open && (
-                              <span className="flex items-center gap-2 text-foreground">
+                              <span className="flex items-center gap-2 truncate flex-1">
                                 {item.title}
                                 {item.path === "notifications" && unreadCount > 0 && (
-                                  <Badge variant="destructive" className="h-5 min-w-5 px-1.5 font-bold shadow-sm">
+                                  <Badge variant="destructive" className="h-5 min-w-5 px-1.5 text-[10px] font-bold shadow-sm ml-auto shrink-0">
                                     {unreadCount}
                                   </Badge>
                                 )}
@@ -219,15 +219,15 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t border-border/50 p-3 lg:p-4">
         <Button
           onClick={onSignOut}
           variant="ghost"
-          className="w-full justify-start font-semibold"
+          className="w-full justify-start font-medium text-foreground/70 hover:text-foreground hover:bg-destructive/10 rounded-lg transition-all duration-200"
           size="sm"
         >
-          <LogOut className="w-5 h-5 mr-2 text-foreground" />
-          {open && <span className="text-foreground">Sign Out</span>}
+          <LogOut className="w-4 h-4 lg:w-5 lg:h-5 mr-2 shrink-0" />
+          {open && <span className="truncate">Sign Out</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>

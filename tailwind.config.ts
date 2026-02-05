@@ -62,6 +62,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        surface: {
+          elevated: "hsl(var(--surface-elevated))",
+          subtle: "hsl(var(--surface-subtle))",
+        },
+        "text-custom": {
+          primary: "hsl(var(--text-primary))",
+          secondary: "hsl(var(--text-secondary))",
+          muted: "hsl(var(--text-muted))",
+        },
+        success: "hsl(var(--accent-success))",
+        warning: "hsl(var(--accent-warning))",
+        info: "hsl(var(--accent-info))",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -137,6 +149,12 @@ export default {
         "slide-up": "slide-up 0.5s ease-out",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "bounce-in": "bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+      },
+      boxShadow: {
+        'enterprise': '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
+        'enterprise-md': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
+        'enterprise-lg': '0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05)',
+        'enterprise-xl': '0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05)',
       },
     },
   },
