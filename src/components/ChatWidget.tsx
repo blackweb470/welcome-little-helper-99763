@@ -36,8 +36,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   const [sendingMessage, setSendingMessage] = useState(false);
   const [visitorEmail, setVisitorEmail] = useState("");
   const [showEmailInput, setShowEmailInput] = useState(false);
-  const [showPreChatForm, setShowPreChatForm] = useState(false);
+  const [showPreChatForm, setShowPreChatForm] = useState<boolean | null>(null); // null = not determined yet
   const [visitorInfo, setVisitorInfo] = useState<any>({});
+  const [preChatCompleted, setPreChatCompleted] = useState(false);
   const [agentTyping, setAgentTyping] = useState(false);
   const [requestingAgent, setRequestingAgent] = useState(false);
   const [cancelingRequest, setCancelingRequest] = useState(false);
@@ -55,6 +56,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const storedSessionId = localStorage.getItem(getStorageKey(businessId, 'sessionId'));
     const storedTranscript = localStorage.getItem(getStorageKey(businessId, 'transcript'));
     const storedEmail = localStorage.getItem(getStorageKey(businessId, 'visitorEmail'));
+    const storedPreChatCompleted = localStorage.getItem(getStorageKey(businessId, 'preChatCompleted'));
     
     if (storedConversationId) {
       setConversationId(storedConversationId);
@@ -70,6 +72,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     
     if (storedEmail) {
       setVisitorEmail(storedEmail);
+    }
+    
+    // Restore pre-chat completion state
+    if (storedPreChatCompleted === 'true') {
+      setPreChatCompleted(true);
     }
     
     // Restore live chat session from database if we have a conversation
@@ -98,6 +105,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       localStorage.setItem(getStorageKey(businessId, 'visitorEmail'), visitorEmail);
     }
   }, [visitorEmail, businessId]);
+
+  // Persist pre-chat completed state
+  useEffect(() => {
+    if (preChatCompleted) {
+      localStorage.setItem(getStorageKey(businessId, 'preChatCompleted'), 'true');
+    }
+  }, [preChatCompleted, businessId]);
 
   // Persist session ID
   useEffect(() => {
@@ -176,10 +190,19 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       
       if (data) {
         setSettings(data);
-        // Check if we should show pre-chat form
-        if (data.pre_chat_enabled && !conversationId) {
+        // Determine pre-chat form visibility:
+        // Show form if pre_chat_enabled AND user hasn't completed it yet
+        const storedPreChatCompleted = localStorage.getItem(getStorageKey(businessId, 'preChatCompleted'));
+        const hasCompletedPreChat = storedPreChatCompleted === 'true' || preChatCompleted;
+        
+        if (data.pre_chat_enabled && !hasCompletedPreChat) {
           setShowPreChatForm(true);
+        } else {
+          setShowPreChatForm(false);
         }
+      } else {
+        // No settings = no pre-chat form
+        setShowPreChatForm(false);
       }
     };
 
@@ -1183,24 +1206,41 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   );
 
   // Render Chat Tab Content
-  const renderChatContent = () => (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      {showPreChatForm ? (
-        <div className="p-2 sm:p-3 md:p-4 overflow-y-auto">
-          <PreChatForm
-            welcomeMessage={settings?.pre_chat_welcome_message}
-            requiredFields={settings?.pre_chat_required_fields || ['name', 'email']}
-            primaryColor={primaryColor}
-            onSubmit={async (data) => {
-              setVisitorInfo(data);
-              setVisitorEmail(data.email);
-              setShowPreChatForm(false);
-              await initializeTextConversation(data);
-            }}
-          />
+  const renderChatContent = () => {
+    // Still determining whether to show form (settings loading)
+    if (showPreChatForm === null) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      ) : (
-        <>
+      );
+    }
+    
+    // Show pre-chat form if enabled and not completed
+    if (showPreChatForm) {
+      return (
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="p-2 sm:p-3 md:p-4 overflow-y-auto">
+            <PreChatForm
+              welcomeMessage={settings?.pre_chat_welcome_message}
+              requiredFields={settings?.pre_chat_required_fields || ['name', 'email']}
+              primaryColor={primaryColor}
+              onSubmit={async (data) => {
+                setVisitorInfo(data);
+                setVisitorEmail(data.email);
+                setPreChatCompleted(true);
+                setShowPreChatForm(false);
+                await initializeTextConversation(data);
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+    
+    // Show main chat interface
+    return (
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Welcome message */}
           {transcript.length === 0 && (
             <div className="p-2 sm:p-3 md:p-4 shrink-0">
@@ -1368,10 +1408,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               )}
             </div>
           </div>
-        </>
-      )}
-    </div>
-  );
+        </div>
+      </div>
+    );
+  };
 
   const handleProactiveClick = () => {
     setProactiveMessage(null);
