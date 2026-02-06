@@ -82,8 +82,8 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     const appUrl = window.location.origin;
     const primaryColor = settings.primary_color || '#000000';
     // Publishable (public) credentials used for anonymous widget reads
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rgczbabidcqvpyiiqjfv.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw';
+    const supabaseUrl = 'https://rgczbabidcqvpyiiqjfv.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3piYWJpZGNxdnB5aWlxamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDY5NjIsImV4cCI6MjA3NzA4Mjk2Mn0.VLv4iWaWSxNzX-Tqa4qYedpYlv2xQmfW49yJgsmLCKw';
     const code = `<!-- LYQN Chat Widget -->
 <style>
   /* Launcher button (matches LYQN landing page) */
@@ -91,7 +91,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     position: fixed;
     bottom: 16px;
     right: 16px;
-    z-index: 1000000;
+    z-index: 2147483647;
     width: 56px;
     height: 56px;
     border-radius: 9999px;
@@ -118,7 +118,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     position: fixed;
     bottom: 88px;
     right: 16px;
-    z-index: 999999;
+    z-index: 2147483646;
     max-width: 260px;
     background: #fff;
     color: #111;
@@ -172,7 +172,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     right: 16px;
     width: 400px;
     height: 600px;
-    z-index: 1000001;
+    z-index: 2147483647;
     display: none;
     border-radius: 16px;
     overflow: hidden;
@@ -214,207 +214,282 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
 <div id="lyqn-toggle" aria-label="Chat with us" role="button" tabindex="0"></div>
 <script>
 (function() {
-  var businessId = '${id}';
-  var widgetUrl = '${appUrl}/widget/' + businessId;
-  var supabaseUrl = '${supabaseUrl}';
-  var supabaseKey = '${supabaseKey}';
-  var isOpen = false;
-  var proactiveLoaded = false;
-
-  var root = document.body || document.documentElement;
-  var btn = document.getElementById('lyqn-toggle');
-  var popup = document.getElementById('lyqn-proactive');
-  var container = document.getElementById('lyqn-widget');
-
-  // Enterprise-grade hardening: if a customer pastes only the <script> part,
-  // we still create the required DOM nodes and keep the widget functional.
-  if (!popup) {
-    popup = document.createElement('div');
-    popup.id = 'lyqn-proactive';
-    popup.setAttribute('aria-label', 'Open chat');
-    popup.innerHTML =
-      '<button id="lyqn-proactive-close" aria-label="Dismiss">×</button>' +
-      '<p id="lyqn-proactive-text">👋 Hi there! How can I help you today?</p>' +
-      '<div id="lyqn-proactive-pointer"></div>';
-    root.appendChild(popup);
+  // Ensure we run after DOM is available (works with tag managers / head injections)
+  function onReady(fn) {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', fn);
+    } else {
+      fn();
+    }
   }
 
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'lyqn-widget';
-    root.appendChild(container);
-  }
+  onReady(function initLyqnWidget() {
+    var businessId = '${id}';
+    var widgetUrl = '${appUrl}/widget/' + businessId;
+    var supabaseUrl = '${supabaseUrl}';
+    var supabaseKey = '${supabaseKey}';
+    var isOpen = false;
+    var proactiveLoaded = false;
 
-  if (!btn) {
-    btn = document.createElement('div');
-    btn.id = 'lyqn-toggle';
-    btn.setAttribute('aria-label', 'Chat with us');
-    btn.setAttribute('role', 'button');
-    btn.setAttribute('tabindex', '0');
-    root.appendChild(btn);
-  }
+    var root = document.body || document.documentElement;
+    var btn = document.getElementById('lyqn-toggle');
+    var popup = document.getElementById('lyqn-proactive');
+    var container = document.getElementById('lyqn-widget');
 
-  var popupText = document.getElementById('lyqn-proactive-text');
-  var popupClose = document.getElementById('lyqn-proactive-close');
+    // Enterprise-grade hardening: if a customer pastes only the <script> part,
+    // we still create the required DOM nodes and keep the widget functional.
+    if (!popup) {
+      popup = document.createElement('div');
+      popup.id = 'lyqn-proactive';
+      popup.setAttribute('aria-label', 'Open chat');
+      popup.innerHTML =
+        '<button id="lyqn-proactive-close" aria-label="Dismiss">×</button>' +
+        '<p id="lyqn-proactive-text">👋 Hi there! How can I help you today?</p>' +
+        '<div id="lyqn-proactive-pointer"></div>';
+      root.appendChild(popup);
+    }
 
-  var icons = {
-    chat: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-    close: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
-  };
-  btn.innerHTML = icons.chat;
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'lyqn-widget';
+      root.appendChild(container);
+    }
 
-  // Fetch proactive message from database
-  function loadProactiveMessage() {
-    if (proactiveLoaded) return;
-    proactiveLoaded = true;
-    
-    fetch(supabaseUrl + '/rest/v1/proactive_chat_rules?business_id=eq.' + businessId + '&enabled=eq.true&order=priority.desc&limit=1', {
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': 'Bearer ' + supabaseKey
-      }
-    })
-    .then(function(res) {
-      if (!res || !res.ok) {
-        var status = res && res.status ? res.status : 0;
-        throw new Error('Proactive rules request failed (HTTP ' + status + ')');
-      }
-      return res.json();
-    })
-    .then(function(rules) {
-      if (rules && rules.length > 0) {
-        var rule = rules[0];
-        var message = rule.message || '👋 Hi there! How can I help you today?';
-        if (popupText) popupText.textContent = message;
-        
-        // Handle different trigger types
-        var triggerType = rule.trigger_type;
-        var triggerValue = rule.trigger_value || {};
-        
-        if (triggerType === 'time_on_page') {
-          var seconds = Number(triggerValue.seconds);
-          if (!isFinite(seconds) || seconds < 0) seconds = 3;
-          setTimeout(function() {
-            if (!isOpen) popup.style.display = 'block';
-          }, seconds * 1000);
-        } else if (triggerType === 'page_visit' || triggerType === 'specific_page') {
-          var targetUrl = triggerValue.url || '';
-          if (!targetUrl || window.location.href.toLowerCase().indexOf(targetUrl.toLowerCase()) !== -1) {
-            setTimeout(function() {
-              if (!isOpen) popup.style.display = 'block';
-            }, 1000);
-          }
-        } else if (triggerType === 'scroll_depth') {
-          var requiredDepth = triggerValue.percentage || 50;
-          window.addEventListener('scroll', function onScroll() {
-            var scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
-            if (scrollDepth >= requiredDepth && !isOpen) {
-              popup.style.display = 'block';
-              window.removeEventListener('scroll', onScroll);
-            }
-          });
-        } else if (triggerType === 'exit_intent') {
-          document.addEventListener('mouseleave', function onLeave(e) {
-            if (e.clientY <= 0 && !isOpen) {
-              popup.style.display = 'block';
-              document.removeEventListener('mouseleave', onLeave);
-            }
-          });
-        } else {
-          // Default: show after 3 seconds
-          setTimeout(function() {
-            if (!isOpen) popup.style.display = 'block';
-          }, 3000);
-        }
-      } else {
-        // No rules - show default message after 3 seconds
-        setTimeout(function() {
-          if (!isOpen) popup.style.display = 'block';
-        }, 3000);
-      }
-    })
-    .catch(function(err) {
-      console.error('Failed to load proactive message:', err);
-      // Fallback: show default message
-      setTimeout(function() {
-        if (!isOpen) popup.style.display = 'block';
-      }, 3000);
-    });
-  }
+    if (!btn) {
+      btn = document.createElement('div');
+      btn.id = 'lyqn-toggle';
+      btn.setAttribute('aria-label', 'Chat with us');
+      btn.setAttribute('role', 'button');
+      btn.setAttribute('tabindex', '0');
+      root.appendChild(btn);
+    }
 
-  // Create iframe only once
-  function ensureIframe() {
-    if (container.querySelector('iframe')) return;
-    var iframe = document.createElement('iframe');
-    iframe.src = widgetUrl;
-    iframe.title = 'LYQN Chat Widget';
-    iframe.setAttribute('allow', 'microphone');
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
-    container.appendChild(iframe);
+    var popupText = document.getElementById('lyqn-proactive-text');
+    var popupClose = document.getElementById('lyqn-proactive-close');
 
-    // Send parent URL on load
-    iframe.onload = function() {
-      try {
-        iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*');
-      } catch (e) {}
+    var icons = {
+      chat: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+      close: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
     };
+    btn.innerHTML = icons.chat;
 
-    // Listen for parent URL requests
-    window.addEventListener('message', function(event) {
-      if (event && event.data && event.data.type === 'REQUEST_PARENT_URL') {
+    // Force styles to win even on aggressive host CSS
+    function setImportant(el, prop, value) {
+      if (!el || !el.style) return;
+      try {
+        el.style.setProperty(prop, value, 'important');
+      } catch (e) {
+        try { el.style[prop] = value; } catch (e2) {}
+      }
+    }
+
+    function showProactive() {
+      if (!popup || isOpen) return;
+      setImportant(popup, 'display', 'block');
+      setImportant(popup, 'visibility', 'visible');
+      setImportant(popup, 'opacity', '1');
+      setImportant(popup, 'pointer-events', 'auto');
+      setImportant(popup, 'z-index', '2147483646');
+    }
+
+    function hideProactive() {
+      if (!popup) return;
+      setImportant(popup, 'display', 'none');
+    }
+
+    var proactiveTimer = null;
+    function scheduleProactive(ms) {
+      if (proactiveTimer) {
+        clearTimeout(proactiveTimer);
+        proactiveTimer = null;
+      }
+      proactiveTimer = setTimeout(function() {
+        if (!isOpen) showProactive();
+      }, ms);
+    }
+
+    // Fetch proactive message from database (with timeout so we never hang)
+    function loadProactiveMessage() {
+      if (proactiveLoaded) return;
+      proactiveLoaded = true;
+
+      var url = supabaseUrl + '/rest/v1/proactive_chat_rules?business_id=eq.' + businessId + '&enabled=eq.true&order=priority.desc&limit=1';
+
+      function fetchWithTimeout(timeoutMs) {
+        if (window.AbortController) {
+          var controller = new AbortController();
+          var timeout = setTimeout(function() {
+            try { controller.abort(); } catch (e) {}
+          }, timeoutMs);
+          return fetch(url, {
+            headers: {
+              apikey: supabaseKey,
+              Authorization: 'Bearer ' + supabaseKey
+            },
+            signal: controller.signal
+          }).finally(function() {
+            clearTimeout(timeout);
+          });
+        }
+
+        // Fallback for older browsers: race (cannot abort, but ensures our logic continues)
+        return Promise.race([
+          fetch(url, {
+            headers: {
+              apikey: supabaseKey,
+              Authorization: 'Bearer ' + supabaseKey
+            }
+          }),
+          new Promise(function(_, reject) {
+            setTimeout(function() {
+              reject(new Error('Proactive rules request timed out'));
+            }, timeoutMs);
+          })
+        ]);
+      }
+
+      fetchWithTimeout(2500)
+        .then(function(res) {
+          if (!res || !res.ok) {
+            var status = res && res.status ? res.status : 0;
+            throw new Error('Proactive rules request failed (HTTP ' + status + ')');
+          }
+          return res.json();
+        })
+        .then(function(rules) {
+          if (rules && rules.length > 0) {
+            var rule = rules[0];
+            var message = rule.message || '👋 Hi there! How can I help you today?';
+            if (popupText) popupText.textContent = message;
+
+            // Handle different trigger types
+            var triggerType = rule.trigger_type;
+            var triggerValue = rule.trigger_value || {};
+
+            if (triggerType === 'time_on_page') {
+              var seconds = Number(triggerValue.seconds);
+              if (!isFinite(seconds) || seconds < 0) seconds = 3;
+              scheduleProactive(seconds * 1000);
+            } else if (triggerType === 'page_visit' || triggerType === 'specific_page') {
+              var targetUrl = triggerValue.url || '';
+              if (!targetUrl || window.location.href.toLowerCase().indexOf(String(targetUrl).toLowerCase()) !== -1) {
+                scheduleProactive(1000);
+              }
+            } else if (triggerType === 'scroll_depth') {
+              if (proactiveTimer) clearTimeout(proactiveTimer);
+              proactiveTimer = null;
+
+              var requiredDepth = Number(triggerValue.percentage);
+              if (!isFinite(requiredDepth) || requiredDepth <= 0) requiredDepth = 50;
+
+              window.addEventListener('scroll', function onScroll() {
+                var scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
+                if (scrollDepth >= requiredDepth && !isOpen) {
+                  showProactive();
+                  window.removeEventListener('scroll', onScroll);
+                }
+              });
+            } else if (triggerType === 'exit_intent') {
+              if (proactiveTimer) clearTimeout(proactiveTimer);
+              proactiveTimer = null;
+
+              document.addEventListener('mouseleave', function onLeave(e) {
+                if (e && e.clientY <= 0 && !isOpen) {
+                  showProactive();
+                  document.removeEventListener('mouseleave', onLeave);
+                }
+              });
+            } else {
+              // Default
+              scheduleProactive(3000);
+            }
+          } else {
+            // No rules - show default message after 3 seconds
+            scheduleProactive(3000);
+          }
+        })
+        .catch(function(err) {
+          console.error('Failed to load proactive message:', err);
+          // Fallback: show default message
+          scheduleProactive(3000);
+        });
+    }
+
+    // Create iframe only once
+    function ensureIframe() {
+      if (container.querySelector('iframe')) return;
+      var iframe = document.createElement('iframe');
+      iframe.src = widgetUrl;
+      iframe.title = 'LYQN Chat Widget';
+      iframe.setAttribute('allow', 'microphone');
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+      container.appendChild(iframe);
+
+      // Send parent URL on load
+      iframe.onload = function() {
         try {
           iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*');
         } catch (e) {}
+      };
+
+      // Listen for parent URL requests
+      window.addEventListener('message', function(event) {
+        if (event && event.data && event.data.type === 'REQUEST_PARENT_URL') {
+          try {
+            iframe.contentWindow.postMessage({ type: 'PARENT_URL', url: window.location.href }, '*');
+          } catch (e) {}
+        }
+      });
+    }
+
+    function openWidget() {
+      ensureIframe();
+      isOpen = true;
+      container.style.display = 'block';
+      hideProactive();
+      btn.innerHTML = icons.close;
+    }
+
+    function closeWidget() {
+      isOpen = false;
+      container.style.display = 'none';
+      hideProactive();
+      btn.innerHTML = icons.chat;
+    }
+
+    function toggleWidget() {
+      if (isOpen) closeWidget();
+      else openWidget();
+    }
+
+    // Load proactive message on page load
+    loadProactiveMessage();
+
+    // Clicking bubble opens widget (except close button)
+    popup.addEventListener('click', function(e) {
+      if (e && e.target && e.target.id === 'lyqn-proactive-close') return;
+      openWidget();
+    });
+
+    if (popupClose) {
+      popupClose.addEventListener('click', function(e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        hideProactive();
+      });
+    }
+
+    btn.addEventListener('click', function() {
+      toggleWidget();
+    });
+
+    btn.addEventListener('keydown', function(e) {
+      if (!e) return;
+      var key = e.key || e.code;
+      if (key === 'Enter' || key === ' ') {
+        e.preventDefault();
+        toggleWidget();
       }
     });
-  }
-
-  function openWidget() {
-    ensureIframe();
-    isOpen = true;
-    container.style.display = 'block';
-    popup.style.display = 'none';
-    btn.innerHTML = icons.close;
-  }
-
-  function closeWidget() {
-    isOpen = false;
-    container.style.display = 'none';
-    popup.style.display = 'none';
-    btn.innerHTML = icons.chat;
-  }
-
-  function toggleWidget() {
-    if (isOpen) closeWidget();
-    else openWidget();
-  }
-
-  // Load proactive message on page load
-  loadProactiveMessage();
-
-  // Clicking bubble opens widget (except close button)
-  popup.addEventListener('click', function(e) {
-    if (e && e.target && e.target.id === 'lyqn-proactive-close') return;
-    openWidget();
-  });
-  if (popupClose) {
-    popupClose.addEventListener('click', function(e) {
-      if (e && e.stopPropagation) e.stopPropagation();
-      popup.style.display = 'none';
-    });
-  }
-
-  btn.addEventListener('click', function() {
-    toggleWidget();
-  });
-
-  btn.addEventListener('keydown', function(e) {
-    if (!e) return;
-    var key = e.key || e.code;
-    if (key === 'Enter' || key === ' ') {
-      e.preventDefault();
-      toggleWidget();
-    }
   });
 })();
 </script>`;
