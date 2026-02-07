@@ -1647,6 +1647,13 @@ export type Database = {
           plan_name: string
         }[]
       }
+      get_whatsapp_public_info: {
+        Args: { p_business_id: string }
+        Returns: {
+          enabled: boolean
+          phone_number: string
+        }[]
+      }
       has_business_permission: {
         Args: { _business_id: string; _permission: string; _user_id: string }
         Returns: boolean

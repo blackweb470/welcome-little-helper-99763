@@ -43,20 +43,18 @@ export const ContinueOnWhatsApp = ({
   useEffect(() => {
     const fetchWhatsAppSettings = async () => {
       try {
+        // Use the secure RPC function to get public WhatsApp info
+        // This avoids exposing access_token via direct table query
         const { data, error } = await supabase
-          .from("whatsapp_settings")
-          .select("phone_number, enabled")
-          .eq("business_id", businessId)
-          .eq("enabled", true)
-          .maybeSingle();
+          .rpc("get_whatsapp_public_info", { p_business_id: businessId });
 
         if (error) {
           console.error("Error fetching WhatsApp settings:", error);
           return;
         }
 
-        if (data?.phone_number && data.enabled) {
-          setWhatsappNumber(data.phone_number);
+        if (data && data.length > 0 && data[0].phone_number && data[0].enabled) {
+          setWhatsappNumber(data[0].phone_number);
           setIsEnabled(true);
         }
       } catch (error) {
