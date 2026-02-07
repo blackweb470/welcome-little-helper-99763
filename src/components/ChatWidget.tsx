@@ -1409,7 +1409,6 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             </div>
           </div>
         </div>
-      </div>
     );
   };
 
