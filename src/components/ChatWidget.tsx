@@ -259,19 +259,48 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     };
   }, [businessId]);
 
-  // Auto-trigger proactive on page load (demo: always show after 3 seconds)
+  // Auto-trigger proactive fallback only when no real rules exist
   useEffect(() => {
-    if (!businessId || isEmbedded || isOpen) return;
+    if (!businessId || isEmbedded || isOpen || proactiveShown) return;
     
-    // Wait 3 seconds then show a default proactive message
-    const timer = setTimeout(() => {
-      if (isOpen) return;
-      console.log('Showing proactive popup after 3 seconds');
-      setProactiveMessage("👋 Hi there! How can I help you today?");
-    }, 3000);
+    let cancelled = false;
     
-    return () => clearTimeout(timer);
-  }, [businessId, isEmbedded, isOpen]);
+    const checkAndFallback = async () => {
+      try {
+        const { data: rules } = await supabase
+          .from('proactive_chat_rules')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('enabled', true)
+          .limit(1);
+        
+        // Only show fallback if no real rules exist
+        if (!cancelled && (!rules || rules.length === 0)) {
+          const timer = setTimeout(() => {
+            if (!cancelled && !isOpen) {
+              console.log('Showing proactive popup fallback after 3 seconds');
+              setProactiveMessage("👋 Hi there! How can I help you today?");
+            }
+          }, 3000);
+          return () => clearTimeout(timer);
+        }
+      } catch (e) {
+        // On error, show fallback anyway
+        if (!cancelled) {
+          const timer = setTimeout(() => {
+            if (!cancelled && !isOpen) {
+              setProactiveMessage("👋 Hi there! How can I help you today?");
+            }
+          }, 3000);
+          return () => clearTimeout(timer);
+        }
+      }
+    };
+    
+    checkAndFallback();
+    
+    return () => { cancelled = true; };
+  }, [businessId, isEmbedded, isOpen, proactiveShown]);
 
   // Check proactive rules when parent URL is available
   useEffect(() => {
