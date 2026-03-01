@@ -655,7 +655,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                     <MessageSquare className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
+                <PopoverContent className="w-80 z-50" align="start" side="top" sideOffset={8}>
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm">Canned Responses</h4>
                     <ScrollArea className="h-[200px]">
@@ -704,7 +704,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-96" align="start">
+                <PopoverContent className="w-96 z-50" align="start" side="top" sideOffset={8}>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-primary" />
