@@ -74,6 +74,16 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       setVisitorEmail(storedEmail);
     }
     
+    // Restore visitor info
+    const storedVisitorInfo = localStorage.getItem(getStorageKey(businessId, 'visitorInfo'));
+    if (storedVisitorInfo) {
+      try {
+        setVisitorInfo(JSON.parse(storedVisitorInfo));
+      } catch (e) {
+        console.error('Error parsing stored visitor info:', e);
+      }
+    }
+    
     // Restore pre-chat completion state
     if (storedPreChatCompleted === 'true') {
       setPreChatCompleted(true);
@@ -112,6 +122,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       localStorage.setItem(getStorageKey(businessId, 'preChatCompleted'), 'true');
     }
   }, [preChatCompleted, businessId]);
+
+  // Persist visitor info
+  useEffect(() => {
+    if (visitorInfo && Object.keys(visitorInfo).length > 0) {
+      localStorage.setItem(getStorageKey(businessId, 'visitorInfo'), JSON.stringify(visitorInfo));
+    }
+  }, [visitorInfo, businessId]);
 
   // Persist session ID
   useEffect(() => {
@@ -1327,6 +1344,45 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
           {/* Chat Input */}
           <div className="border-t bg-background shrink-0">
+            {/* Email input for live agent when pre-chat is disabled */}
+            {showEmailInput && !visitorEmail && (
+              <div className="m-2 sm:m-3 p-2 sm:p-3 bg-muted/50 border rounded-lg">
+                <p className="text-xs sm:text-sm font-medium mb-2">Enter your email to connect with an agent:</p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.target as HTMLFormElement;
+                    const emailInput = form.elements.namedItem('agent-email') as HTMLInputElement;
+                    const email = emailInput?.value?.trim();
+                    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                      setVisitorEmail(email);
+                      setShowEmailInput(false);
+                      // Auto-trigger live agent request with the email
+                      setTimeout(() => {
+                        requestLiveAgent('User requested live agent support');
+                      }, 100);
+                    }
+                  }}
+                  className="flex gap-2"
+                >
+                  <Input
+                    name="agent-email"
+                    type="email"
+                    placeholder="your.email@example.com"
+                    className="h-8 text-xs sm:text-sm flex-1"
+                    required
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="h-8 px-3 text-xs shrink-0"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    Submit
+                  </Button>
+                </form>
+              </div>
+            )}
             {liveChatSession && liveChatSession.status === 'queued' && (
               <div className="m-2 sm:m-3 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                 <div className="flex items-center justify-between mb-1">
