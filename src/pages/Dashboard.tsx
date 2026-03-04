@@ -96,13 +96,6 @@ const Dashboard = () => {
           
           if (payload.eventType === 'DELETE' || 
               (payload.eventType === 'UPDATE' && payload.new.status === 'deactivated')) {
-            const { toast } = require('@/hooks/use-toast');
-            toast({
-              title: "Access Removed",
-              description: "You have been removed from a team. Your access has been revoked.",
-              variant: "destructive",
-            });
-            
             // Force refresh businesses list
             window.location.reload();
           }

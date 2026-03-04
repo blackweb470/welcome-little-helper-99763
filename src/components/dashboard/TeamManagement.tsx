@@ -114,14 +114,33 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Fetch profile names for members with user_id
+      const userIds = (data || []).filter(m => m.user_id).map(m => m.user_id);
+      let profilesMap: Record<string, { email: string; full_name: string | null }> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, email, full_name')
+          .in('id', userIds);
+        
+        if (profiles) {
+          profiles.forEach(p => {
+            profilesMap[p.id] = { email: p.email, full_name: p.full_name };
+          });
+        }
+      }
       
       const membersWithProfiles = (data || []).map((member: any) => ({
         ...member,
         permissions: member.permissions as { can_chat: boolean; can_view_analytics: boolean; can_manage_settings: boolean; },
-        profiles: {
-          email: member.email || 'No email',
-          full_name: member.user_id ? 'Team Member' : 'Pending'
-        }
+        profiles: member.user_id && profilesMap[member.user_id]
+          ? profilesMap[member.user_id]
+          : {
+              email: member.email || 'No email',
+              full_name: member.status === 'pending' ? 'Pending Invitation' : 'Unknown'
+            }
       }));
       
       setTeamMembers(membersWithProfiles as TeamMember[]);
