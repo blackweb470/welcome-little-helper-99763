@@ -196,16 +196,19 @@ const Dashboard = () => {
 
           <div className="p-8 space-y-8 max-w-[1600px] mx-auto animate-fade-in">
             {currentTab === 'businesses' && (
-              <Card className="p-8 shadow-elegant">
-                <BusinessList 
-                  userId={user.id} 
-                  onSelectBusiness={(id) => {
-                    setSelectedBusinessId(id);
-                    setActiveTab('analytics');
-                  }}
-                  selectedBusinessId={selectedBusinessId}
-                />
-              </Card>
+              <div className="space-y-6">
+                <PendingInvitations userId={user.id} />
+                <Card className="p-8 shadow-elegant">
+                  <BusinessList 
+                    userId={user.id} 
+                    onSelectBusiness={(id) => {
+                      setSelectedBusinessId(id);
+                      setActiveTab('analytics');
+                    }}
+                    selectedBusinessId={selectedBusinessId}
+                  />
+                </Card>
+              </div>
             )}
 
             {selectedBusinessId && (
