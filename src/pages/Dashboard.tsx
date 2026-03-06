@@ -25,6 +25,7 @@ import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { BotCustomization } from "@/components/dashboard/BotCustomization";
 import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
 import { WhatsAppAdminSettings } from "@/components/dashboard/WhatsAppAdminSettings";
+import { PendingInvitations } from "@/components/dashboard/PendingInvitations";
 
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
