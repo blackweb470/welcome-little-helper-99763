@@ -25,6 +25,7 @@ import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { BotCustomization } from "@/components/dashboard/BotCustomization";
 import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
 import { WhatsAppAdminSettings } from "@/components/dashboard/WhatsAppAdminSettings";
+import { PendingInvitations } from "@/components/dashboard/PendingInvitations";
 
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
@@ -195,16 +196,19 @@ const Dashboard = () => {
 
           <div className="p-8 space-y-8 max-w-[1600px] mx-auto animate-fade-in">
             {currentTab === 'businesses' && (
-              <Card className="p-8 shadow-elegant">
-                <BusinessList 
-                  userId={user.id} 
-                  onSelectBusiness={(id) => {
-                    setSelectedBusinessId(id);
-                    setActiveTab('analytics');
-                  }}
-                  selectedBusinessId={selectedBusinessId}
-                />
-              </Card>
+              <div className="space-y-6">
+                <PendingInvitations userId={user.id} />
+                <Card className="p-8 shadow-elegant">
+                  <BusinessList 
+                    userId={user.id} 
+                    onSelectBusiness={(id) => {
+                      setSelectedBusinessId(id);
+                      setActiveTab('analytics');
+                    }}
+                    selectedBusinessId={selectedBusinessId}
+                  />
+                </Card>
+              </div>
             )}
 
             {selectedBusinessId && (
