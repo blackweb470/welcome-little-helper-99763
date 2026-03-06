@@ -35,7 +35,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2, UserX, MoreVertical } from "lucide-react";
+import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2, UserX, MoreVertical, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -76,6 +86,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showPending, setShowPending] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'deactivate'; memberId: string; memberName: string } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -616,14 +627,14 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => handleDeactivate(member.id)}
+                            onClick={() => setConfirmAction({ type: 'deactivate', memberId: member.id, memberName: member.profiles?.full_name || member.profiles?.email || 'this member' })}
                             className="text-orange-600 focus:text-orange-600"
                           >
                             <UserX className="w-4 h-4 mr-2" />
                             Deactivate Account
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleRemove(member.id)}
+                            onClick={() => setConfirmAction({ type: 'remove', memberId: member.id, memberName: member.profiles?.full_name || member.profiles?.email || 'this member' })}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -639,6 +650,40 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
           </div>
         )}
       </Card>
+
+      <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              {confirmAction?.type === 'remove' ? 'Remove Team Member' : 'Deactivate Team Member'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.type === 'remove' 
+                ? `Are you sure you want to permanently remove ${confirmAction?.memberName} from your team? This action cannot be undone.`
+                : `Are you sure you want to deactivate ${confirmAction?.memberName}? They will lose access to your business dashboard. You can re-invite them later.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!confirmAction) return;
+                if (confirmAction.type === 'remove') {
+                  await handleRemove(confirmAction.memberId);
+                } else {
+                  await handleDeactivate(confirmAction.memberId);
+                }
+                setConfirmAction(null);
+              }}
+            >
+              {confirmAction?.type === 'remove' ? 'Remove' : 'Deactivate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Role Descriptions</h3>

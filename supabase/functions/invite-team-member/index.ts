@@ -72,7 +72,6 @@ serve(async (req) => {
   try {
     const { email, businessId, role, permissions } = await req.json();
 
-    // Create Supabase client with service role for admin access
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -84,7 +83,6 @@ serve(async (req) => {
       }
     );
 
-    // Get authorization header to identify the inviter
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(
@@ -93,7 +91,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify the inviter's JWT
     const token = authHeader.replace('Bearer ', '');
     const { data: { user: inviter }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
@@ -104,14 +101,12 @@ serve(async (req) => {
       );
     }
 
-    // Get inviter's profile
     const { data: inviterProfile } = await supabaseAdmin
       .from('profiles')
       .select('full_name')
       .eq('id', inviter.id)
       .single();
 
-    // Get business details
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
       .select('name')
@@ -125,7 +120,7 @@ serve(async (req) => {
       );
     }
 
-    // Check if user already exists
+    // Check if user already exists in auth
     const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
     if (listError) {
@@ -136,31 +131,80 @@ serve(async (req) => {
       );
     }
 
-    const existingUser = users?.find(u => u.email === email);
-    let userId = existingUser?.id;
+    const existingUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    const userId = existingUser?.id;
 
-    // Check if already a team member
-    if (userId) {
-      const { data: existing } = await supabaseAdmin
-        .from('team_members')
-        .select('id')
-        .eq('business_id', businessId)
-        .eq('user_id', userId)
-        .single();
+    // Check for existing team member by user_id OR email (covers both active and pending)
+    const { data: existingMembers } = await supabaseAdmin
+      .from('team_members')
+      .select('id, status, user_id, email')
+      .eq('business_id', businessId)
+      .or(
+        userId 
+          ? `user_id.eq.${userId},email.ilike.${email}` 
+          : `email.ilike.${email}`
+      );
 
-      if (existing) {
+    if (existingMembers && existingMembers.length > 0) {
+      const activeMember = existingMembers.find(m => m.status === 'active');
+      const deactivatedMember = existingMembers.find(m => m.status === 'deactivated');
+      const pendingMember = existingMembers.find(m => m.status === 'pending');
+
+      if (activeMember) {
         return new Response(
           JSON.stringify({ error: 'Already a member', message: 'This user is already part of your team' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Re-activate deactivated member
+      if (deactivatedMember) {
+        const { error: updateError } = await supabaseAdmin
+          .from('team_members')
+          .update({
+            status: existingUser ? 'active' : 'pending',
+            role: role,
+            permissions: permissions,
+            invited_by: inviter.id,
+            invited_at: new Date().toISOString(),
+            accepted_at: existingUser ? new Date().toISOString() : null,
+            user_id: existingUser ? userId : null,
+            email: email,
+          })
+          .eq('id', deactivatedMember.id);
+
+        if (updateError) {
+          console.error('Error reactivating team member:', updateError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to reactivate team member' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Send email notification
+        await sendInviteEmail(req, email, business.name, inviterProfile, inviter, role, permissions, existingUser, resend);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Team member reactivated successfully'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Already has a pending invite
+      if (pendingMember) {
+        return new Response(
+          JSON.stringify({ error: 'Invitation pending', message: 'An invitation is already pending for this email' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    // If user doesn't exist, create a pending invitation
-    // If user exists, add them directly as active
+    // Create new team member record
     const status = existingUser ? 'active' : 'pending';
     
-    // Create team member record
     const teamMemberData: any = {
       business_id: businessId,
       email: email,
@@ -188,7 +232,6 @@ serve(async (req) => {
 
     // Only create profile and assign roles if user exists
     if (existingUser && userId) {
-      // Ensure user has a profile
       const { data: existingProfile } = await supabaseAdmin
         .from('profiles')
         .select('id')
@@ -205,7 +248,6 @@ serve(async (req) => {
           });
       }
 
-      // Assign admin role if needed
       if (role === 'admin') {
         await supabaseAdmin
           .from('user_roles')
@@ -218,51 +260,8 @@ serve(async (req) => {
       }
     }
 
-    // Send notification email to existing user
-    // Get the proper app URL - use the origin from request headers or fallback to production
-    const origin = req.headers.get('origin') || 'https://lyqn.app';
-    const inviteUrl = existingUser 
-      ? `${origin}/dashboard` 
-      : `${origin}/auth`;
-    
-    const emailHtml = createInvitationEmail(
-      business.name,
-      inviterProfile?.full_name || inviter.email || 'Team Admin',
-      role.charAt(0).toUpperCase() + role.slice(1),
-      permissions,
-      inviteUrl
-    );
-
-    // Get the configured from email or use default
-    const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
-    
-    try {
-      const { error: emailError } = await resend.emails.send({
-        from: fromEmail,
-        to: [email],
-        replyTo: inviter.email || undefined,
-        subject: `You've been invited to join ${business.name}'s team`,
-        html: emailHtml,
-      });
-
-      if (emailError) {
-        console.error('Error sending invitation email:', emailError);
-        // Log the error but don't fail the invitation
-        // Return success but notify that email failed
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            member: newMember,
-            warning: 'Team member added but email notification failed to send',
-            emailError: emailError.message
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (error) {
-      console.error('Exception sending invitation email:', error);
-      // Continue anyway
-    }
+    // Send email
+    await sendInviteEmail(req, email, business.name, inviterProfile, inviter, role, permissions, existingUser, resend);
 
     return new Response(
       JSON.stringify({ 
@@ -283,3 +282,46 @@ serve(async (req) => {
     );
   }
 });
+
+async function sendInviteEmail(
+  req: Request,
+  email: string,
+  businessName: string,
+  inviterProfile: any,
+  inviter: any,
+  role: string,
+  permissions: any,
+  existingUser: any,
+  resendClient: any
+) {
+  const origin = req.headers.get('origin') || 'https://lyqn.app';
+  const inviteUrl = existingUser 
+    ? `${origin}/dashboard` 
+    : `${origin}/auth`;
+  
+  const emailHtml = createInvitationEmail(
+    businessName,
+    inviterProfile?.full_name || inviter.email || 'Team Admin',
+    role.charAt(0).toUpperCase() + role.slice(1),
+    permissions,
+    inviteUrl
+  );
+
+  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
+  
+  try {
+    const { error: emailError } = await resendClient.emails.send({
+      from: fromEmail,
+      to: [email],
+      replyTo: inviter.email || undefined,
+      subject: `You've been invited to join ${businessName}'s team`,
+      html: emailHtml,
+    });
+
+    if (emailError) {
+      console.error('Error sending invitation email:', emailError);
+    }
+  } catch (error) {
+    console.error('Exception sending invitation email:', error);
+  }
+}
