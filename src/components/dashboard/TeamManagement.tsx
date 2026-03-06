@@ -86,6 +86,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showPending, setShowPending] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ type: 'remove' | 'deactivate'; memberId: string; memberName: string } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
