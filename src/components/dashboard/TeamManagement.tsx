@@ -35,7 +35,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2, UserX, MoreVertical } from "lucide-react";
+import { UserPlus, Trash2, Shield, Eye, MessageSquare, BarChart3, Settings2, Mail, Loader2, UserX, MoreVertical, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
