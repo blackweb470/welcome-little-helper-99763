@@ -1670,6 +1670,10 @@ export type Database = {
         Returns: boolean
       }
       is_on_trial: { Args: { p_user_id: string }; Returns: boolean }
+      is_team_member_of_business: {
+        Args: { _business_id: string; _user_id: string }
+        Returns: boolean
+      }
       search_conversations: {
         Args: {
           p_business_id: string
