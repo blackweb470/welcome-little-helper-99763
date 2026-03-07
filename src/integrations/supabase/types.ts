@@ -1617,6 +1617,18 @@ export type Database = {
         Returns: number
       }
       can_create_business: { Args: { p_user_id: string }; Returns: boolean }
+      get_pending_invitations: {
+        Args: { _user_email: string }
+        Returns: {
+          business_id: string
+          business_name: string
+          email: string
+          id: string
+          invited_at: string
+          permissions: Json
+          role: string
+        }[]
+      }
       get_subscription_status: {
         Args: { p_user_id: string }
         Returns: {
