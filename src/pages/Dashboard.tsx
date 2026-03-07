@@ -231,7 +231,10 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'team' && hasAccess('live_agent') && (
-                  <TeamManagement businessId={selectedBusinessId} />
+                  <div className="space-y-6">
+                    {user && <PendingInvitations userId={user.id} />}
+                    <TeamManagement businessId={selectedBusinessId} />
+                  </div>
                 )}
 
                 {currentTab === 'livechat' && hasAccess('live_agent') && (
