@@ -31,38 +31,17 @@ export function PendingInvitations({ userId }: { userId: string }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.email) return;
 
-      // Query pending invitations matching current user's email
+      // Use SECURITY DEFINER function to avoid RLS recursion
       const { data, error } = await supabase
-        .from('team_members')
-        .select('id, business_id, role, permissions, invited_at, email')
-        .eq('status', 'pending')
-        .ilike('email', user.email);
+        .rpc('get_pending_invitations', { _user_email: user.email });
 
       if (error) throw error;
 
-      if (!data || data.length === 0) {
-        setInvitations([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch business names
-      const businessIds = data.map(inv => inv.business_id);
-      const { data: businesses } = await supabase
-        .from('businesses')
-        .select('id, name')
-        .in('id', businessIds);
-
-      const businessMap: Record<string, string> = {};
-      businesses?.forEach(b => { businessMap[b.id] = b.name; });
-
-      const invitationsWithNames = data.map(inv => ({
+      setInvitations((data || []).map(inv => ({
         ...inv,
         email: inv.email || '',
-        business_name: businessMap[inv.business_id] || 'Unknown Business',
-      }));
-
-      setInvitations(invitationsWithNames);
+        business_name: inv.business_name || 'Unknown Business',
+      })));
     } catch (error) {
       console.error('Error fetching pending invitations:', error);
     } finally {
