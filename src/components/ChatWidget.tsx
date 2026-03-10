@@ -323,7 +323,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   useEffect(() => {
     if (!businessId) return;
     
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     const listeners: { type: string; handler: EventListener }[] = [];
     let hasTriggered = false;
 
