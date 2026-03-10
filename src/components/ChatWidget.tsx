@@ -1095,8 +1095,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       // Escalation handled via live agent button
     } catch (error) {
       console.error('Error sending text message:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      handleTranscript(`Sorry, there was an error: ${errorMsg}`, 'assistant');
+      handleTranscript('⚠️ Message failed to send. Please check your connection and try again.', 'assistant');
     } finally {
       setSendingMessage(false);
     }
