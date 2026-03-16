@@ -67,7 +67,7 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
     };
   };
 
-  const { data: analysis, isLoading } = useQuery({
+  const { data: analysis, isLoading, error: queryError } = useQuery({
     queryKey: ['conversation-analysis', businessId, dateFilter],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
@@ -77,9 +77,16 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       return data as AnalysisData;
     },
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 60000,
+    retry: (failureCount, error) => {
+      // Don't retry on rate limit or payment errors
+      const msg = error?.message || '';
+      if (msg.includes('Rate limited') || msg.includes('credits')) return false;
+      return failureCount < 2;
+    }
   });
 
   const getSeverityColor = (severity: string) => {
