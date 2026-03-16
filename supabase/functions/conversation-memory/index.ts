@@ -31,9 +31,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY not configured');
     }
 
     if (action === 'retrieve_context') {
@@ -81,14 +81,14 @@ ${conversationText}
 
 Format your response as JSON with "summary", "key_facts", and "preferences" fields.`;
 
-      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: 'You are a helpful AI that extracts structured information from conversations. Always respond with valid JSON.' },
             { role: 'user', content: prompt }
@@ -99,8 +99,8 @@ Format your response as JSON with "summary", "key_facts", and "preferences" fiel
 
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
-        console.error('Lovable AI error:', aiResponse.status, errorText);
-        throw new Error(`Lovable AI error: ${aiResponse.status}`);
+        console.error('OpenAI error:', aiResponse.status, errorText);
+        throw new Error(`OpenAI error: ${aiResponse.status}`);
       }
 
       const aiData = await aiResponse.json();
