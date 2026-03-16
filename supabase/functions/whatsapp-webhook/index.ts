@@ -439,10 +439,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get AI response using the same logic as chat-message
-      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-      if (!LOVABLE_API_KEY) {
-        throw new Error('LOVABLE_API_KEY not configured');
+      // Get AI response using OpenAI
+      const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+      if (!OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY not configured');
       }
 
       // Fetch widget settings and context
