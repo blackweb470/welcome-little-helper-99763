@@ -136,6 +136,12 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
             </div>
+          ) : queryError ? (
+            <div className="text-center py-8 space-y-2">
+              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+              <p className="text-sm text-destructive font-medium">{queryError.message}</p>
+              <p className="text-xs text-muted-foreground">Try again in a few moments</p>
+            </div>
           ) : analysis ? (
             <div className="space-y-6">
               {/* Summary Stats */}
