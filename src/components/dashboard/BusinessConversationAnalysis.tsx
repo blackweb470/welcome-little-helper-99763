@@ -67,7 +67,7 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
     };
   };
 
-  const { data: analysis, isLoading } = useQuery({
+  const { data: analysis, isLoading, error: queryError } = useQuery({
     queryKey: ['conversation-analysis', businessId, dateFilter],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
@@ -77,9 +77,16 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       return data as AnalysisData;
     },
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 60000,
+    retry: (failureCount, error) => {
+      // Don't retry on rate limit or payment errors
+      const msg = error?.message || '';
+      if (msg.includes('Rate limited') || msg.includes('credits')) return false;
+      return failureCount < 2;
+    }
   });
 
   const getSeverityColor = (severity: string) => {
@@ -128,6 +135,12 @@ export const BusinessConversationAnalysis = ({ businessId }: BusinessConversatio
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-20 w-full" />
+            </div>
+          ) : queryError ? (
+            <div className="text-center py-8 space-y-2">
+              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+              <p className="text-sm text-destructive font-medium">{queryError.message}</p>
+              <p className="text-xs text-muted-foreground">Try again in a few moments</p>
             </div>
           ) : analysis ? (
             <div className="space-y-6">
