@@ -99,7 +99,7 @@ Guidelines:
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Lovable AI error:', error);
+      console.error('OpenAI error:', error);
       throw new Error('Failed to analyze sentiment');
     }
 

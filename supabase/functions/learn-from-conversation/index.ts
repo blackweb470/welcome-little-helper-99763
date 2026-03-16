@@ -63,14 +63,14 @@ Format as JSON array with objects containing:
 
 Only include high-value, actionable learnings. Skip generic conversation fillers.`;
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'You are an AI that extracts valuable business learnings from conversations. Always respond with valid JSON.' },
           { role: 'user', content: prompt }

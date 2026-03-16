@@ -99,8 +99,8 @@ Format your response as JSON with "summary", "key_facts", and "preferences" fiel
 
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
-        console.error('Lovable AI error:', aiResponse.status, errorText);
-        throw new Error(`Lovable AI error: ${aiResponse.status}`);
+        console.error('OpenAI error:', aiResponse.status, errorText);
+        throw new Error(`OpenAI error: ${aiResponse.status}`);
       }
 
       const aiData = await aiResponse.json();
