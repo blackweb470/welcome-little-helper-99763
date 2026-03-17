@@ -693,7 +693,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
               
               <Popover open={aiSuggestionsOpen} onOpenChange={(open) => {
                 setAiSuggestionsOpen(open);
-                if (open && aiSuggestions.length === 0 && !loadingSuggestions) {
+                if (open) {
+                  setAiSuggestions([]);
                   getAISuggestions();
                 }
               }}>
