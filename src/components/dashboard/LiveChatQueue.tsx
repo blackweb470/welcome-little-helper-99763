@@ -691,17 +691,25 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 </PopoverContent>
               </Popover>
               
-              <Popover open={aiSuggestionsOpen} onOpenChange={setAiSuggestionsOpen}>
+              <Popover open={aiSuggestionsOpen} onOpenChange={(open) => {
+                setAiSuggestionsOpen(open);
+                if (open && aiSuggestions.length === 0 && !loadingSuggestions) {
+                  getAISuggestions();
+                }
+              }}>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="icon"
                     type="button"
                     disabled={sendingMessage || loadingSuggestions}
-                    onClick={getAISuggestions}
                     title="AI Suggestions"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    {loadingSuggestions ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-96 z-50" align="start" side="top" sideOffset={8}>
