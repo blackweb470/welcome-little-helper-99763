@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -691,17 +691,26 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 </PopoverContent>
               </Popover>
               
-              <Popover open={aiSuggestionsOpen} onOpenChange={setAiSuggestionsOpen}>
+              <Popover open={aiSuggestionsOpen} onOpenChange={(open) => {
+                setAiSuggestionsOpen(open);
+                if (open) {
+                  setAiSuggestions([]);
+                  getAISuggestions();
+                }
+              }}>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="icon"
                     type="button"
                     disabled={sendingMessage || loadingSuggestions}
-                    onClick={getAISuggestions}
                     title="AI Suggestions"
                   >
-                    <Sparkles className="w-4 h-4" />
+                    {loadingSuggestions ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-96 z-50" align="start" side="top" sideOffset={8}>

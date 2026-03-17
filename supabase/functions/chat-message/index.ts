@@ -144,53 +144,41 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get AI response
+    // Get AI response — fetch all context in parallel for speed
+    const [settingsResult, documentsResult, websiteResult, learningsResult, historyResult] = await Promise.all([
+      supabase
+        .from('widget_settings')
+        .select('*')
+        .eq('business_id', businessId)
+        .single(),
+      supabase
+        .from('business_documents')
+        .select('content_text, file_name')
+        .eq('business_id', businessId)
+        .eq('status', 'ready'),
+      supabase
+        .from('business_website_content')
+        .select('title, content, url')
+        .eq('business_id', businessId)
+        .limit(10),
+      supabase
+        .from('business_learnings')
+        .select('content')
+        .eq('business_id', businessId)
+        .order('confidence_score', { ascending: false })
+        .limit(5),
+      supabase
+        .from('messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+    ]);
 
-    // Fetch widget settings and context
-    const { data: settings } = await supabase
-      .from('widget_settings')
-      .select('*')
-      .eq('business_id', businessId)
-      .single();
-
-    // Validate message length against configured max_input_characters
-    const maxChars = settings?.max_input_characters || 500;
-    if (message.length > maxChars) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Message too long', 
-          details: `Message exceeds the maximum allowed length of ${maxChars} characters` 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { data: documents } = await supabase
-      .from('business_documents')
-      .select('content_text, file_name')
-      .eq('business_id', businessId)
-      .eq('status', 'ready');
-
-    // Fetch website content for AI training
-    const { data: websiteContent } = await supabase
-      .from('business_website_content')
-      .select('title, content, url')
-      .eq('business_id', businessId)
-      .limit(10);
-
-    const { data: learnings } = await supabase
-      .from('business_learnings')
-      .select('content')
-      .eq('business_id', businessId)
-      .order('confidence_score', { ascending: false })
-      .limit(5);
-
-    // Fetch conversation history
-    const { data: history } = await supabase
-      .from('messages')
-      .select('role, content')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true });
+    const settings = settingsResult.data;
+    const documents = documentsResult.data;
+    const websiteContent = websiteResult.data;
+    const learnings = learningsResult.data;
+    const history = historyResult.data;
 
     // Build system prompt
     let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant.';
