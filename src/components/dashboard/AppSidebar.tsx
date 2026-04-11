@@ -7,7 +7,7 @@ import {
   Users,
   Zap,
   
-  Target,
+  
   Settings,
   BookOpen,
   LogOut,
