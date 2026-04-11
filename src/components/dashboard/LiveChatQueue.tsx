@@ -193,7 +193,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           business_id: businessId,
           status: newStatus,
           last_activity_at: new Date().toISOString()
-        });
+        }, { onConflict: 'user_id,business_id' });
 
       if (error) throw error;
       setAgentStatus(newStatus);
