@@ -17,7 +17,7 @@ import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
 import { WebsiteCrawler } from "@/components/dashboard/WebsiteCrawler";
-import AgentPerformance from "@/components/dashboard/AgentPerformance";
+
 import { CannedResponses } from "@/components/dashboard/CannedResponses";
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
@@ -176,7 +176,7 @@ const Dashboard = () => {
                   currentTab === 'documents' ? 'Business Documents' :
                   
                   currentTab === 'scoring' ? 'Behavioral Scoring' :
-                  currentTab === 'agent-performance' ? 'Agent Performance' :
+                  
                   currentTab === 'settings' ? 'Widget Settings' :
                   currentTab === 'whatsapp' ? 'WhatsApp Integration' : 'Dashboard'}
               </h1>
@@ -250,9 +250,6 @@ const Dashboard = () => {
                   <NotificationSettings businessId={selectedBusinessId} />
                 )}
 
-                {currentTab === 'agent-performance' && (
-                  <AgentPerformance businessId={selectedBusinessId} />
-                )}
 
                 {currentTab === 'proactive' && hasAccess('proactive_chat') && (
                   <ProactiveChatRules businessId={selectedBusinessId} />

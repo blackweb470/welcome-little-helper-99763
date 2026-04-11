@@ -70,7 +70,7 @@ const businessItems = [
   { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses", permission: "can_chat" },
   { title: "Notifications", path: "notifications", icon: Bell, permission: "can_chat" },
   { title: "Notification Settings", path: "notification-settings", icon: Settings, permission: "can_chat" },
-  { title: "Agent Performance", path: "agent-performance", icon: TrendingUp, feature: "advanced_analytics", permission: "can_view_analytics" },
+  
   { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat", permission: "can_manage_settings" },
   
   { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
