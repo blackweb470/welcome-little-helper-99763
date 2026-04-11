@@ -237,23 +237,6 @@ export function NotificationSettings({ businessId }: { businessId: string }) {
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label htmlFor="ticket_created">New Tickets</Label>
-            <Switch
-              id="ticket_created"
-              checked={prefs.notify_ticket_created}
-              onCheckedChange={(v) => handleToggle("notify_ticket_created", v)}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="ticket_resolved">Resolved Tickets</Label>
-            <Switch
-              id="ticket_resolved"
-              checked={prefs.notify_ticket_resolved}
-              onCheckedChange={(v) => handleToggle("notify_ticket_resolved", v)}
-            />
-          </div>
 
           <div className="flex items-center justify-between">
             <Label htmlFor="mention">Mentions</Label>
