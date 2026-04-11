@@ -10,7 +10,7 @@ import { BusinessConversationAnalysis } from "@/components/dashboard/BusinessCon
 import WidgetSettings from "@/components/dashboard/WidgetSettings";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 
-import { BehavioralScoring } from "@/components/dashboard/BehavioralScoring";
+
 import { FeaturesDocumentation } from "@/components/dashboard/FeaturesDocumentation";
 
 import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
@@ -175,7 +175,7 @@ const Dashboard = () => {
                   
                   currentTab === 'documents' ? 'Business Documents' :
                   
-                  currentTab === 'scoring' ? 'Behavioral Scoring' :
+                  
                   
                   currentTab === 'settings' ? 'Widget Settings' :
                   currentTab === 'whatsapp' ? 'WhatsApp Integration' : 'Dashboard'}
@@ -256,9 +256,6 @@ const Dashboard = () => {
                 )}
 
 
-                {currentTab === 'scoring' && hasAccess('visitor_tracking') && (
-                  <BehavioralScoring businessId={selectedBusinessId} />
-                )}
 
                 {currentTab === 'documents' && hasAccess('business_documents') && (
                   <div className="space-y-6">

@@ -7,7 +7,7 @@ import {
   Users,
   Zap,
   
-  Target,
+  
   Settings,
   BookOpen,
   LogOut,
@@ -75,7 +75,7 @@ const businessItems = [
   
   { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
   
-  { title: "Scoring", path: "scoring", icon: Target, feature: "visitor_tracking", permission: "can_view_analytics" },
+  
   { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
   { title: "Customize Bot", path: "customize-bot", icon: Bot, ownerOnly: true },
   { title: "WhatsApp", path: "whatsapp", icon: MessageCircle, ownerOnly: true },
