@@ -12,7 +12,7 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 
 import { BehavioralScoring } from "@/components/dashboard/BehavioralScoring";
 import { FeaturesDocumentation } from "@/components/dashboard/FeaturesDocumentation";
-import { TicketsList } from "@/components/dashboard/TicketsList";
+
 import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
 import { BusinessDocuments } from "@/components/dashboard/BusinessDocuments";
