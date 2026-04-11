@@ -3,7 +3,7 @@ import {
   Building2,
   MessageSquare,
   BarChart3,
-  Ticket,
+  
   Users,
   Zap,
   
@@ -64,7 +64,7 @@ const externalLinks = [
 const businessItems = [
   { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics", permission: "can_view_analytics" },
   { title: "Conversations", path: "conversations", icon: MessageSquare, permission: "can_chat" },
-  { title: "Tickets", path: "tickets", icon: Ticket, permission: "can_chat" },
+  
   { title: "Team", path: "team", icon: UsersRound, feature: "live_agent", ownerOnly: true },
   { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent", permission: "can_chat" },
   { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses", permission: "can_chat" },
