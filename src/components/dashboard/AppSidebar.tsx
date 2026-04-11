@@ -12,7 +12,7 @@ import {
   BookOpen,
   LogOut,
   FileText,
-  TrendingUp,
+  
   FileStack,
   Bell,
   BellDot,
