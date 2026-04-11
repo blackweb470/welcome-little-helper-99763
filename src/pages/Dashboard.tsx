@@ -165,7 +165,7 @@ const Dashboard = () => {
                 {currentTab === 'businesses' ? 'Businesses' :
                  currentTab === 'analytics' ? 'Analytics' :
                  currentTab === 'conversations' ? 'Conversations' :
-                 currentTab === 'tickets' ? 'Tickets' :
+                 
                  currentTab === 'team' ? 'Team Management' :
                  currentTab === 'livechat' ? 'Live Chat' :
                  currentTab === 'proactive' ? 'Proactive Chat' :
@@ -226,9 +226,6 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {currentTab === 'tickets' && (
-                  <TicketsList businessId={selectedBusinessId} />
-                )}
 
                 {currentTab === 'team' && hasAccess('live_agent') && (
                   <div className="space-y-6">

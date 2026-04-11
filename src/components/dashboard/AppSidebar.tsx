@@ -3,7 +3,7 @@ import {
   Building2,
   MessageSquare,
   BarChart3,
-  Ticket,
+  
   Users,
   Zap,
   
