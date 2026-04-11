@@ -24,7 +24,11 @@ export const firecrawlApi = {
     if (error) {
       return { success: false, error: error.message };
     }
-    return data;
+    // The edge function returns { success, pagesFound, pagesStored, ... } at top level
+    if (data?.success) {
+      return { success: true, data };
+    }
+    return { success: false, error: data?.error || 'Failed to crawl website' };
   },
 
   // Scrape a single URL
