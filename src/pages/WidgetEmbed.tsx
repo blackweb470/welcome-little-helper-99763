@@ -6,6 +6,25 @@ import { VisitorTracker } from "@/utils/visitorTracking";
 const WidgetEmbed = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const [parentUrl, setParentUrl] = useState<string>('');
+  const [isInIframe, setIsInIframe] = useState(true);
+
+  // Add noindex meta tag and detect iframe
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+
+    try {
+      setIsInIframe(window.self !== window.top);
+    } catch {
+      setIsInIframe(true); // cross-origin means we're in an iframe
+    }
+
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
 
   // Get parent page URL from iframe
   useEffect(() => {
