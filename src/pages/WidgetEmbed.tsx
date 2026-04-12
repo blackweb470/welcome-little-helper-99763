@@ -6,6 +6,25 @@ import { VisitorTracker } from "@/utils/visitorTracking";
 const WidgetEmbed = () => {
   const { businessId } = useParams<{ businessId: string }>();
   const [parentUrl, setParentUrl] = useState<string>('');
+  const [isInIframe, setIsInIframe] = useState(true);
+
+  // Add noindex meta tag and detect iframe
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+
+    try {
+      setIsInIframe(window.self !== window.top);
+    } catch {
+      setIsInIframe(true); // cross-origin means we're in an iframe
+    }
+
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
 
   // Get parent page URL from iframe
   useEffect(() => {
@@ -61,6 +80,25 @@ const WidgetEmbed = () => {
 
   if (!businessId || !isValidUUID) {
     return null;
+  }
+
+  if (!isInIframe) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md p-8">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Widget Embed</h1>
+          <p className="text-muted-foreground mb-6">
+            This chat widget is designed to be embedded on your website. Visit our main site to get started.
+          </p>
+          <a
+            href="/"
+            className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Go to LYQN
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
