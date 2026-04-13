@@ -139,7 +139,7 @@ const Pricing = () => {
               >
                 {plan.trial && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
+                    <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
                       1 Month Free
                     </span>
                   </div>
