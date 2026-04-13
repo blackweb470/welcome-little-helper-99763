@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Sparkles, Zap, Building2, ArrowRight } from "lucide-react";
+import { Check, Zap, Building2, ArrowRight, Star } from "lucide-react";
 import { PolarCheckout } from "@/components/PolarCheckout";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -27,10 +27,10 @@ const Pricing = () => {
       price: 9.99,
       productId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
       description: "Perfect for getting started",
-      icon: Sparkles,
+      icon: Star,
       features: [
-        "1 Month Free Trial",
-        "3 Businesses",
+        "2 Weeks Free Trial",
+        "1 Business",
         "Pre-Chat Forms",
         "Canned Responses",
         "Basic Analytics",
@@ -51,7 +51,7 @@ const Pricing = () => {
       icon: Zap,
       features: [
         "Everything in Basic",
-        "10 Businesses",
+        "2 Businesses",
         "Live Agent Transfer",
         "Advanced Analytics",
         "Sentiment Analysis",
@@ -68,11 +68,11 @@ const Pricing = () => {
       name: "Business",
       price: 99.99,
       productId: "495da580-72e9-4fb9-a706-b098921df542",
-      description: "For large organizations",
+      description: "For growing organizations",
       icon: Building2,
       features: [
         "Everything in Pro",
-        "Unlimited Businesses",
+        "5 Businesses",
         "AI Learning & Documents",
         "Advanced Visitor Tracking",
         "Custom Integrations",
@@ -94,7 +94,6 @@ const Pricing = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button onClick={() => navigate("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Sparkles className="w-6 h-6 text-foreground" />
               <span className="text-xl font-bold">LYQN</span>
             </button>
             {isNewUser ? (
@@ -121,8 +120,8 @@ const Pricing = () => {
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             {isNewUser
-              ? "Add your payment card to start your free trial. No charges until the trial ends."
-              : "Start free on Basic and scale as you grow. Cancel anytime."}
+              ? "Add your payment card to start your 2-week free trial. No charges until the trial ends."
+              : "Start with a 2-week free trial on Basic and scale as you grow. Cancel anytime."}
           </p>
         </div>
 
@@ -140,7 +139,7 @@ const Pricing = () => {
                 {plan.trial && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
-                      1 Month Free
+                      2 Weeks Free
                     </span>
                   </div>
                 )}
