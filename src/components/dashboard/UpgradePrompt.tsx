@@ -27,19 +27,19 @@ const planFeatures: { [key: string]: string[] } = {
     'Email Notifications',
   ],
   pro: [
-    '10 Businesses',
+    '2 Businesses',
     'Live Agent Transfer',
     'Advanced Analytics',
     'Sentiment Analysis',
-    'Product Catalog',
+    'Proactive Chat Rules',
   ],
   business: [
-    'Unlimited Businesses',
-    'AI Learning',
-    'Business Documents',
-    'Advanced Tracking',
-    'Custom Integrations',
-    'API Access',
+    '5 Businesses',
+    'AI Learning & Documents',
+    'Advanced Visitor Tracking',
+    'Website Crawler',
+    'Team Management',
+    'Dedicated Account Manager',
   ],
 };
 
