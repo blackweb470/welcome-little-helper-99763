@@ -132,7 +132,7 @@ export const SubscriptionManager = () => {
           <Crown className="w-12 h-12 mx-auto text-muted-foreground" />
           <h3 className="text-xl font-semibold">No Active Subscription</h3>
           <p className="text-muted-foreground">
-            Start your journey with a 1-month free trial on our Basic plan
+            Start your journey with a 2-week free trial on our Basic plan
           </p>
           <Button onClick={() => navigate('/pricing')}>
             View Plans
