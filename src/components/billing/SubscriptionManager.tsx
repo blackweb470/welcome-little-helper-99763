@@ -132,7 +132,7 @@ export const SubscriptionManager = () => {
           <Crown className="w-12 h-12 mx-auto text-muted-foreground" />
           <h3 className="text-xl font-semibold">No Active Subscription</h3>
           <p className="text-muted-foreground">
-            Start your journey with a 1-month free trial on our Basic plan
+            Start your journey with a 2-week free trial on our Basic plan
           </p>
           <Button onClick={() => navigate('/pricing')}>
             View Plans
@@ -293,15 +293,11 @@ export const SubscriptionManager = () => {
               <AlertDialogAction
                 onClick={async () => {
                   try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) throw new Error("Not authenticated");
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) throw new Error("Not authenticated");
 
-                    const { error } = await supabase
-                      .from('user_subscriptions')
-                      .update({ cancel_at_period_end: true })
-                      .eq('user_id', user.id);
-
-                    if (error) throw error;
+                    const response = await supabase.functions.invoke('cancel-subscription');
+                    if (response.error) throw new Error(response.error.message || 'Cancellation failed');
 
                     toast({
                       title: "Subscription Cancelled",

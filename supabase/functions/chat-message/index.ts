@@ -40,6 +40,36 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Enforce pre-chat form server-side: if enabled, visitor must have submitted it
+    const { data: widgetCheck } = await supabase
+      .from('widget_settings')
+      .select('pre_chat_enabled')
+      .eq('business_id', businessId)
+      .single();
+
+    if (widgetCheck?.pre_chat_enabled) {
+      const { data: existingVisitorConv } = await supabase
+        .from('conversations')
+        .select('visitor_email, visitor_name')
+        .eq('business_id', businessId)
+        .eq('visitor_id', visitorId)
+        .is('ended_at', null)
+        .not('visitor_email', 'is', null)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingVisitorConv) {
+        console.log('Pre-chat form required but visitor has not submitted it');
+        return new Response(
+          JSON.stringify({ 
+            error: 'Pre-chat form required', 
+            details: 'Please complete the pre-chat form before starting a conversation' 
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Create or get conversation
     let conversationId: string;
     
