@@ -293,15 +293,11 @@ export const SubscriptionManager = () => {
               <AlertDialogAction
                 onClick={async () => {
                   try {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    if (!user) throw new Error("Not authenticated");
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) throw new Error("Not authenticated");
 
-                    const { error } = await supabase
-                      .from('user_subscriptions')
-                      .update({ cancel_at_period_end: true })
-                      .eq('user_id', user.id);
-
-                    if (error) throw error;
+                    const response = await supabase.functions.invoke('cancel-subscription');
+                    if (response.error) throw new Error(response.error.message || 'Cancellation failed');
 
                     toast({
                       title: "Subscription Cancelled",
