@@ -1606,6 +1606,59 @@ export type Database = {
           },
         ]
       }
+      widget_settings_public: {
+        Row: {
+          agent_name: string | null
+          business_id: string | null
+          id: string | null
+          max_input_characters: number | null
+          pre_chat_enabled: boolean | null
+          pre_chat_required_fields: Json | null
+          pre_chat_welcome_message: string | null
+          primary_color: string | null
+          show_qa_to_visitors: boolean | null
+          voice_enabled: boolean | null
+          welcome_message: string | null
+          widget_position: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          business_id?: string | null
+          id?: string | null
+          max_input_characters?: number | null
+          pre_chat_enabled?: boolean | null
+          pre_chat_required_fields?: Json | null
+          pre_chat_welcome_message?: string | null
+          primary_color?: string | null
+          show_qa_to_visitors?: boolean | null
+          voice_enabled?: boolean | null
+          welcome_message?: string | null
+          widget_position?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          business_id?: string | null
+          id?: string | null
+          max_input_characters?: number | null
+          pre_chat_enabled?: boolean | null
+          pre_chat_required_fields?: Json | null
+          pre_chat_welcome_message?: string | null
+          primary_color?: string | null
+          show_qa_to_visitors?: boolean | null
+          voice_enabled?: boolean | null
+          welcome_message?: string | null
+          widget_position?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_settings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: true
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       calculate_engagement_score: {
