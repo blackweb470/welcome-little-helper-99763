@@ -584,10 +584,12 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
         <div className="flex items-center space-x-2">
           <Switch
             id="pre_chat_enabled"
-            checked={settings.pre_chat_enabled}
-            onCheckedChange={(checked) => setSettings({ ...settings, pre_chat_enabled: checked })}
+            checked={true}
+            disabled={true}
           />
-          <Label htmlFor="pre_chat_enabled">Enable Pre-Chat Form</Label>
+          <Label htmlFor="pre_chat_enabled" className="text-muted-foreground">
+            Pre-Chat Form (Always Enabled for Security)
+          </Label>
         </div>
 
         <div className="flex items-center space-x-2">

@@ -198,9 +198,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
   useEffect(() => {
     const fetchSettings = async () => {
-      // Only fetch public-safe fields (exclude system_prompt)
+      // Use public view that excludes system_prompt
       const { data } = await supabase
-        .from("widget_settings")
+        .from("widget_settings_public" as any)
         .select("id, business_id, welcome_message, agent_name, primary_color, widget_position, pre_chat_enabled, pre_chat_welcome_message, pre_chat_required_fields, max_input_characters, show_qa_to_visitors")
         .eq("business_id", businessId)
         .single();
@@ -212,14 +212,15 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         const storedPreChatCompleted = localStorage.getItem(getStorageKey(businessId, 'preChatCompleted'));
         const hasCompletedPreChat = storedPreChatCompleted === 'true' || preChatCompleted;
         
-        if (data.pre_chat_enabled && !hasCompletedPreChat) {
+        // Pre-chat form is always required — cannot be bypassed
+        if (!hasCompletedPreChat) {
           setShowPreChatForm(true);
         } else {
           setShowPreChatForm(false);
         }
       } else {
-        // No settings = no pre-chat form
-        setShowPreChatForm(false);
+        // No settings = still require pre-chat form
+        setShowPreChatForm(!preChatCompleted);
       }
     };
 
