@@ -1,9 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const requestSchema = z.object({
+  businessId: z.string().uuid('Invalid business ID'),
+  visitorId: z.string().min(1, 'Visitor ID required').max(200, 'Visitor ID too long'),
+  conversationId: z.string().uuid('Invalid conversation ID').optional().nullable(),
+  reason: z.string().max(1000, 'Reason too long').optional(),
+  visitorEmail: z.string().email('Invalid email').max(255).optional().nullable(),
+});
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,8 +20,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { businessId, visitorId, conversationId, reason, visitorEmail } = await req.json();
-    console.log('Live agent request:', { businessId, visitorId, conversationId, reason, visitorEmail });
+    const body = await req.json();
+    const validationResult = requestSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validationResult.error.errors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { businessId, visitorId, conversationId, reason, visitorEmail } = validationResult.data;
+    console.log('Live agent request:', { businessId, visitorId });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -181,9 +200,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Error in request-live-agent function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Unable to process request. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
