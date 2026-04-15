@@ -40,34 +40,26 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Enforce pre-chat form server-side: if enabled, visitor must have submitted it
-    const { data: widgetCheck } = await supabase
-      .from('widget_settings')
-      .select('pre_chat_enabled')
+    // Enforce pre-chat form server-side: ALL visitors must have submitted it (cannot be bypassed)
+    const { data: existingVisitorConv } = await supabase
+      .from('conversations')
+      .select('visitor_email, visitor_name')
       .eq('business_id', businessId)
-      .single();
+      .eq('visitor_id', visitorId)
+      .is('ended_at', null)
+      .not('visitor_email', 'is', null)
+      .limit(1)
+      .maybeSingle();
 
-    if (widgetCheck?.pre_chat_enabled) {
-      const { data: existingVisitorConv } = await supabase
-        .from('conversations')
-        .select('visitor_email, visitor_name')
-        .eq('business_id', businessId)
-        .eq('visitor_id', visitorId)
-        .is('ended_at', null)
-        .not('visitor_email', 'is', null)
-        .limit(1)
-        .maybeSingle();
-
-      if (!existingVisitorConv) {
-        console.log('Pre-chat form required but visitor has not submitted it');
-        return new Response(
-          JSON.stringify({ 
-            error: 'Pre-chat form required', 
-            details: 'Please complete the pre-chat form before starting a conversation' 
-          }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    if (!existingVisitorConv) {
+      console.log('Pre-chat form required but visitor has not submitted it');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Pre-chat form required', 
+          details: 'Please complete the pre-chat form before starting a conversation' 
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Create or get conversation
