@@ -376,17 +376,39 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
         });
       } else {
         // Send via regular database insert
-        const { error } = await supabase
+        const messageContent = messageInput.trim();
+        const { data: insertedMessage, error } = await supabase
           .from('messages')
           .insert({
             conversation_id: selectedSession.conversation_id,
             role: 'assistant',
-            content: messageInput.trim()
-          });
+            content: messageContent
+          })
+          .select('id, content, role, created_at')
+          .single();
 
         if (error) {
           console.error('Error inserting message:', error);
           throw error;
+        }
+
+        // Broadcast to visitor (bypasses RLS — visitor can't SELECT messages directly)
+        try {
+          const broadcastChannel = supabase.channel(`visitor-messages-${selectedSession.conversation_id}`);
+          await broadcastChannel.subscribe();
+          await broadcastChannel.send({
+            type: 'broadcast',
+            event: 'agent_message',
+            payload: {
+              id: insertedMessage?.id,
+              content: messageContent,
+              role: 'assistant',
+              created_at: insertedMessage?.created_at,
+            },
+          });
+          await supabase.removeChannel(broadcastChannel);
+        } catch (broadcastErr) {
+          console.error('Broadcast to visitor failed:', broadcastErr);
         }
 
         toast({
