@@ -603,9 +603,25 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       )
       .subscribe();
 
+    // Also listen on a broadcast channel — agents broadcast messages to bypass visitor RLS
+    const broadcastChannel = supabase
+      .channel(`visitor-messages-${conversationId}`)
+      .on('broadcast', { event: 'agent_message' }, (payload) => {
+        console.log('Agent message received via broadcast:', payload);
+        const msg = payload.payload as any;
+        if (!msg?.id || renderedMessageIdsRef.current.has(msg.id)) {
+          return;
+        }
+        renderedMessageIdsRef.current.add(msg.id);
+        setAgentTyping(false);
+        handleTranscript(msg.content, 'assistant');
+      })
+      .subscribe();
+
     return () => {
       console.log('Cleaning up messages subscription');
       supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastChannel);
     };
   }, [conversationId]);
 
