@@ -49,6 +49,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const renderedMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Restore session state from localStorage on mount
   useEffect(() => {
