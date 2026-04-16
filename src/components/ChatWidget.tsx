@@ -49,6 +49,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   const [expandedFaqId, setExpandedFaqId] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const renderedMessageIdsRef = useRef<Set<string>>(new Set());
 
   // Restore session state from localStorage on mount
   useEffect(() => {
@@ -576,12 +577,17 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           filter: `conversation_id=eq.${conversationId}`
         },
         async (payload) => {
-          console.log('New message received:', payload);
+          console.log('New message received via realtime:', payload);
           const newMessage = payload.new as any;
           
-          // Only show assistant messages (from agent) in the transcript
+          // Only show assistant messages (from agent) that weren't already rendered via HTTP
           if (newMessage.role === 'assistant') {
-            setAgentTyping(false); // Clear typing indicator
+            if (renderedMessageIdsRef.current.has(newMessage.id)) {
+              console.log('Skipping duplicate message:', newMessage.id);
+              return;
+            }
+            renderedMessageIdsRef.current.add(newMessage.id);
+            setAgentTyping(false);
             handleTranscript(newMessage.content, 'assistant');
             
             // Mark message as read by visitor
@@ -1087,9 +1093,12 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         return;
       }
 
-      // If this is the first message (no conversation yet), we won't have an active
-      // realtime subscription in time—so render the reply immediately.
-      if (!hasActiveConversation && data.reply) {
+      // Always display the reply from the HTTP response.
+      // Track the message ID to prevent duplicates from realtime.
+      if (data.reply) {
+        if (data.messageId) {
+          renderedMessageIdsRef.current.add(data.messageId);
+        }
         handleTranscript(data.reply, 'assistant');
       }
       

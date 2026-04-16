@@ -288,18 +288,21 @@ Deno.serve(async (req) => {
     let cleanReply = reply.replace('ESCALATE_TO_AGENT', '').trim();
 
     // Save assistant message
-    await supabase
+    const { data: savedMessage } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
         role: 'assistant',
         content: cleanReply
-      });
+      })
+      .select('id')
+      .single();
 
-    console.log('AI response generated successfully');
+    const messageId = savedMessage?.id || null;
+    console.log('AI response generated successfully, messageId:', messageId);
 
     return new Response(
-      JSON.stringify({ reply: cleanReply, conversationId, shouldEscalate }),
+      JSON.stringify({ reply: cleanReply, conversationId, shouldEscalate, messageId }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
