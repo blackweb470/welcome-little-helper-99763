@@ -1087,9 +1087,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         return;
       }
 
-      // If this is the first message (no conversation yet), we won't have an active
-      // realtime subscription in time—so render the reply immediately.
-      if (!hasActiveConversation && data.reply) {
+      // Always display the reply from the HTTP response.
+      // Realtime may not work for anonymous/external widget users due to RLS.
+      if (data.reply) {
         handleTranscript(data.reply, 'assistant');
       }
       
