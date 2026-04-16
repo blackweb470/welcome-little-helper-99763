@@ -1094,8 +1094,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       }
 
       // Always display the reply from the HTTP response.
-      // Realtime may not work for anonymous/external widget users due to RLS.
+      // Track the message ID to prevent duplicates from realtime.
       if (data.reply) {
+        if (data.messageId) {
+          renderedMessageIdsRef.current.add(data.messageId);
+        }
         handleTranscript(data.reply, 'assistant');
       }
       
