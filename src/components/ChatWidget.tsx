@@ -616,6 +616,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         setAgentTyping(false);
         handleTranscript(msg.content, 'assistant');
       })
+      .on('broadcast', { event: 'agent_joined' }, (payload) => {
+        console.log('Agent joined event received via broadcast:', payload);
+        const data = payload.payload as any;
+        const dedupeKey = `agent_joined:${data?.sessionId || conversationId}`;
+        if (renderedMessageIdsRef.current.has(dedupeKey)) return;
+        renderedMessageIdsRef.current.add(dedupeKey);
+        playNotificationSound();
+        setQueuePosition(null);
+        setEstimatedWaitMinutes(null);
+        setLiveChatSession((prev: any) => prev ? { ...prev, status: 'active', agent_id: data?.agentId, accepted_at: data?.acceptedAt } : prev);
+        handleTranscript("👋 You are speaking with a human agent now.", 'assistant');
+      })
       .subscribe();
 
     return () => {
@@ -647,7 +659,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           // Check if agent just joined (status changed to active)
           if (updatedSession.status === 'active' && liveChatSession?.status !== 'active') {
             console.log('Agent joined the chat!');
-            handleTranscript('🎉 A human agent has joined the chat!', 'assistant');
+            const dedupeKey = `agent_joined:${updatedSession.id || conversationId}`;
+            if (!renderedMessageIdsRef.current.has(dedupeKey)) {
+              renderedMessageIdsRef.current.add(dedupeKey);
+              handleTranscript('👋 You are speaking with a human agent now.', 'assistant');
+            }
           }
           
           setLiveChatSession(updatedSession);
@@ -687,13 +703,15 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             // Check if status changed from queued to active (agent accepted)
             if (newSession.status === 'active' && oldSession?.status === 'queued') {
               console.log('Agent has joined - status changed from queued to active');
-              // Play notification sound
-              playNotificationSound();
-              setTranscript(prev => [...prev, { 
-                text: '🎉 An agent has accepted your request and joined the chat!', 
-                role: 'assistant' as const 
-              }]);
-              // Clear queue position when agent accepts
+              const dedupeKey = `agent_joined:${newSession.id || conversationId}`;
+              if (!renderedMessageIdsRef.current.has(dedupeKey)) {
+                renderedMessageIdsRef.current.add(dedupeKey);
+                playNotificationSound();
+                setTranscript(prev => [...prev, {
+                  text: '👋 You are speaking with a human agent now.',
+                  role: 'assistant' as const
+                }]);
+              }
               setQueuePosition(null);
               setEstimatedWaitMinutes(null);
             }
