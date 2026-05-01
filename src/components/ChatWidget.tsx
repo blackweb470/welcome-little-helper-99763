@@ -659,7 +659,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           // Check if agent just joined (status changed to active)
           if (updatedSession.status === 'active' && liveChatSession?.status !== 'active') {
             console.log('Agent joined the chat!');
-            handleTranscript('🎉 A human agent has joined the chat!', 'assistant');
+            const dedupeKey = `agent_joined:${updatedSession.id || conversationId}`;
+            if (!renderedMessageIdsRef.current.has(dedupeKey)) {
+              renderedMessageIdsRef.current.add(dedupeKey);
+              handleTranscript('👋 You are speaking with a human agent now.', 'assistant');
+            }
           }
           
           setLiveChatSession(updatedSession);
