@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Bell } from "lucide-react";
+import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Bell, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
