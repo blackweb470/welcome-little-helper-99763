@@ -703,13 +703,15 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             // Check if status changed from queued to active (agent accepted)
             if (newSession.status === 'active' && oldSession?.status === 'queued') {
               console.log('Agent has joined - status changed from queued to active');
-              // Play notification sound
-              playNotificationSound();
-              setTranscript(prev => [...prev, { 
-                text: '🎉 An agent has accepted your request and joined the chat!', 
-                role: 'assistant' as const 
-              }]);
-              // Clear queue position when agent accepts
+              const dedupeKey = `agent_joined:${newSession.id || conversationId}`;
+              if (!renderedMessageIdsRef.current.has(dedupeKey)) {
+                renderedMessageIdsRef.current.add(dedupeKey);
+                playNotificationSound();
+                setTranscript(prev => [...prev, {
+                  text: '👋 You are speaking with a human agent now.',
+                  role: 'assistant' as const
+                }]);
+              }
               setQueuePosition(null);
               setEstimatedWaitMinutes(null);
             }
