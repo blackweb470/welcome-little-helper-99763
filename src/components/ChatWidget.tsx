@@ -1560,15 +1560,16 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 primaryColor={primaryColor}
               />
               
-              {!liveChatSession && (
+              {(!liveChatSession || liveChatSession.status === 'ended' || liveChatSession.status === 'ai') && (
                 <Button
                   onClick={() => requestLiveAgent('User requested live agent support')}
                   disabled={requestingAgent}
-                  variant="outline"
                   size="sm"
-                  className="w-full h-8 text-[10px] sm:text-xs"
+                  className="w-full h-9 text-xs font-medium text-white gap-1.5"
+                  style={{ backgroundColor: primaryColor }}
                 >
-                  {requestingAgent ? 'Requesting...' : 'Talk to Live Agent'}
+                  <User className="w-3.5 h-3.5" />
+                  {requestingAgent ? 'Connecting…' : 'Connect to a Human Agent'}
                 </Button>
               )}
             </div>
