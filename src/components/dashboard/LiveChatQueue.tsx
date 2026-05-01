@@ -252,6 +252,34 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
       console.log('Chat session updated successfully:', data);
 
+      // Broadcast agent_joined event so the visitor sees it instantly
+      // (postgres_changes on live_chat_sessions may not reach anonymous visitors due to RLS)
+      try {
+        const sessionForBroadcast = sessions.find(s => s.id === sessionId);
+        const conversationIdForBroadcast = sessionForBroadcast?.conversation_id || data?.conversation_id;
+        if (conversationIdForBroadcast) {
+          const joinChannel = supabase.channel(`visitor-messages-${conversationIdForBroadcast}`);
+          await new Promise<void>((resolve) => {
+            joinChannel.subscribe((status) => {
+              if (status === 'SUBSCRIBED') resolve();
+            });
+            setTimeout(() => resolve(), 1500);
+          });
+          await joinChannel.send({
+            type: 'broadcast',
+            event: 'agent_joined',
+            payload: {
+              sessionId,
+              conversationId: conversationIdForBroadcast,
+              agentId: user.id,
+              acceptedAt: new Date().toISOString(),
+            },
+          });
+        }
+      } catch (broadcastErr) {
+        console.error('Failed to broadcast agent_joined:', broadcastErr);
+      }
+
       // Find the session and open it automatically
       const session = sessions.find(s => s.id === sessionId);
       if (session) {
