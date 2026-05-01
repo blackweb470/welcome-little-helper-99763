@@ -782,6 +782,43 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     };
   }, [liveChatSession?.id, liveChatSession?.status]);
 
+  // Polling fallback: while queued, re-check session status every 4s in case
+  // realtime postgres_changes doesn't reach the anonymous visitor (RLS) and the
+  // initial broadcast event was missed (race on subscribe).
+  useEffect(() => {
+    if (!conversationId) return;
+    if (!liveChatSession || liveChatSession.status !== 'queued') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await supabase
+          .from('live_chat_sessions')
+          .select('*')
+          .eq('id', liveChatSession.id)
+          .maybeSingle();
+
+        if (data && data.status !== 'queued') {
+          console.log('Polling detected status change:', data.status);
+          if (data.status === 'active') {
+            const dedupeKey = `agent_joined:${data.id}`;
+            if (!renderedMessageIdsRef.current.has(dedupeKey)) {
+              renderedMessageIdsRef.current.add(dedupeKey);
+              playNotificationSound();
+              handleTranscript('👋 You are speaking with a human agent now.', 'assistant');
+            }
+            setQueuePosition(null);
+            setEstimatedWaitMinutes(null);
+          }
+          setLiveChatSession(data);
+        }
+      } catch (err) {
+        console.error('Polling live_chat_session failed:', err);
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [conversationId, liveChatSession?.id, liveChatSession?.status]);
+
   const initializeTextConversation = async (preChatData?: any) => {
     try {
       const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
