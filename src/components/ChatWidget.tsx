@@ -616,6 +616,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         setAgentTyping(false);
         handleTranscript(msg.content, 'assistant');
       })
+      .on('broadcast', { event: 'agent_joined' }, (payload) => {
+        console.log('Agent joined event received via broadcast:', payload);
+        const data = payload.payload as any;
+        const dedupeKey = `agent_joined:${data?.sessionId || conversationId}`;
+        if (renderedMessageIdsRef.current.has(dedupeKey)) return;
+        renderedMessageIdsRef.current.add(dedupeKey);
+        playNotificationSound();
+        setQueuePosition(null);
+        setEstimatedWaitMinutes(null);
+        setLiveChatSession((prev: any) => prev ? { ...prev, status: 'active', agent_id: data?.agentId, accepted_at: data?.acceptedAt } : prev);
+        handleTranscript("👋 You are speaking with a human agent now.", 'assistant');
+      })
       .subscribe();
 
     return () => {
