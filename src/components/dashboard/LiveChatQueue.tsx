@@ -741,50 +741,79 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 </PopoverContent>
               </Popover>
               
-              <Popover open={aiSuggestionsOpen} onOpenChange={setAiSuggestionsOpen}>
+              <Popover open={aiSuggestionsOpen} onOpenChange={(open) => {
+                setAiSuggestionsOpen(open);
+                if (open && aiSuggestions.length === 0 && !loadingSuggestions) {
+                  getAISuggestions();
+                }
+              }}>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="outline" 
                     size="icon"
                     type="button"
-                    disabled={sendingMessage || loadingSuggestions}
-                    onClick={getAISuggestions}
+                    disabled={sendingMessage}
                     title="AI Suggestions"
                   >
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-96 z-50" align="start" side="top" sideOffset={8}>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <h4 className="font-medium text-sm">AI Suggested Responses</h4>
+                <PopoverContent
+                  className="w-96 z-50 bg-popover text-popover-foreground border shadow-lg p-3"
+                  align="start"
+                  side="top"
+                  sideOffset={8}
+                  collisionPadding={16}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <h4 className="font-medium text-sm">AI Suggested Responses</h4>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          getAISuggestions();
+                        }}
+                        disabled={loadingSuggestions}
+                      >
+                        {loadingSuggestions ? 'Generating…' : 'Refresh'}
+                      </Button>
                     </div>
-                    {loadingSuggestions ? (
-                      <div className="py-4 text-center">
-                        <p className="text-sm text-muted-foreground">Generating suggestions...</p>
+                    {loadingSuggestions && aiSuggestions.length === 0 ? (
+                      <div className="py-6 text-center">
+                        <Sparkles className="w-5 h-5 text-primary mx-auto mb-2 animate-pulse" />
+                        <p className="text-sm text-muted-foreground">Generating suggestions…</p>
                       </div>
                     ) : aiSuggestions.length === 0 ? (
-                      <div className="py-4 text-center">
-                        <p className="text-sm text-muted-foreground">Click the button to get AI suggestions</p>
+                      <div className="py-6 text-center">
+                        <p className="text-sm text-muted-foreground">No suggestions yet. Click Refresh to generate.</p>
                       </div>
                     ) : (
-                      <ScrollArea className="h-[300px]">
-                        <div className="space-y-3">
+                      <ScrollArea className="max-h-[280px] pr-2">
+                        <div className="space-y-2">
                           {aiSuggestions.map((suggestion, idx) => (
                             <button
                               key={idx}
+                              type="button"
                               onClick={() => {
                                 setMessageInput(suggestion);
                                 setAiSuggestionsOpen(false);
                               }}
-                              className="w-full text-left p-3 rounded border hover:bg-accent transition-colors"
+                              className="w-full text-left p-3 rounded-md border border-border bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
                             >
                               <div className="flex items-start gap-2">
                                 <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
                                   {idx + 1}
                                 </div>
-                                <div className="text-sm flex-1">{suggestion}</div>
+                                <div className="text-sm flex-1 text-popover-foreground whitespace-pre-wrap break-words">
+                                  {suggestion}
+                                </div>
                               </div>
                             </button>
                           ))}
