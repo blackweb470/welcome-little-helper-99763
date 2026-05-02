@@ -582,8 +582,18 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       
       if (error) throw error;
       
-      if (data?.responses) {
-        setAiSuggestions(data.responses);
+      if (data?.responses && Array.isArray(data.responses)) {
+        // Normalize: AI may return strings or objects like { response: "..." }
+        const normalized: string[] = data.responses
+          .map((r: any) => {
+            if (typeof r === 'string') return r;
+            if (r && typeof r === 'object') {
+              return r.response || r.text || r.content || r.message || JSON.stringify(r);
+            }
+            return String(r ?? '');
+          })
+          .filter((s: string) => s && s.trim().length > 0);
+        setAiSuggestions(normalized);
         setAiSuggestionsOpen(true);
       }
     } catch (error) {
