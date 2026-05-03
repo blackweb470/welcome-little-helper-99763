@@ -5,6 +5,7 @@ import { Check, Zap, Building2, ArrowRight, Star } from "lucide-react";
 import { PolarCheckout } from "@/components/PolarCheckout";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
 
 const Pricing = () => {
   const navigate = useNavigate();
