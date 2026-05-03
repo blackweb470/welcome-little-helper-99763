@@ -587,8 +587,8 @@ const Index = () => {
         </div>
       </footer>
       
-      {/* Chat Widget with proactive popup */}
-      <ChatWidget businessId={DEMO_BUSINESS_ID} />
+      {/* Real LYQN Chat Widget */}
+      <LyqnWidgetEmbed />
     </div>
   );
 };
