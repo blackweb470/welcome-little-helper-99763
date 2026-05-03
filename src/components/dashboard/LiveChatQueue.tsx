@@ -377,6 +377,79 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     }
   };
 
+  const handleAgentImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedSession) return;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Invalid file", description: "Only JPEG, PNG, GIF, WebP images allowed", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
+      return;
+    }
+
+    setUploadingAgentImage(true);
+    try {
+      const conversationId = selectedSession.conversation_id;
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const fileName = `${conversationId}/agent-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('message-attachments')
+        .upload(fileName, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(fileName);
+      const imageUrl = urlData.publicUrl;
+
+      const { data: insertedMessage, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          role: 'assistant',
+          content: `[Image: ${file.name}]`,
+          audio_url: imageUrl,
+        })
+        .select('id, content, role, created_at, audio_url')
+        .single();
+      if (msgError) throw msgError;
+
+      // Broadcast to visitor
+      try {
+        const ch = supabase.channel(`visitor-messages-${conversationId}`);
+        await ch.subscribe();
+        await ch.send({
+          type: 'broadcast',
+          event: 'agent_message',
+          payload: {
+            id: insertedMessage?.id,
+            content: insertedMessage?.content,
+            role: 'assistant',
+            created_at: insertedMessage?.created_at,
+            imageUrl,
+          },
+        });
+        await supabase.removeChannel(ch);
+      } catch (err) {
+        console.error('Broadcast failed:', err);
+      }
+
+      await fetchMessages(conversationId);
+      toast({ title: "Image sent" });
+    } catch (error) {
+      console.error('Agent image upload error:', error);
+      toast({ title: "Upload failed", description: "Could not send image", variant: "destructive" });
+    } finally {
+      setUploadingAgentImage(false);
+      if (agentImageInputRef.current) agentImageInputRef.current.value = '';
+    }
+  };
+
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedSession) return;
 
