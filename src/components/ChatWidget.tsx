@@ -617,7 +617,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
         renderedMessageIdsRef.current.add(msg.id);
         setAgentTyping(false);
-        handleTranscript(msg.content, 'assistant');
+        handleTranscript(msg.content, 'assistant', msg.imageUrl);
       })
       .on('broadcast', { event: 'agent_joined' }, (payload) => {
         console.log('Agent joined event received via broadcast:', payload);
