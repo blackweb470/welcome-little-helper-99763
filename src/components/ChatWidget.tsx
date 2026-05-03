@@ -588,7 +588,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             }
             renderedMessageIdsRef.current.add(newMessage.id);
             setAgentTyping(false);
-            handleTranscript(newMessage.content, 'assistant');
+            const imageUrl = newMessage.audio_url && /\.(jpe?g|png|gif|webp)$/i.test(newMessage.audio_url)
+              ? newMessage.audio_url
+              : undefined;
+            handleTranscript(newMessage.content, 'assistant', imageUrl);
             
             // Mark message as read by visitor
             await supabase
@@ -614,7 +617,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
         renderedMessageIdsRef.current.add(msg.id);
         setAgentTyping(false);
-        handleTranscript(msg.content, 'assistant');
+        handleTranscript(msg.content, 'assistant', msg.imageUrl);
       })
       .on('broadcast', { event: 'agent_joined' }, (payload) => {
         console.log('Agent joined event received via broadcast:', payload);

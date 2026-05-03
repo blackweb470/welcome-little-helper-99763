@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply, ImagePlus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -19,6 +19,7 @@ interface Message {
   created_at: string;
   read_at: string | null;
   read_by: string | null;
+  audio_url?: string | null;
 }
 
 interface ChatSession {
@@ -64,6 +65,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const agentImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAgentImage, setUploadingAgentImage] = useState(false);
 
   // Fetch canned responses
   const { data: cannedResponses } = useQuery({
@@ -374,6 +377,79 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     }
   };
 
+  const handleAgentImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedSession) return;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      toast({ title: "Invalid file", description: "Only JPEG, PNG, GIF, WebP images allowed", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 5MB", variant: "destructive" });
+      return;
+    }
+
+    setUploadingAgentImage(true);
+    try {
+      const conversationId = selectedSession.conversation_id;
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const fileName = `${conversationId}/agent-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('message-attachments')
+        .upload(fileName, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('message-attachments')
+        .getPublicUrl(fileName);
+      const imageUrl = urlData.publicUrl;
+
+      const { data: insertedMessage, error: msgError } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          role: 'assistant',
+          content: `[Image: ${file.name}]`,
+          audio_url: imageUrl,
+        })
+        .select('id, content, role, created_at, audio_url')
+        .single();
+      if (msgError) throw msgError;
+
+      // Broadcast to visitor
+      try {
+        const ch = supabase.channel(`visitor-messages-${conversationId}`);
+        await ch.subscribe();
+        await ch.send({
+          type: 'broadcast',
+          event: 'agent_message',
+          payload: {
+            id: insertedMessage?.id,
+            content: insertedMessage?.content,
+            role: 'assistant',
+            created_at: insertedMessage?.created_at,
+            imageUrl,
+          },
+        });
+        await supabase.removeChannel(ch);
+      } catch (err) {
+        console.error('Broadcast failed:', err);
+      }
+
+      await fetchMessages(conversationId);
+      toast({ title: "Image sent" });
+    } catch (error) {
+      console.error('Agent image upload error:', error);
+      toast({ title: "Upload failed", description: "Could not send image", variant: "destructive" });
+    } finally {
+      setUploadingAgentImage(false);
+      if (agentImageInputRef.current) agentImageInputRef.current.value = '';
+    }
+  };
+
   const sendMessage = async () => {
     if (!messageInput.trim() || !selectedSession) return;
 
@@ -671,7 +747,15 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                         : 'bg-primary text-primary-foreground'
                     }`}
                   >
-                    <p className="text-sm">{msg.content}</p>
+                    {msg.audio_url && /\.(jpe?g|png|gif|webp)$/i.test(msg.audio_url) && (
+                      <img
+                        src={msg.audio_url}
+                        alt="Shared image"
+                        className="max-w-full max-h-64 rounded-md mb-1 object-contain cursor-pointer"
+                        onClick={() => window.open(msg.audio_url!, '_blank')}
+                      />
+                    )}
+                    {msg.content && <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>}
                     <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
                       <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
                       {msg.role === 'assistant' && (
@@ -857,6 +941,23 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 </Popover>
               )}
               
+              <input
+                ref={agentImageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleAgentImageUpload}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                type="button"
+                disabled={sendingMessage || uploadingAgentImage || selectedConversation?.channel === 'whatsapp'}
+                title={selectedConversation?.channel === 'whatsapp' ? "Image sending not supported on WhatsApp" : "Send image"}
+                onClick={() => agentImageInputRef.current?.click()}
+              >
+                {uploadingAgentImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+              </Button>
               <Input
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
