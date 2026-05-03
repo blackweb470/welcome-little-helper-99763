@@ -257,6 +257,7 @@ const Pricing = () => {
           © 2025 LYQN AI. All rights reserved. Payments processed securely by Polar.
         </div>
       </footer>
+      <LyqnWidgetEmbed />
     </div>
   );
 };
