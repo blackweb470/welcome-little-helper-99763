@@ -588,7 +588,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             }
             renderedMessageIdsRef.current.add(newMessage.id);
             setAgentTyping(false);
-            handleTranscript(newMessage.content, 'assistant');
+            const imageUrl = newMessage.audio_url && /\.(jpe?g|png|gif|webp)$/i.test(newMessage.audio_url)
+              ? newMessage.audio_url
+              : undefined;
+            handleTranscript(newMessage.content, 'assistant', imageUrl);
             
             // Mark message as read by visitor
             await supabase
