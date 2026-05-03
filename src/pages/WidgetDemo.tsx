@@ -1,8 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect } from "react";
 
-// Demo business ID for testing - replace with a real one from your database
-const DEMO_BUSINESS_ID = "00000000-0000-0000-0000-000000000000";
+// Default demo business (Lyqn) — used when no businessId is in the URL
+const DEMO_BUSINESS_ID = "78a79fad-274f-4584-8ce8-d61ee6e01894";
 
 const WidgetDemo = () => {
   const { businessId } = useParams<{ businessId: string }>();
