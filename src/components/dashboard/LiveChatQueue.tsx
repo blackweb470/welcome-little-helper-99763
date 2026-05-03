@@ -672,7 +672,15 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                         : 'bg-primary text-primary-foreground'
                     }`}
                   >
-                    <p className="text-sm">{msg.content}</p>
+                    {msg.audio_url && /\.(jpe?g|png|gif|webp)$/i.test(msg.audio_url) && (
+                      <img
+                        src={msg.audio_url}
+                        alt="Shared image"
+                        className="max-w-full max-h-64 rounded-md mb-1 object-contain cursor-pointer"
+                        onClick={() => window.open(msg.audio_url!, '_blank')}
+                      />
+                    )}
+                    {msg.content && <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>}
                     <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
                       <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
                       {msg.role === 'assistant' && (
