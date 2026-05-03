@@ -941,6 +941,23 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 </Popover>
               )}
               
+              <input
+                ref={agentImageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleAgentImageUpload}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                type="button"
+                disabled={sendingMessage || uploadingAgentImage || selectedConversation?.channel === 'whatsapp'}
+                title={selectedConversation?.channel === 'whatsapp' ? "Image sending not supported on WhatsApp" : "Send image"}
+                onClick={() => agentImageInputRef.current?.click()}
+              >
+                {uploadingAgentImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+              </Button>
               <Input
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
