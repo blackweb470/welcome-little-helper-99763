@@ -425,6 +425,7 @@ export default function NewDocumentation() {
           </aside>
         </div>
       </div>
+      <LyqnWidgetEmbed />
     </div>
   );
 }
