@@ -65,6 +65,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const agentImageInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAgentImage, setUploadingAgentImage] = useState(false);
 
   // Fetch canned responses
   const { data: cannedResponses } = useQuery({
