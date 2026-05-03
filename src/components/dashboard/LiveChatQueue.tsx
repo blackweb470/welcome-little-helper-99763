@@ -19,6 +19,7 @@ interface Message {
   created_at: string;
   read_at: string | null;
   read_by: string | null;
+  audio_url?: string | null;
 }
 
 interface ChatSession {
