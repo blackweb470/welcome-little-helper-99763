@@ -24,7 +24,7 @@ import {
   Play
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ChatWidget } from "@/components/ChatWidget";
+import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
 
 // Demo business ID for landing page widget
 const DEMO_BUSINESS_ID = "00000000-0000-0000-0000-000000000000";
@@ -587,8 +587,8 @@ const Index = () => {
         </div>
       </footer>
       
-      {/* Chat Widget with proactive popup */}
-      <ChatWidget businessId={DEMO_BUSINESS_ID} />
+      {/* Real LYQN Chat Widget */}
+      <LyqnWidgetEmbed />
     </div>
   );
 };
