@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
 import { 
   Search, 
   Home, 
@@ -425,7 +424,6 @@ export default function NewDocumentation() {
           </aside>
         </div>
       </div>
-      <LyqnWidgetEmbed />
     </div>
   );
 }
