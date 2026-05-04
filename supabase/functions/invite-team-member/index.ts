@@ -109,7 +109,7 @@ serve(async (req) => {
 
     const { data: business, error: businessError } = await supabaseAdmin
       .from('businesses')
-      .select('name, owner_id')
+      .select('name')
       .eq('id', businessId)
       .single();
 
@@ -117,25 +117,6 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Business not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Authorization: only owner or an active team member with manage_settings can invite
-    let canInvite = business.owner_id === inviter.id;
-    if (!canInvite) {
-      const { data: membership } = await supabaseAdmin
-        .from('team_members')
-        .select('permissions, status')
-        .eq('business_id', businessId)
-        .eq('user_id', inviter.id)
-        .eq('status', 'active')
-        .maybeSingle();
-      canInvite = !!(membership && (membership.permissions as any)?.can_manage_settings === true);
-    }
-    if (!canInvite) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
