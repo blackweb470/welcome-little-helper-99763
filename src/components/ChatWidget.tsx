@@ -1360,11 +1360,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               requiredFields={settings?.pre_chat_required_fields || ['name', 'email']}
               primaryColor={primaryColor}
               onSubmit={async (data) => {
-                setVisitorInfo(data);
-                setVisitorEmail(data.email);
-                setPreChatCompleted(true);
-                setShowPreChatForm(false);
-                await initializeTextConversation(data);
+                const started = await initializeTextConversation(data);
+                if (started) {
+                  setVisitorInfo(data);
+                  setVisitorEmail(data.email);
+                  setPreChatCompleted(true);
+                  setShowPreChatForm(false);
+                }
               }}
             />
           </div>
