@@ -232,8 +232,8 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         .eq("id", businessId)
         .single();
       
-      if (data) {
-        setBusinessInfo(data);
+      if (data && !('error' in data)) {
+        setBusinessInfo(data as { name: string; logo_url: string | null });
       }
     };
 
@@ -822,7 +822,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     return () => clearInterval(interval);
   }, [conversationId, liveChatSession?.id, liveChatSession?.status]);
 
-  const initializeTextConversation = async (preChatData?: any) => {
+  const initializeTextConversation = async (preChatData?: any): Promise<boolean> => {
     try {
       const visitorId = localStorage.getItem('visitor_id') || `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem('visitor_id', visitorId);
@@ -853,8 +853,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         if (data.messageId) renderedMessageIdsRef.current.add(data.messageId);
         if (data.reply) handleTranscript(data.reply, 'assistant');
       }
+      return true;
     } catch (error) {
       console.error('Error initializing text conversation:', error);
+      handleTranscript('⚠️ Message failed to send. Please check your connection and try again.', 'assistant');
+      return false;
     }
   };
 
