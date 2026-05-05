@@ -227,13 +227,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
     const fetchBusinessInfo = async () => {
       const { data } = await supabase
-        .from("businesses")
+        .from("businesses_public" as any)
         .select("name, logo_url")
         .eq("id", businessId)
         .single();
       
-      if (data) {
-        setBusinessInfo(data);
+      if (data && !('error' in data)) {
+        setBusinessInfo(data as { name: string; logo_url: string | null });
       }
     };
 
@@ -822,37 +822,42 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     return () => clearInterval(interval);
   }, [conversationId, liveChatSession?.id, liveChatSession?.status]);
 
-  const initializeTextConversation = async (preChatData?: any) => {
+  const initializeTextConversation = async (preChatData?: any): Promise<boolean> => {
     try {
-      const visitorId = localStorage.getItem('visitor_id') || 'anonymous';
-      
-      const { data: convData, error: convError } = await supabase
-        .from('conversations')
-        .insert({
-          business_id: businessId,
-          visitor_id: visitorId,
-          visitor_email: preChatData?.email || visitorEmail || null,
-          visitor_name: preChatData?.name,
-          visitor_phone: preChatData?.phone,
-          visitor_company: preChatData?.company,
-          started_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const visitorId = localStorage.getItem('visitor_id') || `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('visitor_id', visitorId);
 
-      if (convError) throw convError;
-      if (convData) {
-        setConversationId(convData.id);
-        
-        // If there's an initial message from pre-chat form, send it
-        if (preChatData?.message) {
-          setTimeout(() => {
-            handleSendText(preChatData.message);
-          }, 500);
+      const response = await fetch(
+        `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/chat-message`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId,
+            visitorId,
+            preChatData,
+            message: preChatData?.message || undefined,
+          }),
         }
+      );
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to start chat');
+
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
       }
+
+      if (preChatData?.message) {
+        handleTranscript(preChatData.message, 'user');
+        if (data.messageId) renderedMessageIdsRef.current.add(data.messageId);
+        if (data.reply) handleTranscript(data.reply, 'assistant');
+      }
+      return true;
     } catch (error) {
       console.error('Error initializing text conversation:', error);
+      handleTranscript('⚠️ Message failed to send. Please check your connection and try again.', 'assistant');
+      return false;
     }
   };
 
@@ -1355,11 +1360,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               requiredFields={settings?.pre_chat_required_fields || ['name', 'email']}
               primaryColor={primaryColor}
               onSubmit={async (data) => {
-                setVisitorInfo(data);
-                setVisitorEmail(data.email);
-                setPreChatCompleted(true);
-                setShowPreChatForm(false);
-                await initializeTextConversation(data);
+                const started = await initializeTextConversation(data);
+                if (started) {
+                  setVisitorInfo(data);
+                  setVisitorEmail(data.email);
+                  setPreChatCompleted(true);
+                  setShowPreChatForm(false);
+                }
               }}
             />
           </div>

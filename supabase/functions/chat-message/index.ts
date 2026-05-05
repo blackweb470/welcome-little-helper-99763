@@ -6,10 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const preChatSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  email: z.string().email().max(255).optional(),
+  phone: z.string().max(50).optional(),
+  company: z.string().max(100).optional(),
+  message: z.string().max(500).optional(),
+});
+
 const requestSchema = z.object({
   businessId: z.string().uuid('Invalid business ID format'),
   visitorId: z.string().min(1, 'Visitor ID required').max(200, 'Visitor ID too long'),
-  message: z.string().min(1, 'Message cannot be empty').max(1000, 'Message too long (max 1000 characters)')
+  conversationId: z.string().uuid('Invalid conversation ID').optional().nullable(),
+  message: z.string().max(1000, 'Message too long (max 1000 characters)').optional(),
+  preChatData: preChatSchema.optional(),
+}).refine((data) => Boolean(data.message?.trim()) || Boolean(data.preChatData), {
+  message: 'Message or pre-chat data is required',
 });
 
 Deno.serve(async (req) => {
@@ -33,69 +45,102 @@ Deno.serve(async (req) => {
       );
     }
     
-    const { businessId, visitorId, message } = validationResult.data;
-    console.log('Chat message received:', { businessId, visitorId, message });
+    const { businessId, visitorId, conversationId: requestedConversationId, preChatData } = validationResult.data;
+    const message = validationResult.data.message?.trim() || '';
+    console.log('Chat message received:', { businessId, visitorId, hasMessage: Boolean(message), hasPreChatData: Boolean(preChatData) });
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Enforce pre-chat form server-side: ALL visitors must have submitted it (cannot be bypassed)
-    const { data: existingVisitorConv } = await supabase
-      .from('conversations')
-      .select('visitor_email, visitor_name')
+    const { data: settings } = await supabase
+      .from('widget_settings')
+      .select('*')
       .eq('business_id', businessId)
-      .eq('visitor_id', visitorId)
-      .is('ended_at', null)
-      .not('visitor_email', 'is', null)
-      .limit(1)
-      .maybeSingle();
-
-    if (!existingVisitorConv) {
-      console.log('Pre-chat form required but visitor has not submitted it');
-      return new Response(
-        JSON.stringify({ 
-          error: 'Pre-chat form required', 
-          details: 'Please complete the pre-chat form before starting a conversation' 
-        }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create or get conversation
-    let conversationId: string;
-    
-    const { data: existingConv } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('business_id', businessId)
-      .eq('visitor_id', visitorId)
-      .is('ended_at', null)
-      .order('started_at', { ascending: false })
-      .limit(1)
       .single();
 
-    if (existingConv) {
-      conversationId = existingConv.id;
-      console.log('Using existing conversation:', conversationId);
-    } else {
-      const { data: newConv, error: convError } = await supabase
-        .from('conversations')
-        .insert({
-          business_id: businessId,
-          visitor_id: visitorId,
-          started_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+    const preChatEnabled = settings?.pre_chat_enabled !== false;
 
-      if (convError) {
-        console.error('Error creating conversation:', convError);
-        throw convError;
+    let existingConvQuery = supabase
+      .from('conversations')
+      .select('id, visitor_email, visitor_name')
+      .eq('business_id', businessId)
+      .eq('visitor_id', visitorId)
+      .is('ended_at', null);
+
+    if (requestedConversationId) {
+      existingConvQuery = existingConvQuery.eq('id', requestedConversationId);
+    } else {
+      existingConvQuery = existingConvQuery.order('started_at', { ascending: false }).limit(1);
+    }
+
+    const { data: existingConv } = await existingConvQuery.maybeSingle();
+    let conversationId: string | null = existingConv?.id || null;
+
+    if (preChatData) {
+      const conversationPayload = {
+        visitor_email: preChatData.email || null,
+        visitor_name: preChatData.name || null,
+        visitor_phone: preChatData.phone || null,
+        visitor_company: preChatData.company || null,
+      };
+
+      if (conversationId) {
+        const { error: updateError } = await supabase
+          .from('conversations')
+          .update(conversationPayload)
+          .eq('id', conversationId)
+          .eq('business_id', businessId)
+          .eq('visitor_id', visitorId);
+
+        if (updateError) throw updateError;
+      } else {
+        const { data: newConv, error: convError } = await supabase
+          .from('conversations')
+          .insert({
+            business_id: businessId,
+            visitor_id: visitorId,
+            ...conversationPayload,
+            started_at: new Date().toISOString()
+          })
+          .select('id')
+          .single();
+
+        if (convError) throw convError;
+        conversationId = newConv.id;
       }
 
+      if (!message) {
+        return new Response(
+          JSON.stringify({ conversationId, preChatCompleted: true, reply: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    if (!conversationId) {
+      if (preChatEnabled) {
+        return new Response(
+          JSON.stringify({ error: 'Pre-chat form required', details: 'Please complete the pre-chat form before starting a conversation' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({ business_id: businessId, visitor_id: visitorId, started_at: new Date().toISOString() })
+        .select('id')
+        .single();
+
+      if (convError) throw convError;
       conversationId = newConv.id;
-      console.log('Created new conversation:', conversationId);
+    }
+
+    if (preChatEnabled && !preChatData && !existingConv?.visitor_email) {
+      return new Response(
+        JSON.stringify({ error: 'Pre-chat form required', details: 'Please complete the pre-chat form before starting a conversation' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Save user message
@@ -167,13 +212,6 @@ Deno.serve(async (req) => {
     }
 
     // Get AI response
-
-    // Fetch widget settings and context
-    const { data: settings } = await supabase
-      .from('widget_settings')
-      .select('*')
-      .eq('business_id', businessId)
-      .single();
 
     // Validate message length against configured max_input_characters
     const maxChars = settings?.max_input_characters || 500;
