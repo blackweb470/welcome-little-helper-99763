@@ -213,13 +213,6 @@ Deno.serve(async (req) => {
 
     // Get AI response
 
-    // Fetch widget settings and context
-    const { data: settings } = await supabase
-      .from('widget_settings')
-      .select('*')
-      .eq('business_id', businessId)
-      .single();
-
     // Validate message length against configured max_input_characters
     const maxChars = settings?.max_input_characters || 500;
     if (message.length > maxChars) {
