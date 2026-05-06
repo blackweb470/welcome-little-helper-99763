@@ -359,21 +359,6 @@ const Index = () => {
           </div>
         </section>
 
-        {/* ============== Logo Marquee ============== */}
-        <section className="py-12 border-y" style={{ borderColor: "rgba(11,54,59,0.08)", background: "var(--fog)" }}>
-          <div className="container mx-auto px-6">
-            <p className="cio-eyebrow text-center mb-8">Trusted by support teams worldwide</p>
-            <div className="overflow-hidden" style={{ maskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)" }}>
-              <div className="flex gap-16 whitespace-nowrap" style={{ animation: "cio-marquee 32s linear infinite", width: "max-content" }}>
-                {[...logos, ...logos].map((l, i) => (
-                  <span key={i} className="font-semibold" style={{ fontSize: 22, color: "var(--ash)", letterSpacing: "-0.02em", textTransform: "uppercase" }}>
-                    {l}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* ============== How it works ============== */}
         <section className="cio-section">
