@@ -99,16 +99,9 @@ export default function NewDocumentation() {
                 <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
                   Features
                 </Link>
-                <Link to="/documentation" className="text-foreground font-medium">
-                  Documentation
-                </Link>
               </nav>
             </div>
             <Button asChild variant="outline" size="sm">
-              <Link to="/dashboard">
-                <Home className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
-              </Link>
             </Button>
           </div>
         </div>
