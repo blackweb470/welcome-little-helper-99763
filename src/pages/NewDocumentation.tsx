@@ -96,9 +96,6 @@ export default function NewDocumentation() {
                 <span className="hidden sm:inline font-semibold text-lg">LYQN</span>
               </Link>
               <nav className="hidden md:flex items-center gap-6 text-sm">
-                <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                  Dashboard
-                </Link>
                 <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
                   Features
                 </Link>
