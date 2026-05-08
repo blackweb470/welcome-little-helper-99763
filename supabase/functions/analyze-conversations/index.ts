@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -71,11 +71,11 @@ serve(async (req) => {
     }
 
     // Build conversation text for AI analysis
-    const conversationSummaries = conversations.map(conv => {
-      const userMessages = conv.messages?.filter(m => m.role === 'user') || [];
-      const messageText = userMessages.map(m => m.content).join(' | ');
+    const conversationSummaries = conversations.map((conv: any) => {
+      const userMessages = conv.messages?.filter((m: any) => m.role === 'user') || [];
+      const messageText = userMessages.map((m: any) => m.content).join(' | ');
       const sentiment = userMessages.length > 0 
-        ? userMessages.reduce((sum, m) => sum + (m.sentiment_score || 0), 0) / userMessages.length 
+        ? userMessages.reduce((sum: number, m: any) => sum + (m.sentiment_score || 0), 0) / userMessages.length 
         : 0;
       
       return `[Sentiment: ${sentiment > 0.3 ? 'Positive' : sentiment < -0.3 ? 'Negative' : 'Neutral'}] ${messageText.substring(0, 500)}`;
@@ -181,10 +181,10 @@ Format as JSON:
     const analysis = JSON.parse(aiData.choices[0].message.content);
 
     // Calculate sentiment stats
-    const allMessages = conversations.flatMap(c => c.messages || []);
-    const userMessages = allMessages.filter(m => m.role === 'user' && m.sentiment_score !== null);
+    const allMessages = conversations.flatMap((c: any) => c.messages || []);
+    const userMessages = allMessages.filter((m: any) => m.role === 'user' && m.sentiment_score !== null);
     const averageSentiment = userMessages.length > 0
-      ? userMessages.reduce((sum, m) => sum + (m.sentiment_score || 0), 0) / userMessages.length
+      ? userMessages.reduce((sum: number, m: any) => sum + (m.sentiment_score || 0), 0) / userMessages.length
       : 0;
 
     return new Response(

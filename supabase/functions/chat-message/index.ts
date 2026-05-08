@@ -20,11 +20,11 @@ const requestSchema = z.object({
   conversationId: z.string().uuid('Invalid conversation ID').optional().nullable(),
   message: z.string().max(1000, 'Message too long (max 1000 characters)').optional(),
   preChatData: preChatSchema.optional(),
-}).refine((data) => Boolean(data.message?.trim()) || Boolean(data.preChatData), {
+}).refine((data: any) => Boolean(data.message?.trim()) || Boolean(data.preChatData), {
   message: 'Message or pre-chat data is required',
 });
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
