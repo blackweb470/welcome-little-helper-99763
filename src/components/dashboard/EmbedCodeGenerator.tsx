@@ -14,7 +14,7 @@ export const EmbedCodeGenerator = ({ businessId }: EmbedCodeGeneratorProps) => {
   const [copied, setCopied] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const baseUrl = "https://lyqn.ai";
+  const baseUrl = "https://lyqn.app";
 
   // ── Snippets ──────────────────────────────────────────
   const scriptSnippet = `<!-- LYQN Chat Widget -->

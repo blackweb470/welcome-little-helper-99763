@@ -1,7 +1,7 @@
 /**
  * LYQN Chat Widget Loader v1.0
  * Usage: Include this script with data-business-id attribute
- * <script src="https://lyqn.ai/widget-loader.js" data-business-id="YOUR_ID"></script>
+ * <script src="https://lyqn.app/widget-loader.js" data-business-id="YOUR_ID"></script>
  */
 (function () {
   'use strict';

@@ -1584,17 +1584,6 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               )}
             </div>
             
-            {/* Branding */}
-            <div className="py-1.5 flex justify-center border-t bg-muted/20">
-              <a 
-                href="https://lyqn.ai" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight uppercase"
-              >
-                Powered by <span className="font-bold text-foreground">Lyqn AI</span>
-              </a>
-            </div>
           </div>
         </div>
     );
@@ -1667,7 +1656,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           {/* Branding for Embedded */}
           <div className="py-1.5 flex justify-center border-t bg-muted/20 shrink-0">
             <a 
-              href="https://lyqn.ai" 
+              href="https://lyqn.app" 
               target="_blank" 
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight uppercase"
@@ -1741,6 +1730,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
             {activeTab === "faq" && renderFaqContent()}
             {activeTab === "chat" && renderChatContent()}
+
+            {/* Branding */}
+            <div className="py-1.5 flex justify-center border-t bg-muted/20 shrink-0">
+              <a 
+                href="https://lyqn.app" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight uppercase"
+              >
+                Powered by <span className="font-bold text-foreground">Lyqn AI</span>
+              </a>
+            </div>
           </CardContent>
         </Card>
       ) : (
