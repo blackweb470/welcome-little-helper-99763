@@ -586,7 +586,7 @@ const Index = () => {
             {[
               { title: "Product", links: [["Features", "/features"], ["Pricing", "/pricing"], ["Documentation", "/docs"]] },
               { title: "Company", links: [["About", "/"], ["Blog", "/"], ["Contact", "/"]] },
-              { title: "Legal", links: [["Privacy", "/"], ["Terms", "/"]] },
+              { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/data-deletion"]] },
             ].map((col, i) => (
               <div key={i}>
                 <h4 className="font-semibold mb-4" style={{ fontSize: 14, color: "var(--ink)" }}>{col.title}</h4>
