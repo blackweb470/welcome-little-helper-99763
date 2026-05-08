@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# Lyqn AI Chatbot Platform
 
-## Project info
+Welcome to the Lyqn AI project. This is a comprehensive multi-channel AI chatbot platform designed for modern businesses.
 
-**URL**: https://lovable.dev/projects/f569cee0-3e24-40c0-93b2-5bc5feb33139
+## Key Features
 
-## How can I edit this code?
+- **Multi-channel Support**: Deploy your chatbot on your website and WhatsApp simultaneously.
+- **WhatsApp Integration**: Official WhatsApp Business API integration with automated onboarding and admin command support.
+- **Intelligent RAG**: Advanced Retrieval-Augmented Generation using OpenAI embeddings to provide accurate answers based on your website and business knowledge.
+- **Live Chat Handover**: Seamless transition from AI to human agents when complex issues arise.
+- **Dashboard**: Professional administrative dashboard to manage businesses, conversations, and settings.
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+### Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f569cee0-3e24-40c0-93b2-5bc5feb33139) and start prompting.
+- Node.js & npm installed
+- Supabase account and project
+- Meta Developer account (for WhatsApp)
+- OpenAI API Key
 
-Changes made via Lovable will be committed automatically to this repo.
+### Local Development
 
-**Use your preferred IDE**
+1. **Clone the repository**:
+   ```sh
+   git clone <YOUR_GIT_URL>
+   cd welcome-little-helper-99763
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. **Install dependencies**:
+   ```sh
+   npm i
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+3. **Configure Environment**:
+   Create a `.env` file with your Supabase credentials:
+   ```
+   VITE_SUPABASE_URL=your_project_url
+   VITE_SUPABASE_ANON_KEY=your_anon_key
+   ```
 
-Follow these steps:
+4. **Start the development server**:
+   ```sh
+   npm run dev
+   ```
 
+## Tech Stack
+
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (Database, Auth, Edge Functions)
+- **AI**: OpenAI (GPT-4o-mini, Text Embeddings)
+- **Integrations**: WhatsApp Business API, Firecrawl (Web Scraping)
+
+## Deployment
+
+Deploy your Edge Functions using the Supabase CLI:
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+supabase functions deploy
 ```
 
-**Edit a file directly in GitHub**
+For frontend deployment, we recommend Vercel or Netlify, or simply using Supabase Hosting.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Custom Branding
 
-**Use GitHub Codespaces**
+Lyqn AI is designed to be fully white-labeled. You can customize the look and feel of the chat widget directly from the dashboard.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/f569cee0-3e24-40c0-93b2-5bc5feb33139) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+© 2026 Lyqn AI Platform. All rights reserved.

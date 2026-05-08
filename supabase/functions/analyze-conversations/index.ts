@@ -170,7 +170,7 @@ Format as JSON:
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'AI credits exhausted. Please add credits in your Lovable workspace settings.' }),
+          JSON.stringify({ error: 'AI credits exhausted. Please add credits in your Lyqn AI billing settings.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

@@ -33,7 +33,7 @@ These are configured in:
 4. Copy webhook secret
 
 ### 3. Add Secrets
-The webhook secret should already be configured as `POLAR_WEBHOOK_SECRET` in your Supabase edge functions. If not, add it via Lovable's secrets management.
+The webhook secret should already be configured as `POLAR_WEBHOOK_SECRET` in your Supabase edge functions. If not, add it via the dashboard's secrets management or Supabase CLI.
 
 ### 4. Test Flow
 1. Sign up as new user
