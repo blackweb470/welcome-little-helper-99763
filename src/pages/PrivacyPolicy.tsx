@@ -51,7 +51,7 @@ const PrivacyPolicy = () => {
 
       <h2>6. Data Retention and Deletion</h2>
       <p>
-        We retain your personal information for as long as your account is active. You may request the deletion of your data at any time through our <a href="/data-deletion">Data Deletion</a> page.
+        We retain your personal information for as long as your account is active. You may request the deletion of your data at any time through our <a href="/delete">Data Deletion</a> page.
       </p>
 
       <h2>7. Your Rights (GDPR/CCPA)</h2>

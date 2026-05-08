@@ -17,7 +17,7 @@ const PolicyLayout = ({ children, title, lastUpdated, icon }: PolicyLayoutProps)
   const navItems = [
     { label: "Privacy Policy", href: "/privacy", icon: Shield },
     { label: "Terms of Service", href: "/terms", icon: FileText },
-    { label: "Data Deletion", href: "/data-deletion", icon: Trash2 },
+    { label: "Data Deletion", href: "/delete", icon: Trash2 },
   ];
 
   const IconComponent = {

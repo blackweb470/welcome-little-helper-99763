@@ -48,7 +48,7 @@ const App = () => (
           <Route path="/features-testing" element={<FeaturesTestingCenter />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
-          <Route path="/data-deletion" element={<DataDeletion />} />
+          <Route path="/delete" element={<DataDeletion />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
