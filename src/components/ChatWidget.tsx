@@ -1583,6 +1583,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 </Button>
               )}
             </div>
+            
+            {/* Branding */}
+            <div className="py-1.5 flex justify-center border-t bg-muted/20">
+              <a 
+                href="https://lyqn.ai" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight uppercase"
+              >
+                Powered by <span className="font-bold text-foreground">Lyqn AI</span>
+              </a>
+            </div>
           </div>
         </div>
     );
@@ -1616,6 +1628,12 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
               </div>
             </div>
+            <ContinueOnWhatsApp 
+              businessId={businessId}
+              conversationId={conversationId}
+              primaryColor={primaryColor}
+              variant="header"
+            />
           </div>
         </CardHeader>
 
@@ -1645,6 +1663,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
           {activeTab === "faq" && renderFaqContent()}
           {activeTab === "chat" && renderChatContent()}
+          
+          {/* Branding for Embedded */}
+          <div className="py-1.5 flex justify-center border-t bg-muted/20 shrink-0">
+            <a 
+              href="https://lyqn.ai" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground hover:text-primary transition-colors tracking-tight uppercase"
+            >
+              Powered by <span className="font-bold text-foreground">Lyqn AI</span>
+            </a>
+          </div>
         </CardContent>
       </Card>
     );
@@ -1670,6 +1700,12 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                   <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
                 </div>
               </div>
+              <ContinueOnWhatsApp 
+                businessId={businessId}
+                conversationId={conversationId}
+                primaryColor={primaryColor}
+                variant="header"
+              />
               <button 
                 onClick={() => setIsOpen(false)}
                 className="text-muted-foreground hover:text-foreground p-1 shrink-0"

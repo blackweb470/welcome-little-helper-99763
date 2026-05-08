@@ -96,12 +96,22 @@ export default function NewDocumentation() {
                 <span className="hidden sm:inline font-semibold text-lg">LYQN</span>
               </Link>
               <nav className="hidden md:flex items-center gap-6 text-sm">
+                <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+                  Dashboard
+                </Link>
                 <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">
                   Features
+                </Link>
+                <Link to="/documentation" className="text-foreground font-medium">
+                  Documentation
                 </Link>
               </nav>
             </div>
             <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard">
+                <Home className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Link>
             </Button>
           </div>
         </div>

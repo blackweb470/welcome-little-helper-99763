@@ -186,6 +186,71 @@ Deno.serve(async (req) => {
       },
     });
 
+    // Notify WhatsApp admins if configured
+    try {
+      const { data: waSettings } = await supabase
+        .from('whatsapp_settings')
+        .select('access_token, phone_number_id, admin_phone_numbers')
+        .eq('business_id', businessId)
+        .eq('enabled', true)
+        .maybeSingle();
+
+      if (waSettings?.admin_phone_numbers?.length > 0 && waSettings.access_token && waSettings.phone_number_id) {
+        const adminMsg = `🔔 *New Live Chat Request*\n\n` +
+          `Customer: ${visitorEmail || visitorId}\n` +
+          `Reason: ${reason || 'Not specified'}\n` +
+          `Channel: ${conversationId ? 'Web' : 'Direct'}\n\n` +
+          `Reply \`/accept ${session.id.substring(0, 8)}\` to start chatting.`;
+
+        for (const adminPhone of waSettings.admin_phone_numbers) {
+          const cleanPhone = adminPhone.replace(/[^\d]/g, '');
+          console.log(`Sending WhatsApp interactive notification to admin: ${cleanPhone}`);
+          
+          await fetch(
+            `https://graph.facebook.com/v19.0/${waSettings.phone_number_id}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${waSettings.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to: cleanPhone,
+                type: 'interactive',
+                interactive: {
+                  type: 'button',
+                  header: {
+                    type: 'text',
+                    text: '🔔 New Chat Request'
+                  },
+                  body: {
+                    text: `Customer: ${visitorEmail || visitorId}\nReason: ${reason || 'Not specified'}\nChannel: ${conversationId ? 'Web' : 'Direct'}`
+                  },
+                  footer: {
+                    text: 'Click button to take this chat'
+                  },
+                  action: {
+                    buttons: [
+                      {
+                        type: 'reply',
+                        reply: {
+                          id: `accept_${session.id.substring(0, 8)}`,
+                          title: 'Accept Chat'
+                        }
+                      }
+                    ]
+                  }
+                }
+              }),
+            }
+          );
+        }
+      }
+    } catch (waNotifError) {
+      console.error('Error sending WhatsApp admin notifications:', waNotifError);
+    }
+
     console.log('Live agent request created successfully, queue position:', position);
 
     return new Response(

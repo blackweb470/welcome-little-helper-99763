@@ -35,7 +35,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<any>(null);
-  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(
+    localStorage.getItem('selected_business_id')
+  );
   const currentTab = searchParams.get('tab') || 'businesses';
   const { hasAccess, getRequiredPlan, planName, isAdmin } = useFeatureAccess(user?.id);
   const { hasPermission, isOwner, businesses } = useBusinessPermissions(user?.id);
@@ -66,6 +68,27 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Persist selected business ID
+  useEffect(() => {
+    if (selectedBusinessId) {
+      localStorage.setItem('selected_business_id', selectedBusinessId);
+    } else {
+      localStorage.removeItem('selected_business_id');
+    }
+  }, [selectedBusinessId]);
+
+  // Auto-select first business if none is selected
+  useEffect(() => {
+    if (!selectedBusinessId && businesses.length > 0) {
+      const firstBusinessId = businesses[0].business_id;
+      setSelectedBusinessId(firstBusinessId);
+      // If we're on the business list, maybe stay there, but usually we want to see analytics of the first business
+      if (currentTab === 'businesses') {
+        setActiveTab('analytics');
+      }
+    }
+  }, [businesses, selectedBusinessId]);
 
   // Validate selected business access - redirect if removed from team
   useEffect(() => {
@@ -111,6 +134,7 @@ const Dashboard = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('selected_business_id');
     navigate("/auth");
   };
 
@@ -254,6 +278,8 @@ const Dashboard = () => {
                 {currentTab === 'proactive' && hasAccess('proactive_chat') && (
                   <ProactiveChatRules businessId={selectedBusinessId} />
                 )}
+
+
 
 
 

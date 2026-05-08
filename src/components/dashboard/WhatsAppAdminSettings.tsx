@@ -218,7 +218,7 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
                     <HelpCircle className="w-4 h-4 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Add phone numbers that can manage your business via WhatsApp commands like /queue, /accept, /stats, etc.</p>
+                    <p>Add phone numbers that can manage your business via WhatsApp commands like /queue, /accept, /active, and /end.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -239,9 +239,6 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
             <div><code>/accept [id]</code> - Accept a chat</div>
             <div><code>/active</code> - View active chats</div>
             <div><code>/end [id]</code> - End a chat</div>
-            <div><code>/docs</code> - List documents</div>
-            <div><code>/proactive</code> - Manage rules</div>
-            <div><code>/stats</code> - View statistics</div>
           </div>
         </div>
 

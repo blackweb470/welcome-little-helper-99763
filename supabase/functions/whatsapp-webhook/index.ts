@@ -12,18 +12,37 @@ Deno.serve(async (req) => {
   
   // Handle webhook verification (GET request from Meta)
   if (req.method === 'GET') {
-    const mode = url.searchParams.get('hub.mode');
-    const token = url.searchParams.get('hub.verify_token');
-    const challenge = url.searchParams.get('hub.challenge');
+    const params = Object.fromEntries(url.searchParams.entries());
+    console.log('Full WhatsApp GET params:', params);
 
-    console.log('WhatsApp webhook verification request:', { mode, token, challenge });
+    const mode = url.searchParams.get('hub.mode') || url.searchParams.get('hub_mode');
+    const token = url.searchParams.get('hub.verify_token') || url.searchParams.get('hub_verify_token');
+    const challenge = url.searchParams.get('hub.challenge') || url.searchParams.get('hub_challenge');
+
+    console.log('Extracted verification data:', { mode, token, challenge });
 
     if (mode === 'subscribe' && token && challenge) {
+      const masterToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
+      console.log('Master Token check:', { 
+        hasMasterToken: !!masterToken, 
+        receivedToken: token,
+        matches: masterToken === token
+      });
+      
+      // Check if it's the master app-level token
+      if (masterToken && token === masterToken) {
+        console.log('App-level webhook verified');
+        return new Response(challenge, { 
+          status: 200,
+          headers: { 'Content-Type': 'text/plain' }
+        });
+      }
+
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Look up the business by verify_token
+      // Look up the business by verify_token (for overrides)
       const { data: settings } = await supabase
         .from('whatsapp_settings')
         .select('*')
@@ -86,7 +105,16 @@ Deno.serve(async (req) => {
             id: message.interactive.button_reply.id,
             title: message.interactive.button_reply.title
           };
-          messageText = message.interactive.button_reply.title;
+          // If it's a command button, use the ID as the message text
+          if (message.interactive.button_reply.id.startsWith('cmd_') || message.interactive.button_reply.id.includes('_')) {
+            messageText = message.interactive.button_reply.id.replace('cmd_', '/');
+            // If it doesn't start with /, and contains _, it might be an internal ID like accept_abc
+            if (!messageText.startsWith('/')) {
+              messageText = '/' + messageText.replace('_', ' ');
+            }
+          } else {
+            messageText = message.interactive.button_reply.title;
+          }
         }
         // Handle list selection
         else if (message.interactive?.type === 'list_reply') {
@@ -156,7 +184,8 @@ Deno.serve(async (req) => {
                   senderPhone,
                   messageText,
                   phoneNumberId,
-                  accessToken: waSettings.access_token
+                  accessToken: waSettings.access_token,
+                  buttonId: interactiveReply?.id
                 }),
               }
             );
@@ -197,6 +226,61 @@ Deno.serve(async (req) => {
           );
 
           return new Response(JSON.stringify({ status: 'ok', command_blocked: true }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      } else if (isAdmin) {
+        // Check if this admin has an active live chat session
+        const { data: activeSession } = await supabase
+          .from('live_chat_sessions')
+          .select('id, conversation_id')
+          .eq('status', 'active')
+          .contains('metadata', { agent_whatsapp_phone: senderPhone })
+          .maybeSingle();
+
+        if (activeSession) {
+          console.log('Admin is in an active session, routing message to customer');
+          
+          // Save the message to the database
+          await supabase
+            .from('messages')
+            .insert({
+              conversation_id: activeSession.conversation_id,
+              role: 'assistant',
+              content: messageText
+            });
+
+          // Fetch customer info
+          const { data: conv } = await supabase
+            .from('conversations')
+            .select('channel, channel_metadata')
+            .eq('id', activeSession.conversation_id)
+            .single();
+
+          if (conv?.channel === 'whatsapp') {
+            const customerPhone = (conv.channel_metadata as any)?.phone_number;
+            if (customerPhone) {
+              await fetch(
+                `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${waSettings.access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    messaging_product: 'whatsapp',
+                    to: customerPhone,
+                    type: 'text',
+                    text: { body: messageText }
+                  }),
+                }
+              );
+            }
+          }
+          
+          // Acknowledge to agent
+          return new Response(JSON.stringify({ status: 'ok', routed: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
@@ -452,18 +536,6 @@ Deno.serve(async (req) => {
         .eq('business_id', businessId)
         .maybeSingle();
 
-      const { data: documents } = await supabase
-        .from('business_documents')
-        .select('content_text, file_name')
-        .eq('business_id', businessId)
-        .eq('status', 'ready');
-
-      const { data: websiteContent } = await supabase
-        .from('business_website_content')
-        .select('title, content, url')
-        .eq('business_id', businessId)
-        .limit(10);
-
       const { data: learnings } = await supabase
         .from('business_learnings')
         .select('content')
@@ -477,25 +549,65 @@ Deno.serve(async (req) => {
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
+      // Generate embedding for the user's message to perform RAG
+      let relevantChunks = '';
+      try {
+        if (messageText && messageText.trim().length > 0) {
+          const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${OPENAI_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              input: messageText.replace(/\n/g, ' '),
+              model: 'text-embedding-3-small'
+            })
+          });
+          
+          if (embedRes.ok) {
+            const embedData = await embedRes.json();
+            const queryEmbedding = embedData.data[0].embedding;
+            
+            const { data: matchData, error: matchError } = await supabase.rpc('match_knowledge_chunks', {
+              query_embedding: queryEmbedding,
+              match_count: 5,
+              p_business_id: businessId
+            });
+            
+            if (!matchError && matchData && matchData.length > 0) {
+              relevantChunks = matchData.map((chunk: any) => `Source: ${chunk.source_type}\nContent: ${chunk.content}`).join('\n\n');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('RAG Error:', e);
+      }
+
       // Build system prompt
       let systemPrompt = widgetSettings?.system_prompt || 'You are a helpful AI assistant.';
-      systemPrompt += '\n\nYou are responding via WhatsApp. Keep responses concise and mobile-friendly.';
-      systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
+      systemPrompt += '\n\n**IMPORTANT: YOU ARE RESPONDING ON WHATSAPP.**\n';
+      systemPrompt += 'Please format your responses specifically for WhatsApp:\n';
+      systemPrompt += '- DO NOT use any markdown symbols at all. Absolutely NO asterisks (*), underscores (_), or hash symbols (#).\n';
+      systemPrompt += '- Output strictly PLAIN TEXT only.\n';
+      systemPrompt += '- Use standard emojis strategically to make the text friendly and easy to read, but do not overdo it.\n';
+      systemPrompt += '- Keep responses concise, scannable, and mobile-friendly. Use short paragraphs and spacing to separate ideas.\n';
+      systemPrompt += '\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
       
-      if (documents && documents.length > 0) {
-        systemPrompt += '\n\nBusiness Knowledge (from documents):\n' + documents.map((d: any) => 
-          `${d.file_name}:\n${d.content_text}`
-        ).join('\n\n');
+      if (relevantChunks) {
+        systemPrompt += '\n\nRelevant Business Knowledge:\n' + relevantChunks;
       }
 
-      if (websiteContent && websiteContent.length > 0) {
-        systemPrompt += '\n\nBusiness Website Content:\n' + websiteContent.map((w: any) => 
-          `Page: ${w.title} (${w.url})\n${w.content?.substring(0, 2000)}`
-        ).join('\n\n---\n\n');
-      }
+      let contextAdded = 0;
+      const MAX_CONTEXT_CHARS = 30000; // rough limit to prevent token explosion
 
       if (learnings && learnings.length > 0) {
-        systemPrompt += '\n\nLearned Insights:\n' + learnings.map((l: any) => l.content).join('\n');
+        systemPrompt += '\n\nLearned Information:\n';
+        for (const learning of learnings) {
+          if (contextAdded > MAX_CONTEXT_CHARS) break;
+          systemPrompt += `- ${learning.content}\n`;
+          contextAdded += learning.content?.length || 0;
+        }
       }
 
       // Add context about linked conversation if available
@@ -532,7 +644,8 @@ Deno.serve(async (req) => {
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
         console.error('AI API error:', aiResponse.status, errorText);
-        throw new Error(`AI service error: ${aiResponse.status}`);
+        // Do not try to insert into messages, role 'system' might be invalid
+        throw new Error(`AI service error: ${aiResponse.status} - ${errorText}`);
       }
 
       const aiData = await aiResponse.json();
@@ -572,8 +685,25 @@ Deno.serve(async (req) => {
       if (!whatsappResponse.ok) {
         const errorText = await whatsappResponse.text();
         console.error('WhatsApp API error:', whatsappResponse.status, errorText);
+        
+        // Log the error to the database for debugging
+        await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'system',
+            content: `ERROR_SENDING_WHATSAPP: Status ${whatsappResponse.status}, Error: ${errorText}, URL: https://graph.facebook.com/v19.0/${phoneNumberId}/messages, Token length: ${waSettings.access_token?.length}`
+          });
       } else {
         console.log('WhatsApp message sent successfully');
+        const responseJson = await whatsappResponse.json();
+        await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'system',
+            content: `DEBUG_SUCCESS: sent to ${senderPhone}, wamid: ${responseJson.messages?.[0]?.id}`
+          });
       }
 
       // Handle escalation if needed
@@ -600,8 +730,27 @@ Deno.serve(async (req) => {
 
     } catch (error) {
       console.error('Error processing WhatsApp webhook:', error);
-      // Always return 200 to prevent Meta from retrying
-      return new Response(JSON.stringify({ status: 'error' }), {
+      
+      // Try to log the exact crash to the database
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        
+        await supabase.from('messages').insert({
+          conversation_id: '61c1c692-cb2d-4553-8c9d-a9e5f1ad0094', // fallback if undefined
+          role: 'system',
+          content: `CRASH_ERROR: ${error instanceof Error ? error.message : String(error)} \nStack: ${error instanceof Error ? error.stack : ''}`
+        });
+      } catch (e) {
+        // ignore
+      }
+
+      return new Response(JSON.stringify({ 
+        status: 'error', 
+        error_message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : ''
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }

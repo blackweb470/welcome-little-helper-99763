@@ -225,19 +225,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: documents } = await supabase
-      .from('business_documents')
-      .select('content_text, file_name')
-      .eq('business_id', businessId)
-      .eq('status', 'ready');
-
-    // Fetch website content for AI training
-    const { data: websiteContent } = await supabase
-      .from('business_website_content')
-      .select('title, content, url')
-      .eq('business_id', businessId)
-      .limit(10);
-
     const { data: learnings } = await supabase
       .from('business_learnings')
       .select('content')
@@ -252,26 +239,66 @@ Deno.serve(async (req) => {
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
+    // Use OpenAI directly (your own API key)
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    if (!OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY not configured');
+    }
+
+    // Generate embedding for the user's message to perform RAG
+    let relevantChunks = '';
+    try {
+      if (message && message.trim().length > 0) {
+        const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            input: message.replace(/\n/g, ' '),
+            model: 'text-embedding-3-small'
+          })
+        });
+        
+        if (embedRes.ok) {
+          const embedData = await embedRes.json();
+          const queryEmbedding = embedData.data[0].embedding;
+          
+          const { data: matchData, error: matchError } = await supabase.rpc('match_knowledge_chunks', {
+            query_embedding: queryEmbedding,
+            match_count: 5,
+            p_business_id: businessId
+          });
+          
+          if (!matchError && matchData && matchData.length > 0) {
+            relevantChunks = matchData.map((chunk: any) => `Source: ${chunk.source_type}\nContent: ${chunk.content}`).join('\n\n');
+          }
+        }
+      }
+    } catch (e) {
+      console.error('RAG Error:', e);
+    }
+
     // Build system prompt
     let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant.';
     
     systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
     
-    if (documents && documents.length > 0) {
-      systemPrompt += '\n\nBusiness Knowledge (from documents):\n' + documents.map((d: any) => 
-        `${d.file_name}:\n${d.content_text}`
-      ).join('\n\n');
+    if (relevantChunks) {
+      systemPrompt += '\n\nRelevant Business Knowledge:\n' + relevantChunks;
     }
 
-    // Add website content to system prompt
-    if (websiteContent && websiteContent.length > 0) {
-      systemPrompt += '\n\nBusiness Website Content:\n' + websiteContent.map((w: any) => 
-        `Page: ${w.title} (${w.url})\n${w.content?.substring(0, 2000)}`
-      ).join('\n\n---\n\n');
-    }
+    let contextAdded = 0;
+    const MAX_CONTEXT_CHARS = 30000; // rough limit to prevent token explosion
 
     if (learnings && learnings.length > 0) {
-      systemPrompt += '\n\nLearned Insights:\n' + learnings.map((l: any) => l.content).join('\n');
+      systemPrompt += '\n\nLearned Insights:\n';
+      for (const learning of learnings) {
+        if (contextAdded > MAX_CONTEXT_CHARS) break;
+        systemPrompt += `- ${learning.content}\n`;
+        contextAdded += learning.content?.length || 0;
+      }
     }
 
     // Add fallback instruction for when AI can't find answers
@@ -284,10 +311,7 @@ Deno.serve(async (req) => {
     ];
 
     // Use OpenAI directly (your own API key)
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured');
-    }
+
 
     const OPENAI_MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-4o-mini';
 

@@ -1,47 +1,76 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { 
-  MessageCircle, 
-  Copy, 
-  CheckCircle, 
+  MessageSquare, 
+  Smartphone, 
+  CheckCircle2, 
+  AlertCircle, 
   Loader2, 
-  Phone,
-  Key,
+  ExternalLink,
+  ShieldCheck,
   Zap,
-  XCircle,
-  Eye,
-  EyeOff
-} from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { QRCodeSVG } from "qrcode.react";
+  RefreshCw,
+  Trash2
+} from 'lucide-react';
+import WhatsAppQR from '@/components/dashboard/WhatsAppQR'; // QR Code generator component
 
-interface WhatsAppSettingsProps {
-  businessId: string;
+// Declare FB global for TypeScript
+declare global {
+  interface Window {
+    fbAsyncInit: () => void;
+    FB: any;
+  }
 }
 
-export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
+export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [phoneNumberId, setPhoneNumberId] = useState("");
-  const [accessToken, setAccessToken] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [copied, setCopied] = useState<string | null>(null);
-  const [showToken, setShowToken] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
+  const [isEnabled, setIsEnabled] = useState(false);
 
-  const webhookUrl = `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/whatsapp-webhook`;
+  // Meta App Config from environment
+  const META_APP_ID = import.meta.env.VITE_META_APP_ID;
+  const CONFIG_ID = "991663860045736"; // Provided by user
 
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['whatsapp-settings', businessId],
-    queryFn: async () => {
+  useEffect(() => {
+    fetchSettings();
+    loadFacebookSDK();
+  }, [businessId]);
+
+  const loadFacebookSDK = () => {
+    if (window.FB) return;
+
+    window.fbAsyncInit = function() {
+      window.FB.init({
+        appId: META_APP_ID,
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v21.0'
+      });
+    };
+
+    // Load script
+    (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s) as HTMLScriptElement; js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      if (fjs && fjs.parentNode) {
+        fjs.parentNode.insertBefore(js, fjs);
+      }
+    }(document, 'script', 'facebook-jssdk'));
+  };
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('whatsapp_settings')
         .select('*')
@@ -50,347 +79,305 @@ export const WhatsAppSettings = ({ businessId }: WhatsAppSettingsProps) => {
 
       if (error) throw error;
       
-      if (data) {
-        setPhoneNumberId(data.phone_number_id || "");
-        setPhoneNumber(data.phone_number || "");
-      }
-      
-      return data;
+      setSettings(data);
+      setIsEnabled(data?.enabled || false);
+    } catch (error: any) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
     }
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: async (data: {
-      phone_number_id: string;
-      access_token: string;
-      phone_number: string;
-      enabled: boolean;
-    }) => {
-      if (settings?.id) {
-        const updateData: any = {
-          phone_number_id: data.phone_number_id,
-          phone_number: data.phone_number,
-          enabled: data.enabled,
-        };
-        if (data.access_token) {
-          updateData.access_token = data.access_token;
-        }
-        const { error } = await supabase
-          .from('whatsapp_settings')
-          .update(updateData)
-          .eq('id', settings.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('whatsapp_settings')
-          .insert({
-            business_id: businessId,
-            phone_number_id: data.phone_number_id,
-            access_token: data.access_token,
-            phone_number: data.phone_number,
-            enabled: data.enabled,
-          });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      toast({ title: "Settings saved", description: "WhatsApp integration configured successfully" });
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings', businessId] });
-      setAccessToken("");
-    },
-    onError: (error: any) => {
-      toast({ title: "Error saving settings", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const toggleMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const { error } = await supabase
-        .from('whatsapp_settings')
-        .update({ enabled })
-        .eq('id', settings?.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['whatsapp-settings', businessId] });
-      toast({ title: "Status updated" });
-    }
-  });
-
-  const testConnectionMutation = useMutation({
-    mutationFn: async () => {
-      if (!settings) throw new Error("Please save your settings first");
-      const response = await fetch(
-        `https://graph.facebook.com/v18.0/${settings.phone_number_id}`,
-        { headers: { 'Authorization': `Bearer ${settings.access_token}` } }
-      );
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || "Failed to connect to WhatsApp API");
-      }
-      return await response.json();
-    },
-    onSuccess: (data) => {
-      setTestResult({ success: true, message: `Connected! Phone: ${data.display_phone_number || data.verified_name || "Verified"}` });
-      toast({ title: "Connection successful!", description: "Your WhatsApp integration is working correctly" });
-    },
-    onError: (error: any) => {
-      setTestResult({ success: false, message: error.message });
-      toast({ title: "Connection failed", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const handleCopy = (text: string, type: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(type);
-    setTimeout(() => setCopied(null), 2000);
-    toast({ title: "Copied!", description: `${type} copied to clipboard` });
   };
 
-  const handleSave = () => {
-    if (!phoneNumberId) {
-      toast({ title: "Error", description: "Phone Number ID is required", variant: "destructive" });
+  const launchWhatsAppSignup = () => {
+    if (!window.FB) {
+      toast({
+        variant: "destructive",
+        title: "SDK Not Loaded",
+        description: "Facebook SDK is still loading. Please wait a moment and try again."
+      });
       return;
     }
-    if (!phoneNumber) {
-      toast({ title: "Error", description: "Phone number is required", variant: "destructive" });
-      return;
-    }
-    if (!settings && !accessToken) {
-      toast({ title: "Error", description: "Access Token is required", variant: "destructive" });
-      return;
-    }
-    setTestResult(null);
-    saveMutation.mutate({
-      phone_number_id: phoneNumberId,
-      access_token: accessToken,
-      phone_number: phoneNumber,
-      enabled: true
+
+    setConnecting(true);
+
+    window.FB.login((response: any) => {
+      if (response.authResponse) {
+        const code = response.authResponse.code;
+        handleSignupResponse(code);
+      } else {
+        setConnecting(false);
+        toast({
+          variant: "destructive",
+          title: "Connection Cancelled",
+          description: "The WhatsApp connection process was cancelled."
+        });
+      }
+    }, {
+      config_id: CONFIG_ID,
+      response_type: 'code',
+      override_default_response_type: true,
+      scope: 'whatsapp_business_management,whatsapp_business_messaging',
+      extras: {
+        setup: {},
+        featureType: '',
+        sessionInfoVersion: '3',
+      }
     });
   };
 
-  if (isLoading) {
+  const handleSignupResponse = async (code: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-embedded-signup', {
+        body: { 
+          businessId, 
+          code 
+        },
+      });
+
+      if (error) {
+        let serverErrorMsg = error.message;
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            const errBody = await error.context.json();
+            serverErrorMsg = errBody.error || serverErrorMsg;
+          }
+        } catch (e) {}
+        throw new Error(serverErrorMsg);
+      }
+
+      toast({
+        title: "WhatsApp Connected!",
+        description: `Successfully connected ${data.phoneNumber || 'your number'}. Your bot is now ready.`,
+      });
+      
+      fetchSettings();
+    } catch (error: any) {
+      console.error('Error in signup callback:', error);
+      toast({
+        variant: "destructive",
+        title: "Connection Failed",
+        description: error.message || "Failed to finalize WhatsApp connection.",
+      });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const toggleEnabled = async (checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('whatsapp_settings')
+        .update({ enabled: checked })
+        .eq('business_id', businessId);
+
+      if (error) throw error;
+      setIsEnabled(checked);
+      toast({
+        title: checked ? "WhatsApp Enabled" : "WhatsApp Disabled",
+        description: checked ? "Your bot is now listening for messages." : "Your bot is now offline.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: error.message,
+      });
+    }
+  };
+
+  const disconnectWhatsApp = async () => {
+    if (!confirm("Are you sure you want to disconnect WhatsApp? Your bot will stop responding to customers.")) return;
+
+    try {
+      const { error } = await supabase
+        .from('whatsapp_settings')
+        .delete()
+        .eq('business_id', businessId);
+
+      if (error) throw error;
+      setSettings(null);
+      setIsEnabled(false);
+      toast({
+        title: "WhatsApp Disconnected",
+        description: "The connection has been removed.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Disconnect Failed",
+        description: error.message,
+      });
+    }
+  };
+
+  if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <Loader2 className="w-6 h-6 animate-spin" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
-  const cleanPhone = phoneNumber?.replace(/[^\d+]/g, "").replace(/^\+/, "");
-  const whatsappLink = cleanPhone ? `https://wa.me/${cleanPhone}` : null;
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <Card>
+      <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5 overflow-hidden">
+        <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none">
+          <MessageSquare className="h-32 w-32 rotate-12" />
+        </div>
+        
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <CardTitle>WhatsApp Integration</CardTitle>
-                <CardDescription>
-                  Let your customers reach you on WhatsApp
-                </CardDescription>
-              </div>
+            <div className="space-y-1">
+              <CardTitle className="text-2xl flex items-center gap-2">
+                WhatsApp Integration
+                {settings ? (
+                  <Badge variant="default" className="bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground">Not Connected</Badge>
+                )}
+              </CardTitle>
+              <CardDescription>
+                Connect your business WhatsApp number to provide AI-powered customer service 24/7.
+              </CardDescription>
             </div>
-            {settings && (
-              <div className="flex items-center gap-2">
-                <Badge variant={settings.enabled ? "default" : "secondary"}>
-                  {settings.enabled ? "Active" : "Inactive"}
-                </Badge>
-                <Switch
-                  checked={settings.enabled}
-                  onCheckedChange={(checked) => toggleMutation.mutate(checked)}
-                />
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          {!settings ? (
+            <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center">
+              <div className="bg-primary/10 p-4 rounded-full">
+                <Smartphone className="h-12 w-12 text-primary" />
               </div>
-            )}
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Simple Setup - 2 fields only */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            {settings ? "Update Credentials" : "Connect WhatsApp"}
-          </CardTitle>
-          <CardDescription>
-            Enter your WhatsApp Business phone number and API credentials
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="phone_number" className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              WhatsApp Business Phone Number *
-            </Label>
-            <Input
-              id="phone_number"
-              placeholder="e.g., +1 555-123-4567"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Your WhatsApp business number that customers will message
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone_number_id" className="flex items-center gap-2">
-              Phone Number ID *
-            </Label>
-            <Input
-              id="phone_number_id"
-              placeholder="e.g., 123456789012345"
-              value={phoneNumberId}
-              onChange={(e) => setPhoneNumberId(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Found in your Meta Business Suite → WhatsApp → API Setup
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="access_token" className="flex items-center gap-2">
-              <Key className="w-4 h-4" />
-              Access Token {settings ? "(leave blank to keep existing)" : "*"}
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                id="access_token"
-                type={showToken ? "text" : "password"}
-                placeholder={settings ? "••••••••••••••••" : "Enter your access token"}
-                value={accessToken}
-                onChange={(e) => setAccessToken(e.target.value)}
-                className="flex-1"
-              />
-              <Button variant="outline" size="icon" onClick={() => setShowToken(!showToken)}>
-                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <div className="max-w-md space-y-2">
+                <h3 className="text-xl font-semibold">Connect in Seconds</h3>
+                <p className="text-muted-foreground">
+                  No Meta developer accounts or complex tokens. Just enter your phone number in the secure popup and verify with an OTP.
+                </p>
+              </div>
+              
+              <Button 
+                size="lg" 
+                onClick={launchWhatsAppSignup} 
+                disabled={connecting}
+                className="px-8 shadow-lg shadow-primary/20 gap-2 font-semibold text-lg h-14 bg-gradient-to-r from-primary to-primary/80 hover:scale-105 transition-transform"
+              >
+                {connecting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Zap className="h-5 w-5 fill-current" />
+                )}
+                {connecting ? "Connecting..." : "Connect WhatsApp Now"}
               </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              From Meta Business Suite → System Users → Generate Token
-            </p>
-          </div>
-
-          <Button 
-            onClick={handleSave} 
-            disabled={saveMutation.isPending}
-            className="w-full"
-          >
-            {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {settings ? "Update Settings" : "Save & Enable WhatsApp"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Webhook Config - shown after saving */}
-      {settings && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Webhook Setup</CardTitle>
-            <CardDescription>
-              Copy these values into your Meta Business Suite → WhatsApp → Configuration
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Callback URL</Label>
-              <div className="flex gap-2">
-                <Input value={webhookUrl} readOnly className="font-mono text-sm" />
-                <Button variant="outline" size="icon" onClick={() => handleCopy(webhookUrl, "Webhook URL")}>
-                  {copied === "Webhook URL" ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                </Button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mt-8">
+                <div className="flex flex-col items-center gap-1 p-3 rounded-xl bg-background/50 border border-border">
+                  <ShieldCheck className="h-5 w-5 text-green-500" />
+                  <span className="text-sm font-medium">Official API</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 p-3 rounded-xl bg-background/50 border border-border">
+                  <Zap className="h-5 w-5 text-yellow-500" />
+                  <span className="text-sm font-medium">Instant Setup</span>
+                </div>
+                <div className="flex flex-col items-center gap-1 p-3 rounded-xl bg-background/50 border border-border">
+                  <RefreshCw className="h-5 w-5 text-blue-500" />
+                  <span className="text-sm font-medium">Auto-Sync</span>
+                </div>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label>Verify Token</Label>
-              <div className="flex gap-2">
-                <Input value={settings.verify_token} readOnly className="font-mono text-sm" />
-                <Button variant="outline" size="icon" onClick={() => handleCopy(settings.verify_token, "Verify Token")}>
-                  {copied === "Verify Token" ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Make sure to subscribe to the <strong>messages</strong> webhook field
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* QR Code & Connection Status */}
-      {settings && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Connection & QR Code</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <div className={`w-3 h-3 rounded-full ${settings.enabled ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
-              <div>
-                <p className="font-medium">
-                  {settings.enabled ? "WhatsApp Active" : "WhatsApp Disabled"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {settings.phone_number || `ID: ${settings.phone_number_id}`}
-                </p>
-              </div>
-            </div>
-
-            {testResult && (
-              <Alert variant={testResult.success ? "default" : "destructive"}>
-                {testResult.success ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                <AlertTitle>{testResult.success ? "Connection Verified" : "Connection Failed"}</AlertTitle>
-                <AlertDescription>{testResult.message}</AlertDescription>
-              </Alert>
-            )}
-
-            <Button
-              variant="outline"
-              onClick={() => testConnectionMutation.mutate()}
-              disabled={testConnectionMutation.isPending}
-              className="w-full"
-            >
-              {testConnectionMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Zap className="w-4 h-4 mr-2" />
-              )}
-              Test Connection
-            </Button>
-
-            {/* QR Code for customers */}
-            {whatsappLink && settings.enabled && (
-              <div className="border border-border rounded-lg p-6 text-center space-y-3">
-                <p className="text-sm font-medium">Customer QR Code</p>
-                <p className="text-xs text-muted-foreground">
-                  Visitors can scan this to start a WhatsApp conversation with you
-                </p>
-                <div className="flex justify-center">
-                  <div className="bg-white p-3 rounded-lg inline-block">
-                    <QRCodeSVG
-                      value={whatsappLink}
-                      size={160}
-                      level="M"
-                      includeMargin={false}
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-6 p-6 rounded-2xl bg-background/50 border border-border">
+                <div className="flex-1 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground text-xs uppercase tracking-wider">Phone Number</Label>
+                      <p className="text-lg font-mono font-bold">{settings.phone_number || "Verified Number"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-muted-foreground text-xs uppercase tracking-wider">Display Name</Label>
+                      <p className="text-lg font-bold">{settings.display_name || "Official Account"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-semibold">Enable Bot Responses</Label>
+                      <p className="text-sm text-muted-foreground">Turn this off to pause the AI from replying to messages.</p>
+                    </div>
+                    <Switch 
+                      checked={isEnabled} 
+                      onCheckedChange={toggleEnabled} 
+                      className="data-[state=checked]:bg-green-500"
                     />
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground font-mono">{settings.phone_number}</p>
+
+                <div className="w-full md:w-auto flex flex-col items-center justify-center p-4 rounded-xl bg-white/5 border border-white/10">
+                  <WhatsAppQR phoneNumber={settings.phone_number} size={140} />
+                  <p className="mt-2 text-xs text-center text-muted-foreground">Scan to test your bot</p>
+                </div>
               </div>
-            )}
+
+              <div className="flex items-center justify-between pt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-destructive hover:bg-destructive/10 border-destructive/20"
+                  onClick={disconnectWhatsApp}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Disconnect Account
+                </Button>
+                
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <ShieldCheck className="h-3 w-3 text-green-500" />
+                  Connected via Meta Tech Provider (LYQN)
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-500" />
+              How it works
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground space-y-2">
+            <p>• Your bot uses the official WhatsApp Cloud API.</p>
+            <p>• Conversations are free if you reply within 24 hours.</p>
+            <p>• You can upload PDFs or FAQs in the "Knowledge Base" tab to train your AI.</p>
+            <p>• Complex questions are automatically routed to your live agent dashboard.</p>
           </CardContent>
         </Card>
-      )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ExternalLink className="h-5 w-5 text-purple-500" />
+              Resources
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-2">
+            <Button variant="link" className="justify-start p-0 h-auto" asChild>
+              <a href="#" target="_blank">View WhatsApp Business Policy</a>
+            </Button>
+            <Button variant="link" className="justify-start p-0 h-auto" asChild>
+              <a href="#" target="_blank">How to verify your business</a>
+            </Button>
+            <Button variant="link" className="justify-start p-0 h-auto" asChild>
+              <a href="#" target="_blank">Setting up Greeting Messages</a>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

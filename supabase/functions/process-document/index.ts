@@ -138,6 +138,51 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // Clear old knowledge chunks
+    await supabase.from('knowledge_chunks').delete()
+      .eq('business_id', document.business_id)
+      .eq('source_type', 'document')
+      .eq('source_id', document.id);
+
+    // Generate embeddings for RAG
+    if (openaiKey && extractedText && extractedText.length > 0) {
+      console.log('Generating embeddings for document...');
+      try {
+        const chunkSize = 1000;
+        for (let i = 0; i < extractedText.length; i += chunkSize) {
+          const chunk = extractedText.slice(i, i + chunkSize);
+          
+          const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openaiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              input: chunk.replace(/\n/g, ' '),
+              model: 'text-embedding-3-small'
+            })
+          });
+          
+          if (embedRes.ok) {
+            const embedData = await embedRes.json();
+            const embedding = embedData.data[0].embedding;
+            
+            await supabase.from('knowledge_chunks').insert({
+              business_id: document.business_id,
+              source_type: 'document',
+              source_id: document.id,
+              content: chunk,
+              embedding: embedding
+            });
+          }
+        }
+        console.log('Successfully generated and stored embeddings.');
+      } catch (embedError) {
+        console.error('Failed to generate embeddings for document:', embedError);
+      }
+    }
 
     console.log('Document processed successfully:', documentId);
 

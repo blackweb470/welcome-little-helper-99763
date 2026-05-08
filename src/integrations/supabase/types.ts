@@ -1602,40 +1602,55 @@ export type Database = {
       }
       whatsapp_settings: {
         Row: {
-          access_token: string
+          access_token: string | null
           admin_phone_numbers: string[] | null
           business_id: string
+          connected_at: string | null
+          connection_method: string | null
           created_at: string
+          display_name: string | null
           enabled: boolean
           id: string
+          meta_business_id: string | null
           phone_number: string | null
-          phone_number_id: string
+          phone_number_id: string | null
+          token_expires_at: string | null
           updated_at: string
           verify_token: string
           waba_id: string | null
         }
         Insert: {
-          access_token: string
+          access_token?: string | null
           admin_phone_numbers?: string[] | null
           business_id: string
+          connected_at?: string | null
+          connection_method?: string | null
           created_at?: string
+          display_name?: string | null
           enabled?: boolean
           id?: string
+          meta_business_id?: string | null
           phone_number?: string | null
-          phone_number_id: string
+          phone_number_id?: string | null
+          token_expires_at?: string | null
           updated_at?: string
           verify_token?: string
           waba_id?: string | null
         }
         Update: {
-          access_token?: string
+          access_token?: string | null
           admin_phone_numbers?: string[] | null
           business_id?: string
+          connected_at?: string | null
+          connection_method?: string | null
           created_at?: string
+          display_name?: string | null
           enabled?: boolean
           id?: string
+          meta_business_id?: string | null
           phone_number?: string | null
-          phone_number_id?: string
+          phone_number_id?: string | null
+          token_expires_at?: string | null
           updated_at?: string
           verify_token?: string
           waba_id?: string | null

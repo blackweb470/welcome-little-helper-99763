@@ -82,6 +82,12 @@ Deno.serve(async (req) => {
       .from('business_website_content')
       .delete()
       .eq('business_id', businessId);
+      
+    await supabase
+      .from('knowledge_chunks')
+      .delete()
+      .eq('business_id', businessId)
+      .eq('source_type', 'website');
 
     // Step 3: Scrape each URL and store content
     console.log('Step 3: Scraping pages...');
@@ -130,6 +136,44 @@ Deno.serve(async (req) => {
               console.error(`Failed to store content for ${url}:`, insertError);
               errors.push({ url, error: insertError.message });
             } else {
+              // Generate embeddings for RAG
+              try {
+                const openAiKey = Deno.env.get('OPENAI_API_KEY');
+                if (openAiKey) {
+                  const chunkSize = 1000;
+                  for (let i = 0; i < content.length; i += chunkSize) {
+                    const chunk = content.slice(i, i + chunkSize);
+                    
+                    const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${openAiKey}`,
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        input: chunk.replace(/\n/g, ' '),
+                        model: 'text-embedding-3-small'
+                      })
+                    });
+                    
+                    if (embedRes.ok) {
+                      const embedData = await embedRes.json();
+                      const embedding = embedData.data[0].embedding;
+                      
+                      await supabase.from('knowledge_chunks').insert({
+                        business_id: businessId,
+                        source_type: 'website',
+                        source_id: url,
+                        content: chunk,
+                        embedding: embedding
+                      });
+                    }
+                  }
+                }
+              } catch (embedError) {
+                console.error(`Failed to generate embeddings for ${url}:`, embedError);
+              }
+
               results.push({ url, title, contentLength: content.length });
               console.log(`Stored content for: ${title} (${content.length} chars)`);
             }

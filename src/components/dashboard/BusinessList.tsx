@@ -156,9 +156,6 @@ const BusinessList = ({ userId, onSelectBusiness, selectedBusinessId }: Business
     });
 
     setBusinesses(enrichedBusinesses);
-    if (enrichedBusinesses.length > 0 && !selectedBusinessId) {
-      onSelectBusiness(enrichedBusinesses[0].id);
-    }
   };
 
   const fetchPlanInfo = async () => {

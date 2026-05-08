@@ -6,13 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Loader2, User, Mail, ArrowLeft, Lock, Upload } from "lucide-react";
+import { Loader2, User, Mail, ArrowLeft, Lock, Camera, ShieldCheck, Settings2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/dashboard/AppSidebar";
+import { useFeatureAccess } from "@/hooks/useFeatureAccess";
+import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState({
     email: "",
     full_name: "",
@@ -24,6 +29,9 @@ const Profile = () => {
   });
   const [changingPassword, setChangingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  
+  const { hasAccess } = useFeatureAccess(user?.id);
+  const { hasPermission, isOwner } = useBusinessPermissions(user?.id);
 
   useEffect(() => {
     fetchProfile();
@@ -31,23 +39,25 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
       
-      if (!user) {
+      if (!authUser) {
         navigate("/auth");
         return;
       }
+      
+      setUser(authUser);
 
       const { data: profileData, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", authUser.id)
         .single();
 
       if (error) throw error;
 
       setProfile({
-        email: profileData.email || user.email || "",
+        email: profileData.email || authUser.email || "",
         full_name: profileData.full_name || "",
         avatar_url: profileData.avatar_url || "",
       });
@@ -57,6 +67,11 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
   };
 
   const handleSave = async () => {
@@ -119,13 +134,11 @@ const Profile = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error("Please upload an image file");
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("File size must be less than 2MB");
       return;
@@ -136,7 +149,6 @@ const Profile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
-      // Delete old avatar if exists
       if (profile.avatar_url) {
         const oldPath = profile.avatar_url.split('/').pop();
         if (oldPath) {
@@ -146,7 +158,6 @@ const Profile = () => {
         }
       }
 
-      // Upload new avatar
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
@@ -156,12 +167,10 @@ const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
 
-      // Update profile with new avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: publicUrl })
@@ -188,158 +197,194 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/dashboard")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Profile Settings</h1>
-            <p className="text-muted-foreground">Manage your account information</p>
-          </div>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Personal Information
-            </CardTitle>
-            <CardDescription>
-              Update your profile details
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.avatar_url} alt={profile.full_name || "User"} />
-                <AvatarFallback className="text-2xl">
-                  {profile.full_name?.charAt(0).toUpperCase() || profile.email?.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-2">
-                <Label htmlFor="avatar" className="cursor-pointer">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={uploadingAvatar}
-                    onClick={() => document.getElementById('avatar')?.click()}
-                  >
-                    {uploadingAvatar ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="mr-2 h-4 w-4" />
-                    )}
-                    Upload Avatar
-                  </Button>
-                </Label>
-                <Input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarUpload}
-                  className="hidden"
-                />
-                <p className="text-xs text-muted-foreground">
-                  JPG, PNG or WEBP (max 2MB)
-                </p>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar 
+          hasSelectedBusiness={false} 
+          onSignOut={handleSignOut}
+          hasAccess={hasAccess}
+          onFeatureClick={(feature, featureName, tab) => {
+            navigate(`/dashboard?tab=${tab}`);
+            return true;
+          }}
+          hasPermission={(permission) => false}
+          isOwner={false}
+        />
+        
+        <main className="flex-1 overflow-auto bg-muted/30">
+          <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
+            <div className="flex h-20 items-center gap-6 px-8">
+              <SidebarTrigger className="hover:bg-muted transition-colors" />
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-display font-bold tracking-tight">Profile Settings</h1>
               </div>
             </div>
+          </header>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile.email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed
-              </p>
+          <div className="p-8 space-y-8 max-w-[1200px] mx-auto animate-fade-in">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+              
+              {/* Left: Avatar & Identity */}
+              <div className="lg:col-span-4 space-y-8">
+                <Card className="p-8 shadow-elegant flex flex-col items-center text-center">
+                  <div className="relative group w-fit mb-6">
+                    <Avatar className="h-40 w-40 sm:h-48 sm:w-48 border-4 border-background shadow-xl">
+                      <AvatarImage src={profile.avatar_url} alt={profile.full_name || "User"} className="object-cover" />
+                      <AvatarFallback className="text-5xl bg-muted text-muted-foreground">
+                        {profile.full_name?.charAt(0).toUpperCase() || profile.email?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <Label 
+                      htmlFor="avatar" 
+                      className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-all duration-300"
+                    >
+                      {uploadingAvatar ? (
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                      ) : (
+                        <>
+                          <Camera className="h-6 w-6 mb-2" />
+                          <span className="text-xs font-bold uppercase">Update Photo</span>
+                        </>
+                      )}
+                    </Label>
+                    <Input
+                      id="avatar"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      disabled={uploadingAvatar}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      {profile.full_name || "New User"}
+                    </h2>
+                    <p className="text-muted-foreground font-medium">
+                      {profile.email}
+                    </p>
+                  </div>
+                </Card>
+
+                <Card className="p-6 shadow-elegant">
+                  <div className="flex items-center gap-3 mb-4 text-primary">
+                    <ShieldCheck className="h-5 w-5" />
+                    <h3 className="font-bold">Identity Verified</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Your profile information is used across all your business widgets to provide a personal touch to your AI agents.
+                  </p>
+                </Card>
+              </div>
+
+              {/* Right: Settings Forms */}
+              <div className="lg:col-span-8 space-y-8">
+                
+                {/* Account Info */}
+                <Card className="shadow-elegant overflow-hidden">
+                  <CardHeader className="bg-muted/50 border-b">
+                    <div className="flex items-center gap-3">
+                      <User className="h-5 w-5 text-primary" />
+                      <div>
+                        <CardTitle>Account Details</CardTitle>
+                        <CardDescription>Update your personal information and identity.</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8 space-y-6">
+                    <div className="grid gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="full_name" className="text-sm font-semibold">Full Name</Label>
+                        <Input
+                          id="full_name"
+                          value={profile.full_name}
+                          onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                          placeholder="John Doe"
+                          className="h-12"
+                        />
+                      </div>
+
+                      <div className="space-y-2 opacity-70">
+                        <Label htmlFor="email" className="text-sm font-semibold">Email Address (Read Only)</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={profile.email}
+                          disabled
+                          className="h-12 bg-muted/50"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="h-12 px-8 shadow-lg shadow-primary/20"
+                    >
+                      {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Update Profile
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Security */}
+                <Card className="shadow-elegant overflow-hidden">
+                  <CardHeader className="bg-muted/50 border-b">
+                    <div className="flex items-center gap-3">
+                      <Lock className="h-5 w-5 text-primary" />
+                      <div>
+                        <CardTitle>Security Settings</CardTitle>
+                        <CardDescription>Secure your account with a strong password.</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="new_password" className="text-sm font-semibold">New Password</Label>
+                        <Input
+                          id="new_password"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className="h-12"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm_password" className="text-sm font-semibold">Confirm New Password</Label>
+                        <Input
+                          id="confirm_password"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                          placeholder="••••••••"
+                          className="h-12"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handlePasswordChange}
+                      disabled={changingPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                      variant="outline"
+                      className="h-12 px-8"
+                    >
+                      {changingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Change Password
+                    </Button>
+                  </CardContent>
+                </Card>
+
+              </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                value={profile.full_name}
-                onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                placeholder="Enter your full name"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/dashboard")}
-              >
-                Cancel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="h-5 w-5" />
-              Change Password
-            </CardTitle>
-            <CardDescription>
-              Update your account password
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new_password">New Password</Label>
-              <Input
-                id="new_password"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                placeholder="Enter new password"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm_password">Confirm New Password</Label>
-              <Input
-                id="confirm_password"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                placeholder="Confirm new password"
-              />
-            </div>
-
-            <Button
-              onClick={handlePasswordChange}
-              disabled={changingPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-            >
-              {changingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Change Password
-            </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
