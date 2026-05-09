@@ -89,9 +89,10 @@ Deno.serve(async (req: Request) => {
               created_at,
               transfer_reason,
               conversation_id,
-              conversations!inner(visitor_name, visitor_email, visitor_phone, channel)
+              conversations!inner(visitor_name, visitor_email, visitor_phone, channel, business_id)
             `)
             .eq('status', 'queued')
+            .eq('conversations.business_id', businessId)
             .order('created_at', { ascending: true })
             .limit(10);
 
@@ -234,34 +235,35 @@ Deno.serve(async (req: Request) => {
           let sessionToAccept = null;
           
           if (args.length === 0) {
-            // Find oldest queued session for this business
+            // Find oldest queued session for this specific business
             const { data: queuedSessions } = await supabase
               .from('live_chat_sessions')
-              .select('id, conversation_id')
+              .select('id, conversation_id, conversations!inner(business_id)')
               .eq('status', 'queued')
+              .eq('conversations.business_id', businessId)
               .order('created_at', { ascending: true })
               .limit(1);
               
             if (queuedSessions && queuedSessions.length > 0) {
               sessionToAccept = queuedSessions[0];
             } else {
-              responseText = '✅ No pending chat requests in queue.';
+              responseText = '✅ No pending chat requests in your queue.';
               break;
             }
           } else {
             const sessionIdPrefix = args[0];
-            // Find session matching the prefix - fetch all queued and match in memory
-            // to avoid UUID vs text casting issues in PostgREST
+            // Find session matching the prefix - fetch all queued for this business and match in memory
             const { data: sessions } = await supabase
               .from('live_chat_sessions')
-              .select('id, conversation_id')
+              .select('id, conversation_id, conversations!inner(business_id)')
               .eq('status', 'queued')
+              .eq('conversations.business_id', businessId)
               .order('created_at', { ascending: true });
 
             sessionToAccept = sessions?.find(s => s.id.startsWith(sessionIdPrefix));
 
             if (!sessionToAccept) {
-              responseText = `❌ No queued session found with ID starting with "${sessionIdPrefix}"`;
+              responseText = `❌ No queued session found for your business with ID starting with "${sessionIdPrefix}"`;
               break;
             }
           }
