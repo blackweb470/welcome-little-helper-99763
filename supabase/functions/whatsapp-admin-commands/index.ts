@@ -33,7 +33,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { businessId, senderPhone, messageText, conversationId, phoneNumberId, accessToken } = await req.json();
+    let { businessId, senderPhone, messageText, conversationId, phoneNumberId, accessToken } = await req.json();
 
     console.log('Admin command request:', { businessId, senderPhone, messageText: messageText?.substring(0, 50) });
 
@@ -42,6 +42,19 @@ Deno.serve(async (req: Request) => {
     // @ts-ignore: Deno namespace
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Normalize businessId lookup from senderPhone if not provided
+    if (!businessId) {
+      const { data: settings } = await supabase
+        .from('whatsapp_settings')
+        .select('business_id')
+        .or(`admin_phone_numbers.cs.{"${senderPhone}"},admin_phone_numbers.cs.{"${'+' + senderPhone}"}`)
+        .limit(1);
+      
+      if (settings && settings.length > 0) {
+        businessId = settings[0].business_id;
+      }
+    }
 
     const parsed = parseCommand(messageText);
     if (!parsed) {
@@ -60,8 +73,9 @@ Deno.serve(async (req: Request) => {
       case 'h':
         responseText = `🤖 *Admin Commands*\n\n` +
           `📋 *Chat Management*\n` +
-          `/queue - View pending requests (Buttons ✅)\n` +
-          `/accept [id] - Accept a chat request\n\n` +
+          `/queue - View pending requests\n` +
+          `/accept [id] - Accept a chat request\n` +
+          `/end - End your active chat session\n\n` +
           `💡 *Tip:* You can click buttons and list items to quickly accept chats without typing IDs!`;
         break;
 
@@ -129,6 +143,87 @@ Deno.serve(async (req: Request) => {
             return new Response(JSON.stringify({ handled: true }), {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             });
+          }
+        }
+        break;
+
+      case 'end':
+      case 'e':
+        {
+          // Find active session for this admin
+          const { data: activeSessions } = await supabase
+            .from('live_chat_sessions')
+            .select('id, conversation_id')
+            .eq('status', 'active')
+            .contains('metadata', { agent_whatsapp_phone: senderPhone })
+            .order('accepted_at', { ascending: false })
+            .limit(1);
+
+          if (!activeSessions || activeSessions.length === 0) {
+            responseText = '❌ You don\'t have an active chat session to end.';
+          } else {
+            const sessionToEnd = activeSessions[0];
+            const now = new Date().toISOString();
+
+            // End session
+            await supabase
+              .from('live_chat_sessions')
+              .update({ status: 'ended', ended_at: now })
+              .eq('id', sessionToEnd.id);
+
+            // End conversation
+            await supabase
+              .from('conversations')
+              .update({ ended_at: now })
+              .eq('id', sessionToEnd.conversation_id);
+
+            responseText = '✅ Conversation ended successfully. You are now free to accept new chats.';
+            
+            // Notify visitor and save to messages
+            const endMsg = '👋 This chat session has been ended by the agent. Have a great day!';
+            const { data: savedMsg } = await supabase
+              .from('messages')
+              .insert({
+                conversation_id: sessionToEnd.conversation_id,
+                role: 'assistant',
+                content: endMsg
+              })
+              .select()
+              .single();
+              
+            // Broadcast to web widget via realtime
+            try {
+              // Also fetch the conversation to get the correct business_id for the broadcast
+              const { data: conv } = await supabase
+                .from('conversations')
+                .select('business_id')
+                .eq('id', sessionToEnd.conversation_id)
+                .single();
+
+              const broadcastBusinessId = conv?.business_id || businessId;
+
+              const endChannel = supabase.channel(`visitor-messages-${sessionToEnd.conversation_id}`);
+              await new Promise<void>(r => {
+                endChannel.subscribe(status => status === 'SUBSCRIBED' ? r() : null);
+                setTimeout(r, 1200);
+              });
+              
+              await endChannel.send({
+                type: 'broadcast',
+                event: 'agent_message',
+                payload: {
+                  id: savedMsg?.id || ('end-' + Date.now()),
+                  content: endMsg,
+                  role: 'assistant',
+                  created_at: now,
+                  businessId: broadcastBusinessId,
+                  conversationId: sessionToEnd.conversation_id
+                }
+              });
+              await supabase.removeChannel(endChannel);
+            } catch (err) {
+              console.error('Failed to broadcast end message:', err);
+            }
           }
         }
         break;
