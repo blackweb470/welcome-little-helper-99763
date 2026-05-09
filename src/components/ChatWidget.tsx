@@ -253,7 +253,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
     const fetchQaPairs = async () => {
       const { data } = await supabase
-        .from("bot_qa_pairs")
+        .from("bot_qa_pairs_public" as any)
         .select("*")
         .eq("business_id", businessId)
         .eq("enabled", true)
@@ -301,7 +301,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const checkAndFallback = async () => {
       try {
         const { data: rules } = await supabase
-          .from('proactive_chat_rules')
+          .from('proactive_chat_rules_public' as any)
           .select('id')
           .eq('business_id', businessId)
           .eq('enabled', true)
@@ -354,7 +354,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       try {
         console.log('Checking proactive rules for business:', businessId);
         const { data: rules, error } = await supabase
-          .from('proactive_chat_rules')
+          .from('proactive_chat_rules_public' as any)
           .select('*')
           .eq('business_id', businessId)
           .eq('enabled', true)
