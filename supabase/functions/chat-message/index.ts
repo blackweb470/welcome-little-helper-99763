@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: settings } = await supabase
       .from('widget_settings')
-      .select('*')
+      .select('system_prompt, pre_chat_enabled, pre_chat_required_fields, pre_chat_welcome_message, max_input_characters, show_qa_to_visitors, welcome_message, agent_name, primary_color, voice_enabled')
       .eq('business_id', businessId)
       .single();
 
