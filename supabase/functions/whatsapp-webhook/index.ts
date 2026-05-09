@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
 
                 await channel.send({
                   type: 'broadcast',
-                  event: 'new_message',
+                  event: 'agent_message',
                   payload: {
                     id: savedMessage.id,
                     content: messageText,
