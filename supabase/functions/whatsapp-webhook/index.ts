@@ -118,14 +118,24 @@ Deno.serve(async (req) => {
         }
         // Handle list selection
         else if (message.interactive?.type === 'list_reply') {
+          const listId = message.interactive.list_reply.id;
           interactiveReply = {
             type: 'list_reply',
-            id: message.interactive.list_reply.id,
+            id: listId,
             title: message.interactive.list_reply.title
           };
-          messageText = message.interactive.list_reply.title;
-          if (message.interactive.list_reply.description) {
-            messageText += ` - ${message.interactive.list_reply.description}`;
+          
+          // If it's a command list item, use the ID as the message text
+          if (listId.startsWith('cmd_') || listId.includes('_')) {
+            messageText = listId.replace('cmd_', '/');
+            if (!messageText.startsWith('/')) {
+              messageText = '/' + messageText.replace('_', ' ');
+            }
+          } else {
+            messageText = message.interactive.list_reply.title;
+            if (message.interactive.list_reply.description) {
+              messageText += ` - ${message.interactive.list_reply.description}`;
+            }
           }
         }
       }
