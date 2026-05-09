@@ -251,20 +251,24 @@ Deno.serve(async (req) => {
         if (activeSession) {
           console.log('Admin is in an active session, routing message to customer');
           
+          // Fetch conversation to get the correct business_id and channel
+          const { data: conv } = await supabase
+            .from('conversations')
+            .select('channel, channel_metadata, business_id')
+            .eq('id', activeSession.conversation_id)
+            .single();
+
+          const correctBusinessId = conv?.business_id || businessId;
+
           // Save the message to the database
-          await supabase
+          const { data: savedMessage } = await supabase
             .from('messages')
             .insert({
               conversation_id: activeSession.conversation_id,
               role: 'assistant',
               content: messageText
-            });
-
-          // Fetch customer info
-          const { data: conv } = await supabase
-            .from('conversations')
-            .select('channel, channel_metadata')
-            .eq('id', activeSession.conversation_id)
+            })
+            .select()
             .single();
 
           if (conv?.channel === 'whatsapp') {
@@ -286,6 +290,36 @@ Deno.serve(async (req) => {
                   }),
                 }
               );
+            }
+          } else {
+            // This is a web-based chat, broadcast to the visitor via realtime
+            if (savedMessage) {
+              try {
+                const channel = supabase.channel(`visitor-messages-${activeSession.conversation_id}`);
+                await new Promise<void>((resolve) => {
+                  channel.subscribe((status: string) => {
+                    if (status === 'SUBSCRIBED') resolve();
+                  });
+                  setTimeout(() => resolve(), 1500); // Fallback to avoid hanging
+                });
+
+                await channel.send({
+                  type: 'broadcast',
+                  event: 'new_message',
+                  payload: {
+                    id: savedMessage.id,
+                    content: messageText,
+                    role: 'assistant',
+                    created_at: savedMessage.created_at || new Date().toISOString(),
+                    businessId: correctBusinessId,
+                    conversationId: activeSession.conversation_id
+                  }
+                });
+                await supabase.removeChannel(channel);
+                console.log('Broadcasted admin message to web visitor');
+              } catch (broadcastError) {
+                console.error('Error broadcasting admin message:', broadcastError);
+              }
             }
           }
           
