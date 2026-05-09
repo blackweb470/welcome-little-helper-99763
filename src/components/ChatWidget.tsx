@@ -53,6 +53,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
   // Restore session state from localStorage on mount
   useEffect(() => {
+    // Initialize visitor ID early for RLS headers
+    const existingVisitorId = localStorage.getItem('visitor_id');
+    if (!existingVisitorId) {
+      const newVisitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('visitor_id', newVisitorId);
+    }
+
     const storedConversationId = localStorage.getItem(getStorageKey(businessId, 'conversationId'));
     const storedSessionId = localStorage.getItem(getStorageKey(businessId, 'sessionId'));
     const storedTranscript = localStorage.getItem(getStorageKey(businessId, 'transcript'));
@@ -158,7 +165,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   const restoreLiveChatSession = async (convId: string) => {
     try {
       const { data, error } = await supabase
-        .from('live_chat_sessions')
+        .from('live_chat_sessions_public' as any)
         .select('*')
         .eq('conversation_id', convId)
         .in('status', ['queued', 'active'])
@@ -751,24 +758,28 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const interval = setInterval(async () => {
       try {
         const { data } = await supabase
-          .from('live_chat_sessions')
+          .from('live_chat_sessions_public' as any)
           .select('*')
-          .eq('id', liveChatSession.id)
+          .eq('conversation_id', conversationId)
           .maybeSingle();
 
         if (data && data.status !== 'queued') {
           console.log('Polling detected status change:', data.status);
+          setLiveChatSession(data);
+          // If accepted, add the "You are speaking with a human agent" message
           if (data.status === 'active') {
-            const dedupeKey = `agent_joined:${data.id}`;
+            const dedupeKey = `agent-joined-${data.id}`;
             if (!renderedMessageIdsRef.current.has(dedupeKey)) {
               renderedMessageIdsRef.current.add(dedupeKey);
               playNotificationSound();
-              handleTranscript('👋 You are speaking with a human agent now.', 'assistant');
+              setTranscript(t => [...t, {
+                text: '👋 You are speaking with a human agent now.',
+                role: 'assistant' as const
+              }]);
             }
             setQueuePosition(null);
             setEstimatedWaitMinutes(null);
           }
-          setLiveChatSession(data);
         }
       } catch (err) {
         console.error('Polling live_chat_session failed:', err);
