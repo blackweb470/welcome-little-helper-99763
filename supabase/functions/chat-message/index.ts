@@ -77,12 +77,39 @@ Deno.serve(async (req: Request) => {
     const { data: existingConv } = await existingConvQuery.maybeSingle();
     let conversationId: string | null = existingConv?.id || null;
 
-    if (preChatData) {
+    // Persistent identity recovery: If no active conversation but preChatEnabled,
+    // try to find visitor info from previous conversations to avoid 403
+    let recoveredPreChatData = null;
+    if (!existingConv && preChatEnabled && !preChatData) {
+      const { data: pastConv } = await supabase
+        .from('conversations')
+        .select('visitor_email, visitor_name, visitor_phone, visitor_company')
+        .eq('business_id', businessId)
+        .eq('visitor_id', visitorId)
+        .not('visitor_email', 'is', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (pastConv) {
+        console.log('Recovered persistent identity from past conversation');
+        recoveredPreChatData = {
+          email: pastConv.visitor_email,
+          name: pastConv.visitor_name,
+          phone: pastConv.visitor_phone,
+          company: pastConv.visitor_company
+        };
+      }
+    }
+
+    const finalPreChatData = preChatData || recoveredPreChatData;
+
+    if (finalPreChatData) {
       const conversationPayload = {
-        visitor_email: preChatData.email || null,
-        visitor_name: preChatData.name || null,
-        visitor_phone: preChatData.phone || null,
-        visitor_company: preChatData.company || null,
+        visitor_email: finalPreChatData.email || null,
+        visitor_name: finalPreChatData.name || null,
+        visitor_phone: finalPreChatData.phone || null,
+        visitor_company: finalPreChatData.company || null,
       };
 
       if (conversationId) {
@@ -108,6 +135,7 @@ Deno.serve(async (req: Request) => {
 
         if (convError) throw convError;
         conversationId = newConv.id;
+        console.log('Created new conversation for persistent user:', conversationId);
       }
 
       if (!message) {
@@ -136,7 +164,7 @@ Deno.serve(async (req: Request) => {
       conversationId = newConv.id;
     }
 
-    if (preChatEnabled && !preChatData && !existingConv?.visitor_email) {
+    if (preChatEnabled && !finalPreChatData && !existingConv?.visitor_email) {
       return new Response(
         JSON.stringify({ error: 'Pre-chat form required', details: 'Please complete the pre-chat form before starting a conversation' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

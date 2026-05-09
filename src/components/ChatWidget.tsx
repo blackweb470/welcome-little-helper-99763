@@ -1087,7 +1087,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           body: JSON.stringify({
             businessId: businessId,
             visitorId: visitorId,
-            message: message
+            message: message,
+            conversationId: conversationId,
+            preChatData: visitorInfo && Object.keys(visitorInfo).length > 0 ? visitorInfo : undefined
           })
         }
       );
@@ -1103,8 +1105,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       const data = await response.json();
       console.log('Response received:', data);
 
-      // Update conversation ID if returned
-      if (data.conversationId && !conversationId) {
+      // Update conversation ID if returned (handles session transitions)
+      if (data.conversationId && data.conversationId !== conversationId) {
+        console.log('Conversation ID updated from backend:', data.conversationId);
         setConversationId(data.conversationId);
       }
 
