@@ -167,14 +167,36 @@ Deno.serve(async (req: Request) => {
       // Forward message to admin on WhatsApp if they are managing via WhatsApp
       if (liveSession.metadata?.agent_whatsapp_phone && message) {
         try {
-          // Find whatsapp settings for the business to get token
-          const { data: waSettings } = await supabase
+          // Find whatsapp settings. Try the business first, then try to find 
+          // settings where the active agent's phone is an admin (for multi-business support)
+          let waSettings = null;
+          const { data: directSettings } = await supabase
             .from('whatsapp_settings')
             .select('access_token, phone_number_id')
             .eq('business_id', businessId)
             .eq('enabled', true)
             .maybeSingle();
             
+          if (directSettings) {
+            waSettings = directSettings;
+          } else {
+            const agentPhone = liveSession.metadata.agent_whatsapp_phone;
+            // Fallback: Search for settings where this phone is an admin.
+            // We check both the exact number and the number with a '+' prefix.
+            const { data: fallbackSettings } = await supabase
+              .from('whatsapp_settings')
+              .select('access_token, phone_number_id')
+              .or(`admin_phone_numbers.cs.{"${agentPhone}"},admin_phone_numbers.cs.{"${'+' + agentPhone}"}`)
+              .eq('enabled', true)
+              .limit(1);
+            
+            if (fallbackSettings && fallbackSettings.length > 0) {
+              waSettings = fallbackSettings[0];
+            } else {
+              console.warn('No WhatsApp settings found for agent forwarding', { businessId, agentPhone });
+            }
+          }
+          
           if (waSettings?.access_token && waSettings?.phone_number_id) {
             const { data: conv } = await supabase
               .from('conversations')
