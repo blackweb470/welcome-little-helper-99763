@@ -230,6 +230,29 @@ Deno.serve(async (req: Request) => {
                     role: 'assistant',
                     content: '👋 A support agent has joined the chat. How can we help you today?'
                   });
+
+                // Broadcast the agent_joined event to immediately notify the web widget
+                try {
+                  const joinChannel = supabase.channel(`visitor-messages-${sessionToAccept.conversation_id}`);
+                  await new Promise<void>((resolve) => {
+                    joinChannel.subscribe((status: string) => {
+                      if (status === 'SUBSCRIBED') resolve();
+                    });
+                    setTimeout(() => resolve(), 1500);
+                  });
+                  await joinChannel.send({
+                    type: 'broadcast',
+                    event: 'agent_joined',
+                    payload: {
+                      sessionId: sessionToAccept.id,
+                      agentId: business?.owner_id,
+                      acceptedAt: new Date().toISOString()
+                    }
+                  });
+                  await supabase.removeChannel(joinChannel);
+                } catch (err) {
+                  console.error('Failed to broadcast agent_joined:', err);
+                }
               }
             }
           }

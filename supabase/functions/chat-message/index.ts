@@ -163,6 +163,49 @@ Deno.serve(async (req: Request) => {
     // If human agent is active, don't generate AI response
     if (liveSession) {
       console.log('Human agent active, skipping AI response');
+
+      // Forward message to admin on WhatsApp if they are managing via WhatsApp
+      if (liveSession.metadata?.agent_whatsapp_phone && message) {
+        try {
+          // Find whatsapp settings for the business to get token
+          const { data: waSettings } = await supabase
+            .from('whatsapp_settings')
+            .select('access_token, phone_number_id')
+            .eq('business_id', businessId)
+            .eq('enabled', true)
+            .maybeSingle();
+            
+          if (waSettings?.access_token && waSettings?.phone_number_id) {
+            const { data: conv } = await supabase
+              .from('conversations')
+              .select('visitor_name, visitor_email')
+              .eq('id', conversationId)
+              .single();
+              
+            const visitorIdentifier = conv?.visitor_name || conv?.visitor_email || 'Visitor';
+            
+            await fetch(
+              `https://graph.facebook.com/v19.0/${waSettings.phone_number_id}/messages`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${waSettings.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messaging_product: 'whatsapp',
+                  to: liveSession.metadata.agent_whatsapp_phone,
+                  type: 'text',
+                  text: { body: `👤 *${visitorIdentifier}*:\n${message}` }
+                }),
+              }
+            );
+          }
+        } catch (err) {
+          console.error('Error forwarding message to WhatsApp admin:', err);
+        }
+      }
+
       return new Response(
         JSON.stringify({ 
           reply: null, 

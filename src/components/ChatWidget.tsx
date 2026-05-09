@@ -640,46 +640,6 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     };
   }, [conversationId]);
 
-  // Subscribe to live chat session updates in realtime
-  useEffect(() => {
-    if (!conversationId) return;
-
-    console.log('Setting up realtime subscription for session updates');
-    const channel = supabase
-      .channel(`live-chat-session-${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'live_chat_sessions',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        (payload) => {
-          console.log('Live chat session updated:', payload);
-          const updatedSession = payload.new as any;
-          
-          // Check if agent just joined (status changed to active)
-          if (updatedSession.status === 'active' && liveChatSession?.status !== 'active') {
-            console.log('Agent joined the chat!');
-            const dedupeKey = `agent_joined:${updatedSession.id || conversationId}`;
-            if (!renderedMessageIdsRef.current.has(dedupeKey)) {
-              renderedMessageIdsRef.current.add(dedupeKey);
-              handleTranscript('👋 You are speaking with a human agent now.', 'assistant');
-            }
-          }
-          
-          setLiveChatSession(updatedSession);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [conversationId, liveChatSession?.status]);
-
   // Real-time subscription for live chat session updates
   useEffect(() => {
     if (!conversationId) return;
@@ -687,64 +647,46 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     console.log('Setting up live chat session subscription for:', conversationId);
 
     const channel = supabase
-      .channel(`live-chat-${conversationId}`)
+      .channel(`live-chat-session-${conversationId}`)
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to both UPDATE and INSERT
           schema: 'public',
           table: 'live_chat_sessions',
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          console.log('Live chat session UPDATE received:', payload);
-          if (payload.new) {
+          console.log('Live chat session change received:', payload);
+          if (payload.new && Object.keys(payload.new).length > 0) {
             const newSession = payload.new as any;
-            const oldSession = payload.old as any;
-            console.log('Updating liveChatSession state to:', newSession, 'from:', oldSession);
             
-            // Check if status changed from queued to active (agent accepted)
-            if (newSession.status === 'active' && oldSession?.status === 'queued') {
-              console.log('Agent has joined - status changed from queued to active');
-              const dedupeKey = `agent_joined:${newSession.id || conversationId}`;
-              if (!renderedMessageIdsRef.current.has(dedupeKey)) {
-                renderedMessageIdsRef.current.add(dedupeKey);
-                playNotificationSound();
-                setTranscript(prev => [...prev, {
-                  text: '👋 You are speaking with a human agent now.',
-                  role: 'assistant' as const
-                }]);
+            setLiveChatSession((prev: any) => {
+              // If status changed from queued to active
+              if (newSession.status === 'active' && prev?.status !== 'active') {
+                console.log('Agent has joined - status changed to active');
+                const dedupeKey = `agent_joined:${newSession.id || conversationId}`;
+                if (!renderedMessageIdsRef.current.has(dedupeKey)) {
+                  renderedMessageIdsRef.current.add(dedupeKey);
+                  playNotificationSound();
+                  setTranscript(t => [...t, {
+                    text: '👋 You are speaking with a human agent now.',
+                    role: 'assistant' as const
+                  }]);
+                }
+                setQueuePosition(null);
+                setEstimatedWaitMinutes(null);
               }
-              setQueuePosition(null);
-              setEstimatedWaitMinutes(null);
-            }
-            
-            // Handle ended status (session cancelled or ended)
-            if (newSession.status === 'ended' && oldSession?.status === 'queued') {
-              // Session was cancelled while in queue
-              setLiveChatSession(null);
-              setQueuePosition(null);
-              setEstimatedWaitMinutes(null);
-            }
-            
-            setLiveChatSession(newSession);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'live_chat_sessions',
-          filter: `conversation_id=eq.${conversationId}`
-        },
-        (payload) => {
-          console.log('Live chat session INSERT received:', payload);
-          if (payload.new) {
-            const newSession = payload.new as any;
-            console.log('New session created:', newSession);
-            setLiveChatSession(newSession);
+              
+              // Handle ended status (session cancelled or ended)
+              if (newSession.status === 'ended' && prev?.status === 'queued') {
+                setQueuePosition(null);
+                setEstimatedWaitMinutes(null);
+                return null;
+              }
+              
+              return newSession;
+            });
           }
         }
       )
