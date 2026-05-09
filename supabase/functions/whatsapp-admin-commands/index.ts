@@ -155,19 +155,20 @@ Deno.serve(async (req: Request) => {
             }
           } else {
             const sessionIdPrefix = args[0];
-            // Find session matching the prefix
+            // Find session matching the prefix - fetch all queued and match in memory
+            // to avoid UUID vs text casting issues in PostgREST
             const { data: sessions } = await supabase
               .from('live_chat_sessions')
               .select('id, conversation_id')
               .eq('status', 'queued')
-              .ilike('id', `${sessionIdPrefix}%`)
-              .limit(1);
+              .order('created_at', { ascending: true });
 
-            if (!sessions || sessions.length === 0) {
+            sessionToAccept = sessions?.find(s => s.id.startsWith(sessionIdPrefix));
+
+            if (!sessionToAccept) {
               responseText = `❌ No queued session found with ID starting with "${sessionIdPrefix}"`;
               break;
             }
-            sessionToAccept = sessions[0];
           }
 
           if (sessionToAccept) {
