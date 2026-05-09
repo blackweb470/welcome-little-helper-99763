@@ -196,6 +196,20 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (waSettings?.admin_phone_numbers?.length > 0 && waSettings.access_token && waSettings.phone_number_id) {
+        // Get all active sessions for this business to identify busy admins
+        const { data: activeSessions } = await supabase
+          .from('live_chat_sessions')
+          .select('metadata')
+          .eq('status', 'active')
+          .not('metadata', 'is', null);
+
+        const activeAdminPhones = new Set(
+          activeSessions
+            ?.map(s => s.metadata?.agent_whatsapp_phone)
+            .filter(Boolean)
+            .map(p => p.replace(/[^\d]/g, ''))
+        );
+
         const adminMsg = `🔔 *New Live Chat Request*\n\n` +
           `Customer: ${visitorEmail || visitorId}\n` +
           `Reason: ${reason || 'Not specified'}\n` +
@@ -204,6 +218,13 @@ Deno.serve(async (req) => {
 
         for (const adminPhone of waSettings.admin_phone_numbers) {
           const cleanPhone = adminPhone.replace(/[^\d]/g, '');
+          
+          // Skip if admin is already in an active chat
+          if (activeAdminPhones.has(cleanPhone)) {
+            console.log(`Skipping notification for busy admin: ${cleanPhone}`);
+            continue;
+          }
+
           console.log(`Sending WhatsApp interactive notification to admin: ${cleanPhone}`);
           
           await fetch(

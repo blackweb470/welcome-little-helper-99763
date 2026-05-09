@@ -178,7 +178,18 @@ Deno.serve(async (req: Request) => {
               .update({ ended_at: now })
               .eq('id', sessionToEnd.conversation_id);
 
-            responseText = '✅ Conversation ended successfully. You are now free to accept new chats.';
+            // Check if there are other people waiting in the queue
+            const { count: pendingCount } = await supabase
+              .from('live_chat_sessions')
+              .select('id', { count: 'exact', head: true })
+              .eq('status', 'queued')
+              .eq('conversations.business_id', businessId);
+
+            if (pendingCount && pendingCount > 0) {
+              responseText = `✅ Conversation ended successfully. There are *${pendingCount}* other customers waiting in your queue. Type \`/queue\` to see them.`;
+            } else {
+              responseText = '✅ Conversation ended successfully. Your queue is now empty.';
+            }
             
             // Notify visitor and save to messages
             const endMsg = '👋 This chat session has been ended by the agent. Have a great day!';

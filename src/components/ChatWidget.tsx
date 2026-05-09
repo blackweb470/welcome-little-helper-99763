@@ -90,6 +90,18 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       setPreChatCompleted(true);
     }
     
+    // Restore live chat session from localStorage for instant UI feedback
+    const storedSession = localStorage.getItem(getStorageKey(businessId, 'liveChatSession'));
+    if (storedSession) {
+      try {
+        const parsedSession = JSON.parse(storedSession);
+        console.log('Restored live chat session from localStorage:', parsedSession);
+        setLiveChatSession(parsedSession);
+      } catch (e) {
+        console.error('Error parsing stored live chat session:', e);
+      }
+    }
+    
     // Restore live chat session from database if we have a conversation
     if (storedConversationId) {
       restoreLiveChatSession(storedConversationId);
@@ -131,12 +143,14 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     }
   }, [visitorInfo, businessId]);
 
-  // Persist session ID
+  // Persist session ID and object
   useEffect(() => {
     if (liveChatSession?.id) {
       localStorage.setItem(getStorageKey(businessId, 'sessionId'), liveChatSession.id);
+      localStorage.setItem(getStorageKey(businessId, 'liveChatSession'), JSON.stringify(liveChatSession));
     } else if (liveChatSession === null) {
       localStorage.removeItem(getStorageKey(businessId, 'sessionId'));
+      localStorage.removeItem(getStorageKey(businessId, 'liveChatSession'));
     }
   }, [liveChatSession, businessId]);
 
