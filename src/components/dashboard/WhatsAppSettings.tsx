@@ -36,25 +36,50 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const [settings, setSettings] = useState<any>(null);
   const [isEnabled, setIsEnabled] = useState(false);
 
-  // Meta App Config from environment
-  const META_APP_ID = import.meta.env.VITE_META_APP_ID;
-  const CONFIG_ID = import.meta.env.VITE_WHATSAPP_CONFIG_ID || "991663860045736";
+  const [metaConfig, setMetaConfig] = useState<{appId: string, configId: string} | null>(null);
+
+  useEffect(() => {
+    const fetchPlatformSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('platform_settings')
+          .select('key, value');
+        
+        if (!error && data) {
+          const config = {
+            appId: data.find(s => s.key === 'meta_app_id')?.value || import.meta.env.VITE_META_APP_ID,
+            configId: data.find(s => s.key === 'whatsapp_config_id')?.value || import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
+          };
+          setMetaConfig(config);
+          console.log('Platform settings loaded from database');
+        }
+      } catch (err) {
+        console.error('Error fetching platform settings:', err);
+      }
+    };
+
+    fetchPlatformSettings();
+  }, []);
 
   useEffect(() => {
     fetchSettings();
-    loadFacebookSDK();
-  }, [businessId]);
+    if (metaConfig?.appId) {
+      loadFacebookSDK();
+    }
+  }, [businessId, metaConfig]);
 
   const loadFacebookSDK = () => {
     if (window.FB) return;
-    if (!META_APP_ID) {
-      console.error('Meta App ID is missing. Check your environment variables.');
+    
+    const appId = metaConfig?.appId;
+    if (!appId) {
+      console.warn('Meta App ID still loading or missing.');
       return;
     }
 
     window.fbAsyncInit = function() {
       window.FB.init({
-        appId: META_APP_ID,
+        appId: metaConfig?.appId,
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v21.0'
@@ -118,7 +143,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         });
       }
     }, {
-      config_id: CONFIG_ID,
+      config_id: metaConfig?.configId || "970530725626776",
       response_type: 'code',
       override_default_response_type: true,
       scope: 'whatsapp_business_management,whatsapp_business_messaging',
