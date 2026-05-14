@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
 Deno.serve(async (req) => {
@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
 
     // 1. Exchange code for access token
     const tokenResponse = await fetch(
-      `https://graph.facebook.com/v19.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`
+      `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`
     );
 
     const tokenData = await tokenResponse.json();
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
     // 3. Get Phone Number ID
     const phoneNumbersResponse = await fetch(
-      `https://graph.facebook.com/v19.0/${wabaId}/phone_numbers?access_token=${accessToken}`
+      `https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`
     );
     const phonesData = await phoneNumbersResponse.json();
 

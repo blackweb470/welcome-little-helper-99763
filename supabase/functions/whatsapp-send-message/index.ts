@@ -3,7 +3,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
 // Schema for quick reply buttons
@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
 
     // Send via WhatsApp Cloud API
     const whatsappResponse = await fetch(
-      `https://graph.facebook.com/v19.0/${waSettings.phone_number_id}/messages`,
+      `https://graph.facebook.com/v21.0/${waSettings.phone_number_id}/messages`,
       {
         method: 'POST',
         headers: {

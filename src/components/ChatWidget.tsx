@@ -316,13 +316,16 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         
         // Only show fallback if no real rules exist
         if (!cancelled && (!rules || rules.length === 0)) {
+          console.log('[Proactive] No rules found, setting fallback timer (3s)');
           const timer = setTimeout(() => {
             if (!cancelled && !isOpen) {
-              console.log('Showing proactive popup fallback after 3 seconds');
+              console.log('[Proactive] Triggering fallback message');
               setProactiveMessage("👋 Hi there! How can I help you today?");
             }
           }, 3000);
           return () => clearTimeout(timer);
+        } else {
+          console.log(`[Proactive] Found ${rules?.length} active rules, skipping fallback`);
         }
       } catch (e) {
         // On error, show fallback anyway
@@ -359,7 +362,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
     const runProactiveChecks = async () => {
       try {
-        console.log('Checking proactive rules for business:', businessId);
+        console.log('[Proactive] Running checks for business:', businessId, 'URL:', parentPageUrl || window.location.href);
         const { data: rules, error } = await supabase
           .from('proactive_chat_rules_public' as any)
           .select('*')
@@ -367,20 +370,28 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           .eq('enabled', true)
           .order('priority', { ascending: false });
 
-        if (error || !rules?.length) {
-          console.log('No active proactive rules found');
+        if (error) {
+          console.error('[Proactive] Error fetching rules:', error);
           return;
         }
-        console.log('Proactive rules found:', rules);
+
+        if (!rules?.length) {
+          console.log('[Proactive] No active proactive rules found');
+          return;
+        }
+        console.log(`[Proactive] Evaluating ${rules.length} rules`);
 
         // Time on page trigger
         const timeRule = rules.find((r: any) => r.trigger_type === 'time_on_page');
         if (timeRule) {
           const triggerVal = timeRule.trigger_value as Record<string, any>;
           const timeoutSeconds = triggerVal?.seconds || 30;
-          console.log(`Setting time trigger for ${timeoutSeconds} seconds`);
+          console.log(`[Proactive] Setting time trigger for ${timeoutSeconds} seconds: ${timeRule.name}`);
           const timer = setTimeout(() => {
-            triggerProactive(timeRule.message);
+            if (!proactiveShown) {
+              console.log(`[Proactive] Triggering time_on_page: ${timeRule.name}`);
+              triggerProactive(timeRule.message);
+            }
           }, timeoutSeconds * 1000);
           timers.push(timer);
         }
@@ -393,9 +404,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           const triggerVal = pageRule.trigger_value as Record<string, any>;
           const targetUrl = triggerVal?.url || '';
           const currentUrl = parentPageUrl || window.location.href;
-          console.log('Checking page trigger:', targetUrl, 'Current:', currentUrl);
+          console.log(`[Proactive] Checking page trigger: "${targetUrl}" vs Current: "${currentUrl}"`);
           
           if (targetUrl && currentUrl.toLowerCase().includes(targetUrl.toLowerCase())) {
+            console.log(`[Proactive] Triggering page_visit: ${pageRule.name}`);
             setTimeout(() => triggerProactive(pageRule.message), 500);
           }
         }
@@ -405,9 +417,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         if (exitRule) {
           const handleMouseLeave = (e: MouseEvent) => {
             if (e.clientY <= 0) {
+              console.log(`[Proactive] Triggering exit_intent: ${exitRule.name}`);
               triggerProactive(exitRule.message);
             }
           };
+          console.log(`[Proactive] Setting exit_intent listener: ${exitRule.name}`);
           document.addEventListener('mouseleave', handleMouseLeave);
           listeners.push({ type: 'mouseleave', handler: handleMouseLeave as EventListener });
         }
@@ -420,9 +434,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           const handleScroll = () => {
             const scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
             if (scrollDepth >= requiredDepth) {
+              console.log(`[Proactive] Triggering scroll_depth: ${scrollRule.name} at ${scrollDepth.toFixed(1)}%`);
               triggerProactive(scrollRule.message);
             }
           };
+          console.log(`[Proactive] Setting scroll listener (${requiredDepth}%): ${scrollRule.name}`);
           window.addEventListener('scroll', handleScroll);
           listeners.push({ type: 'scroll', handler: handleScroll });
         }
@@ -434,8 +450,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           const requiredScore = triggerVal?.score || 70;
           const checkEngagement = async () => {
             const visitorId = localStorage.getItem('visitor_id');
-            if (!visitorId) return;
+            if (!visitorId || proactiveShown) return;
             
+            console.log(`[Proactive] Checking engagement score (needs ${requiredScore})`);
             const { data: session } = await supabase
               .from('visitor_sessions')
               .select('engagement_score')
@@ -446,6 +463,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               .maybeSingle();
             
             if (session?.engagement_score && session.engagement_score >= requiredScore) {
+              console.log(`[Proactive] High engagement detected (${session.engagement_score})`);
               triggerProactive(engagementRule.message);
             }
           };
@@ -455,7 +473,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
 
       } catch (error) {
-        console.error('Error checking proactive rules:', error);
+        console.error('[Proactive] Error in checks:', error);
       }
     };
 

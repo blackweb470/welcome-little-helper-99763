@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -37,7 +38,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
 
   // Meta App Config from environment
   const META_APP_ID = import.meta.env.VITE_META_APP_ID;
-  const CONFIG_ID = "991663860045736"; // Provided by user
+  const CONFIG_ID = import.meta.env.VITE_WHATSAPP_CONFIG_ID || "991663860045736";
 
   useEffect(() => {
     fetchSettings();
@@ -46,6 +47,10 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
 
   const loadFacebookSDK = () => {
     if (window.FB) return;
+    if (!META_APP_ID) {
+      console.error('Meta App ID is missing. Check your environment variables.');
+      return;
+    }
 
     window.fbAsyncInit = function() {
       window.FB.init({
@@ -125,6 +130,14 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     });
   };
 
+  const [isManualMode, setIsManualMode] = useState(false);
+  const [manualSettings, setManualSettings] = useState({
+    phone_number_id: '',
+    waba_id: '',
+    access_token: '',
+    phone_number: ''
+  });
+
   const handleSignupResponse = async (code: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-embedded-signup', {
@@ -157,6 +170,50 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         variant: "destructive",
         title: "Connection Failed",
         description: error.message || "Failed to finalize WhatsApp connection.",
+      });
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleManualSave = async () => {
+    if (!manualSettings.phone_number_id || !manualSettings.access_token || !manualSettings.phone_number) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in the Phone Number ID, Access Token, and Phone Number."
+      });
+      return;
+    }
+
+    setConnecting(true);
+    try {
+      const { error } = await supabase
+        .from('whatsapp_settings')
+        .upsert({
+          business_id: businessId,
+          phone_number_id: manualSettings.phone_number_id,
+          waba_id: manualSettings.waba_id,
+          access_token: manualSettings.access_token,
+          phone_number: manualSettings.phone_number,
+          enabled: true,
+          display_name: 'Manual Connection'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "WhatsApp Connected Manually!",
+        description: "Your settings have been saved successfully.",
+      });
+      
+      fetchSettings();
+    } catch (error: any) {
+      console.error('Error saving manual settings:', error);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error.message
       });
     } finally {
       setConnecting(false);
@@ -253,23 +310,83 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
               </div>
               <div className="max-w-md space-y-2">
                 <h3 className="text-xl font-semibold">Connect in Seconds</h3>
-                <p className="text-muted-foreground">
-                  No Meta developer accounts or complex tokens. Just enter your phone number in the secure popup and verify with an OTP.
+                <p className="text-muted-foreground text-sm">
+                  Choose your preferred connection method. The official popup is fastest, but manual setup is available for developers.
                 </p>
               </div>
+
+              {!isManualMode ? (
+                <Button 
+                  size="lg" 
+                  onClick={launchWhatsAppSignup} 
+                  disabled={connecting}
+                  className="px-8 shadow-lg shadow-primary/20 gap-2 font-semibold text-lg h-14 bg-gradient-to-r from-primary to-primary/80 hover:scale-105 transition-transform"
+                >
+                  {connecting ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Zap className="h-5 w-5 fill-current" />
+                  )}
+                  {connecting ? "Connecting..." : "Connect WhatsApp Now"}
+                </Button>
+              ) : (
+                <div className="w-full max-w-lg space-y-4 bg-muted/30 p-6 rounded-2xl border border-border animate-in fade-in slide-in-from-bottom-4">
+                  <div className="grid grid-cols-1 gap-4 text-left">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone_number_id">Phone Number ID</Label>
+                      <Input 
+                        id="phone_number_id" 
+                        placeholder="e.g. 123456789012345" 
+                        value={manualSettings.phone_number_id}
+                        onChange={(e) => setManualSettings({...manualSettings, phone_number_id: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="waba_id">WhatsApp Business Account ID</Label>
+                      <Input 
+                        id="waba_id" 
+                        placeholder="e.g. 987654321098765" 
+                        value={manualSettings.waba_id}
+                        onChange={(e) => setManualSettings({...manualSettings, waba_id: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="access_token">Permanent Access Token</Label>
+                      <Input 
+                        id="access_token" 
+                        type="password"
+                        placeholder="EAAB..." 
+                        value={manualSettings.access_token}
+                        onChange={(e) => setManualSettings({...manualSettings, access_token: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone_number">Display Phone Number</Label>
+                      <Input 
+                        id="phone_number" 
+                        placeholder="e.g. +1 234 567 890" 
+                        value={manualSettings.phone_number}
+                        onChange={(e) => setManualSettings({...manualSettings, phone_number: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    className="w-full h-12 text-lg font-semibold"
+                    onClick={handleManualSave}
+                    disabled={connecting}
+                  >
+                    {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Configuration"}
+                  </Button>
+                </div>
+              )}
               
               <Button 
-                size="lg" 
-                onClick={launchWhatsAppSignup} 
-                disabled={connecting}
-                className="px-8 shadow-lg shadow-primary/20 gap-2 font-semibold text-lg h-14 bg-gradient-to-r from-primary to-primary/80 hover:scale-105 transition-transform"
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setIsManualMode(!isManualMode)}
+                className="text-muted-foreground hover:text-primary transition-colors"
               >
-                {connecting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Zap className="h-5 w-5 fill-current" />
-                )}
-                {connecting ? "Connecting..." : "Connect WhatsApp Now"}
+                {isManualMode ? "← Back to Automatic Setup" : "Developer? Use Manual Configuration"}
               </Button>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mt-8">

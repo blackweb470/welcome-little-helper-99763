@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
 interface AdminCommand {
@@ -111,7 +111,7 @@ Deno.serve(async (req: Request) => {
             });
 
             await fetch(
-              `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+              `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
               {
                 method: 'POST',
                 headers: {
@@ -314,7 +314,7 @@ Deno.serve(async (req: Request) => {
                 const customerPhone = (conv.channel_metadata as any)?.phone_number;
                 if (customerPhone) {
                   await fetch(
-                    `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+                    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
                     {
                       method: 'POST',
                       headers: {
@@ -375,7 +375,7 @@ Deno.serve(async (req: Request) => {
     // Send response via WhatsApp
     if (responseText && phoneNumberId && accessToken) {
       await fetch(
-        `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+        `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
         {
           method: 'POST',
           headers: {
