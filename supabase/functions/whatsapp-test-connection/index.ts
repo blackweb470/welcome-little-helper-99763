@@ -18,6 +18,17 @@ serve(async (req) => {
     }
 
     console.log(`Testing WhatsApp connection for Phone ID: ${phoneNumberId} to Recipient: ${recipientPhone}`)
+    
+    const payload = {
+      messaging_product: 'whatsapp',
+      to: recipientPhone,
+      type: 'text',
+      text: {
+        body: '🚀 *Connection Test Successful!*\n\nYour Lyqn AI WhatsApp integration is correctly configured. You can now start receiving and sending messages through the platform.'
+      }
+    }
+
+    console.log('Sending Payload to Meta:', JSON.stringify(payload, null, 2))
 
     const response = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
@@ -27,21 +38,16 @@ serve(async (req) => {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: recipientPhone,
-          type: 'text',
-          text: {
-            body: '🚀 *Connection Test Successful!*\n\nYour Lyqn AI WhatsApp integration is correctly configured. You can now start receiving and sending messages through the platform.'
-          }
-        }),
+        body: JSON.stringify(payload),
       }
     )
 
     const data = await response.json()
+    console.log('Meta API Response Status:', response.status)
+    console.log('Meta API Response Data:', JSON.stringify(data, null, 2))
 
     if (!response.ok) {
-      console.error('Meta API Error:', data)
+      console.error('Meta API Error Details:', data)
       return new Response(
         JSON.stringify({
           success: false,
@@ -59,6 +65,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         message: 'Test message sent successfully!',
+        messageId: data.messages?.[0]?.id,
         data
       }),
       {
