@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Plus, Trash2 } from "lucide-react";
+import { Zap, Plus, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProactiveRule {
@@ -38,6 +38,7 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
     trigger_value: { seconds: 3 },
     message: 'Hi! I noticed you\'ve been browsing for a while. Can I help you find something?'
   });
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,6 +61,20 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
   };
 
   const createRule = async () => {
+    if (isSaving) return;
+
+    // Check for duplicate names locally first
+    const isDuplicate = rules.some(r => r.name.toLowerCase() === formData.name.toLowerCase());
+    if (isDuplicate) {
+      toast({
+        title: "Rule already exists",
+        description: "A rule with this name already exists. Please use a unique name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const { error } = await supabase
         .from('proactive_chat_rules')
@@ -94,6 +109,8 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
         description: "Failed to create rule",
         variant: "destructive"
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -111,7 +128,11 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
     }
   };
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const deleteRule = async (ruleId: string) => {
+    if (deletingId) return;
+    setDeletingId(ruleId);
     try {
       const { error } = await supabase
         .from('proactive_chat_rules')
@@ -132,6 +153,8 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
         description: "Failed to delete rule",
         variant: "destructive"
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -284,10 +307,21 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={createRule} disabled={!formData.name || !formData.message}>
-                Create Rule
+              <Button 
+                onClick={createRule} 
+                disabled={!formData.name || !formData.message || isSaving}
+                className="min-w-[120px]"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Rule'
+                )}
               </Button>
-              <Button onClick={() => setShowForm(false)} variant="outline">
+              <Button onClick={() => setShowForm(false)} variant="outline" disabled={isSaving}>
                 Cancel
               </Button>
             </div>
@@ -319,8 +353,13 @@ export const ProactiveChatRules = ({ businessId }: ProactiveChatRulesProps) => {
                       size="icon"
                       variant="ghost"
                       onClick={() => deleteRule(rule.id)}
+                      disabled={deletingId === rule.id}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingId === rule.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
