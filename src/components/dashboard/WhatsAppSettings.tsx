@@ -199,12 +199,54 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   };
 
   const [isManualMode, setIsManualMode] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testPhone, setTestPhone] = useState('');
   const [manualSettings, setManualSettings] = useState({
     phone_number_id: '',
     waba_id: '',
     access_token: '',
     phone_number: ''
   });
+
+  const handleTestConnection = async () => {
+    if (!manualSettings.phone_number_id || !manualSettings.access_token || !testPhone) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in the Phone Number ID, Access Token, and a Test Recipient Phone Number."
+      });
+      return;
+    }
+
+    setTestLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-test-connection', {
+        body: {
+          phoneNumberId: manualSettings.phone_number_id,
+          accessToken: manualSettings.access_token,
+          recipientPhone: testPhone.replace(/\D/g, '') // Strip non-digits
+        }
+      });
+
+      if (error || !data.success) {
+        throw new Error(data?.error || error?.message || "Test failed");
+      }
+
+      toast({
+        title: "Test Message Sent!",
+        description: "Check your WhatsApp. If you received the message, your configuration is correct.",
+      });
+    } catch (error: any) {
+      console.error('Test connection error:', error);
+      toast({
+        variant: "destructive",
+        title: "Test Failed",
+        description: error.message || "Failed to send test message. Check your credentials and try again."
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
 
   const handleSignupResponse = async (code: string) => {
     try {
@@ -452,13 +494,43 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
                       />
                     </div>
                   </div>
-                  <Button 
-                    className="w-full h-12 text-lg font-semibold"
-                    onClick={handleManualSave}
-                    disabled={connecting}
-                  >
-                    {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Configuration"}
-                  </Button>
+
+                  <div className="pt-4 border-t border-border/50 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="test_phone" className="text-primary flex items-center gap-2">
+                        <Smartphone className="h-4 w-4" />
+                        Verify Configuration (Optional)
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          id="test_phone" 
+                          placeholder="Your phone number (with country code)" 
+                          value={testPhone}
+                          onChange={(e) => setTestPhone(e.target.value)}
+                        />
+                        <Button 
+                          variant="outline" 
+                          onClick={handleTestConnection}
+                          disabled={testLoading || !manualSettings.access_token || !manualSettings.phone_number_id}
+                          className="whitespace-nowrap gap-2"
+                        >
+                          {testLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                          Test
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Sends a test message to verify the Phone ID and Access Token are valid.
+                      </p>
+                    </div>
+
+                    <Button 
+                      className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/10"
+                      onClick={handleManualSave}
+                      disabled={connecting}
+                    >
+                      {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Configuration"}
+                    </Button>
+                  </div>
                 </div>
               )}
               
