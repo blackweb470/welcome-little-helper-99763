@@ -208,27 +208,48 @@ export const AttachmentDisplay = ({ messageId }: AttachmentDisplayProps) => {
   if (loading || attachments.length === 0) return null;
 
   return (
-    <div className="mt-2 space-y-1">
-      {attachments.map((attachment) => (
-        <div
-          key={attachment.id}
-          className="flex items-center gap-2 p-2 border rounded text-sm bg-muted/30"
-        >
-          {attachment.mime_type.startsWith('image/') ? (
-            <ImageIcon className="h-4 w-4" />
-          ) : (
-            <FileText className="h-4 w-4" />
-          )}
-          <span className="flex-1 truncate">{attachment.file_name}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => downloadAttachment(attachment.file_path, attachment.file_name)}
+    <div className="mt-2 space-y-2">
+      {attachments.map((attachment) => {
+        const isImage = attachment.mime_type.startsWith('image/');
+        const publicUrl = attachment.file_path.startsWith('http') 
+          ? attachment.file_path 
+          : supabase.storage.from('message-attachments').getPublicUrl(attachment.file_path).data.publicUrl;
+
+        return (
+          <div
+            key={attachment.id}
+            className="group relative flex flex-col gap-2 p-2 border rounded-lg text-sm bg-muted/30 hover:bg-muted/50 transition-colors"
           >
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
+            {isImage ? (
+              <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black/5">
+                <img 
+                  src={publicUrl} 
+                  alt={attachment.file_name}
+                  className="h-full w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <span className="flex-1 truncate">{attachment.file_name}</span>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between">
+              {!isImage && <span className="text-xs text-muted-foreground">{attachment.file_name}</span>}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 ml-auto"
+                onClick={() => downloadAttachment(attachment.file_path, attachment.file_name)}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

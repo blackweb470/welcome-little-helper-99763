@@ -11,6 +11,7 @@ import { requestNotificationPermission, notifyNewMessage } from "@/utils/notific
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import { WhatsAppInteractiveButtons, type InteractiveMessage } from "./WhatsAppInteractiveButtons";
+import { AttachmentDisplay } from "./MessageAttachments";
 
 interface Message {
   id: string;
@@ -405,38 +406,51 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       const { data: urlData } = supabase.storage
         .from('message-attachments')
         .getPublicUrl(fileName);
-      const imageUrl = urlData.publicUrl;
-
-      const { data: insertedMessage, error: msgError } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: conversationId,
-          role: 'assistant',
-          content: `[Image: ${file.name}]`,
-          audio_url: imageUrl,
-        })
-        .select('id, content, role, created_at, audio_url')
-        .single();
-      if (msgError) throw msgError;
-
-      // Broadcast to visitor
-      try {
-        const ch = supabase.channel(`visitor-messages-${conversationId}`);
-        await ch.subscribe();
-        await ch.send({
-          type: 'broadcast',
-          event: 'agent_message',
-          payload: {
-            id: insertedMessage?.id,
-            content: insertedMessage?.content,
-            role: 'assistant',
-            created_at: insertedMessage?.created_at,
-            imageUrl,
-          },
+      // If this is a WhatsApp conversation, send it via the WhatsApp API
+      const conversation = selectedConversation || sessionConversations[selectedSession.conversation_id];
+      if (conversation?.channel === 'whatsapp') {
+        const { error: waError } = await supabase.functions.invoke('whatsapp-send-message', {
+          body: {
+            businessId: businessId,
+            conversationId: conversationId,
+            imageUrl: imageUrl,
+            message: `[Image: ${file.name}]`
+          }
         });
-        await supabase.removeChannel(ch);
-      } catch (err) {
-        console.error('Broadcast failed:', err);
+        if (waError) throw waError;
+      } else {
+        // Regular chat: Insert message and broadcast
+        const { data: insertedMessage, error: msgError } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'assistant',
+            content: `[Image: ${file.name}]`,
+            audio_url: imageUrl,
+          })
+          .select('id, content, role, created_at, audio_url')
+          .single();
+        if (msgError) throw msgError;
+
+        // Broadcast to visitor
+        try {
+          const ch = supabase.channel(`visitor-messages-${conversationId}`);
+          await ch.subscribe();
+          await ch.send({
+            type: 'broadcast',
+            event: 'agent_message',
+            payload: {
+              id: insertedMessage?.id,
+              content: insertedMessage?.content,
+              role: 'assistant',
+              created_at: insertedMessage?.created_at,
+              imageUrl,
+            },
+          });
+          await supabase.removeChannel(ch);
+        } catch (err) {
+          console.error('Broadcast failed:', err);
+        }
       }
 
       await fetchMessages(conversationId);
@@ -755,6 +769,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                         onClick={() => window.open(msg.audio_url!, '_blank')}
                       />
                     )}
+                    <AttachmentDisplay messageId={msg.id} />
                     {msg.content && <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>}
                     <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
                       <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
@@ -952,8 +967,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                 variant="outline"
                 size="icon"
                 type="button"
-                disabled={sendingMessage || uploadingAgentImage || selectedConversation?.channel === 'whatsapp'}
-                title={selectedConversation?.channel === 'whatsapp' ? "Image sending not supported on WhatsApp" : "Send image"}
+                disabled={sendingMessage || uploadingAgentImage}
+                title="Send image"
                 onClick={() => agentImageInputRef.current?.click()}
               >
                 {uploadingAgentImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}

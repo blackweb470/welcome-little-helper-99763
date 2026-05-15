@@ -39,10 +39,11 @@ const interactiveMessageSchema = z.object({
 const requestSchema = z.object({
   businessId: z.string().uuid('Invalid business ID'),
   conversationId: z.string().uuid('Invalid conversation ID'),
-  message: z.string().min(1, 'Message required').max(4096, 'Message too long').optional(),
+  message: z.string().max(4096, 'Message too long').optional(),
+  imageUrl: z.string().url('Invalid image URL').optional(),
   interactive: interactiveMessageSchema.optional(),
-}).refine(data => data.message || data.interactive, {
-  message: 'Either message or interactive content is required',
+}).refine(data => data.message || data.interactive || data.imageUrl, {
+  message: 'Either message, interactive content, or imageUrl is required',
 });
 
 Deno.serve(async (req) => {
@@ -134,22 +135,40 @@ Deno.serve(async (req) => {
       } else {
         messageContent = interactive.body;
       }
+    } else if (imageUrl) {
+      messageContent = message ? `[Image: ${message}]` : '[Image]';
     } else {
       messageContent = message!;
     }
 
     // Save the message to the database first
-    const { error: msgError } = await supabase
+    const { data: savedMessage, error: msgError } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
         role: 'assistant',
-        content: messageContent
-      });
+        content: messageContent,
+        audio_url: imageUrl || null
+      })
+      .select()
+      .single();
 
     if (msgError) {
       console.error('Error saving message:', msgError);
       throw msgError;
+    }
+
+    // If image, create attachment record
+    if (imageUrl && savedMessage) {
+      await supabase
+        .from('message_attachments')
+        .insert({
+          message_id: savedMessage.id,
+          file_name: 'whatsapp-image.jpg',
+          file_path: imageUrl,
+          file_size: 0,
+          mime_type: 'image/jpeg'
+        });
     }
 
     // Build WhatsApp API payload
@@ -226,6 +245,18 @@ Deno.serve(async (req) => {
           whatsappPayload.interactive.footer = { text: interactive.footer };
         }
       }
+    } else if (imageUrl) {
+      // Image message payload
+      whatsappPayload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipientPhone,
+        type: 'image',
+        image: {
+          link: imageUrl,
+          caption: message || undefined
+        }
+      };
     } else {
       // Regular text message payload
       whatsappPayload = {
