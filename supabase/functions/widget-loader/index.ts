@@ -119,11 +119,22 @@ serve(async (req: Request) => {
     popup.onclick = function(e) { if(e.target.id !== 'lyqn-proactive-close') openWidget(); };
     document.getElementById('lyqn-proactive-close').onclick = function(e) { e.stopPropagation(); popup.style.display='none'; };
 
-    // Fetch Proactive Message with better trigger handling
-    fetch(supabaseUrl + '/rest/v1/proactive_chat_rules?business_id=eq.' + businessId + '&enabled=eq.true&limit=1', {
-      headers: { apikey: supabaseKey, Authorization: 'Bearer ' + supabaseKey }
-    }).then(r => r.json()).then(rules => {
-      var delay = 5000; // Default 5s
+    // Fetch Proactive Message AND Widget Settings
+    Promise.all([
+      fetch(supabaseUrl + '/rest/v1/proactive_chat_rules?business_id=eq.' + businessId + '&enabled=eq.true&limit=1', {
+        headers: { apikey: supabaseKey, Authorization: 'Bearer ' + supabaseKey }
+      }).then(r => r.json()),
+      fetch(supabaseUrl + '/rest/v1/widget_settings?business_id=eq.' + businessId + '&limit=1', {
+        headers: { apikey: supabaseKey, Authorization: 'Bearer ' + supabaseKey }
+      }).then(r => r.json())
+    ]).then(([rules, settings]) => {
+      var delay = 5000;
+      
+      // Apply primary color from settings
+      if(settings && settings.length > 0 && settings[0].primary_color) {
+        btn.style.backgroundColor = settings[0].primary_color;
+      }
+
       if(rules && rules.length > 0) {
         var rule = rules[0];
         document.getElementById('lyqn-proactive-text').textContent = rule.message;
@@ -133,7 +144,6 @@ serve(async (req: Request) => {
       }
       setTimeout(() => { if(!isOpen) popup.style.display = 'block'; }, delay);
     }).catch(() => {
-      // Fallback
       setTimeout(() => { if(!isOpen) popup.style.display = 'block'; }, 5000);
     });
   });
