@@ -60,15 +60,19 @@ serve(async (req) => {
       #lyqn-widget iframe { width: 100%; height: 100%; border: none; }
       
       #lyqn-minimize { 
-        position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; 
-        background: rgba(0,0,0,0.4); color: #fff; border-radius: 50%; 
+        position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 40px; height: 40px; 
+        background: rgba(0,0,0,0.5); color: #fff; border-radius: 50%; 
         display: none; align-items: center; justify-content: center; 
-        cursor: pointer; z-index: 2147483648; border: none; font-size: 20px;
-        backdrop-filter: blur(4px);
+        cursor: pointer; z-index: 2147483648; border: none; font-size: 24px;
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
       }
 
       @media (max-width: 768px) { 
-        #lyqn-widget { width: 100%; height: 100%; right: 0; bottom: 0; border-radius: 0; } 
+        #lyqn-widget { 
+          width: 100%; height: 100%; height: 100dvh; 
+          right: 0; bottom: 0; border-radius: 0; 
+          padding-bottom: env(safe-area-inset-bottom);
+        } 
         #lyqn-minimize { display: flex; }
       }
     \`;
@@ -81,8 +85,9 @@ serve(async (req) => {
     var container = document.createElement('div'); container.id = 'lyqn-widget';
     var minimize = document.createElement('button'); minimize.id = 'lyqn-minimize';
     minimize.innerHTML = '×';
+    minimize.setAttribute('aria-label', 'Close chat');
     
-    popup.innerHTML = '<button id="lyqn-proactive-close">×</button><p id="lyqn-proactive-text">👋 How can I help?</p><div id="lyqn-proactive-pointer"></div>';
+    popup.innerHTML = '<button id="lyqn-proactive-close" aria-label="Dismiss">×</button><p id="lyqn-proactive-text">👋 How can I help?</p><div id="lyqn-proactive-pointer"></div>';
     
     container.appendChild(minimize);
     root.appendChild(btn); root.appendChild(popup); root.appendChild(container);
@@ -98,6 +103,8 @@ serve(async (req) => {
         var ifr = document.createElement('iframe');
         ifr.src = widgetUrl;
         ifr.setAttribute('allow', 'microphone');
+        ifr.style.width = '100%';
+        ifr.style.height = '100%';
         container.appendChild(ifr);
       }
       isOpen = true; container.style.display = 'block'; popup.style.display = 'none'; btn.innerHTML = icons.close;
@@ -110,14 +117,22 @@ serve(async (req) => {
     popup.onclick = function(e) { if(e.target.id !== 'lyqn-proactive-close') openWidget(); };
     document.getElementById('lyqn-proactive-close').onclick = function(e) { e.stopPropagation(); popup.style.display='none'; };
 
-    // Fetch Proactive Message
+    // Fetch Proactive Message with better trigger handling
     fetch(supabaseUrl + '/rest/v1/proactive_chat_rules?business_id=eq.' + businessId + '&enabled=eq.true&limit=1', {
       headers: { apikey: supabaseKey, Authorization: 'Bearer ' + supabaseKey }
     }).then(r => r.json()).then(rules => {
+      var delay = 5000; // Default 5s
       if(rules && rules.length > 0) {
-        document.getElementById('lyqn-proactive-text').textContent = rules[0].message;
-        setTimeout(() => { if(!isOpen) popup.style.display = 'block'; }, 3000);
+        var rule = rules[0];
+        document.getElementById('lyqn-proactive-text').textContent = rule.message;
+        if (rule.trigger_type === 'time_on_page' && rule.trigger_value && rule.trigger_value.seconds) {
+           delay = rule.trigger_value.seconds * 1000;
+        }
       }
+      setTimeout(() => { if(!isOpen) popup.style.display = 'block'; }, delay);
+    }).catch(() => {
+      // Fallback
+      setTimeout(() => { if(!isOpen) popup.style.display = 'block'; }, 5000);
     });
   });
 })();
