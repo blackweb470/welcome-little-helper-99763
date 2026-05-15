@@ -1536,7 +1536,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                   onKeyPress={handleKeyPress}
                   placeholder="Type a message..."
                   maxLength={maxInputChars}
-                  className="flex-1 px-2 sm:px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                  className="flex-1 px-2 sm:px-3 py-2 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                 />
                 <Button
                   onClick={() => handleSendText()}

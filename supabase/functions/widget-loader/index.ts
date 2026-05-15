@@ -62,16 +62,17 @@ serve(async (req: Request) => {
       #lyqn-widget iframe { width: 100%; height: 100%; border: none; }
       
       #lyqn-minimize { 
-        position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 40px; height: 40px; 
-        background: rgba(0,0,0,0.5); color: #fff; border-radius: 50%; 
+        position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); width: 44px; height: 44px; 
+        background: rgba(0,0,0,0.6); color: #fff; border-radius: 50%; 
         display: none; align-items: center; justify-content: center; 
-        cursor: pointer; z-index: 2147483648; border: none; font-size: 24px;
+        cursor: pointer; z-index: 2147483649; border: none; font-size: 28px;
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       }
 
-      @media (max-width: 768px) { 
+      @media (max-width: 991px) { 
         #lyqn-widget { 
-          width: 100%; height: 100%; height: 100dvh; 
+          width: 100%; height: 100%; height: 100dvh; height: -webkit-fill-available;
           right: 0; bottom: 0; border-radius: 0; 
           padding-bottom: env(safe-area-inset-bottom);
         } 
