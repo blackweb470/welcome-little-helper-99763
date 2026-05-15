@@ -265,7 +265,8 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
           access_token: manualSettings.access_token,
           phone_number: manualSettings.phone_number,
           enabled: true,
-          display_name: 'Manual Connection'
+          display_name: 'Manual Connection',
+          connection_method: 'manual'
         });
 
       if (error) throw error;
