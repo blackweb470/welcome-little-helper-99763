@@ -234,8 +234,20 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         }
       });
 
-      if (error || !data.success) {
-        throw new Error(data?.error || error?.message || "Test failed");
+      if (error) {
+        let errorMessage = error.message;
+        try {
+          // If it's a non-2xx status, Supabase client provides a context we can parse
+          if (error.context && typeof error.context.json === 'function') {
+            const errorData = await error.context.json();
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (e) {}
+        throw new Error(errorMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Test failed");
       }
 
       toast({
