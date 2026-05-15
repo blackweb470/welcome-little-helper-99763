@@ -42,19 +42,20 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   useEffect(() => {
     const fetchPlatformSettings = async () => {
       try {
-        const { data, error } = await supabase
-          .from('platform_settings')
-          .select('key, value');
+        // We cast to any here to avoid TS errors as this is a dynamic config table
+        const { data, error } = await (supabase
+          .from('platform_settings' as any)
+          .select('key, value') as any);
         
         if (!error && data) {
           const config = {
-            appId: data.find(s => s.key === 'meta_app_id')?.value || import.meta.env.VITE_META_APP_ID,
-            configId: data.find(s => s.key === 'whatsapp_config_id')?.value || import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
+            appId: data.find((s: any) => s.key === 'meta_app_id')?.value || import.meta.env.VITE_META_APP_ID,
+            configId: data.find((s: any) => s.key === 'whatsapp_config_id')?.value || import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
           };
           setMetaConfig(config);
           console.log('Platform settings loaded from database');
-        } else if (import.meta.env.VITE_META_APP_ID) {
-          // Fallback to env if DB fetch fails but env exists
+        } else {
+          // Fallback if no data or error
           setMetaConfig({
             appId: import.meta.env.VITE_META_APP_ID,
             configId: import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
@@ -62,6 +63,11 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         }
       } catch (err) {
         console.error('Error fetching platform settings:', err);
+        // Ensure we still have a config even on catch
+        setMetaConfig({
+          appId: import.meta.env.VITE_META_APP_ID,
+          configId: import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
+        });
       }
     };
 
