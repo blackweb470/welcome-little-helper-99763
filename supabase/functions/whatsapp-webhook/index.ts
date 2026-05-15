@@ -399,6 +399,146 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Handle "Talk to Agent" button click
+      if (interactiveReply?.id === 'request_agent') {
+        console.log('Visitor clicked "Talk to Agent" button on WhatsApp');
+        
+        // 1. Create or get conversation
+        const visitorId = `whatsapp_${senderPhone}`;
+        let convId: string;
+        
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('visitor_id', visitorId)
+          .eq('channel', 'whatsapp')
+          .is('ended_at', null)
+          .maybeSingle();
+          
+        if (existingConv) {
+          convId = existingConv.id;
+        } else {
+          const { data: newConv } = await supabase.from('conversations').insert({
+            business_id: businessId,
+            visitor_id: visitorId,
+            channel: 'whatsapp',
+            channel_metadata: { phone_number: senderPhone, phone_number_id: phoneNumberId },
+            started_at: new Date().toISOString()
+          }).select().single();
+          convId = newConv.id;
+        }
+
+        // 2. Trigger live agent request (call the same logic as request-live-agent)
+        try {
+          await fetch(
+            `${supabaseUrl}/functions/v1/request-live-agent`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                businessId: businessId,
+                visitorId: visitorId,
+                conversationId: convId,
+                reason: 'Requested via WhatsApp button'
+              }),
+            }
+          );
+        } catch (err) {
+          console.error('Error triggering request-live-agent:', err);
+        }
+
+        // 3. Confirm to visitor on WhatsApp
+        await fetch(
+          `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${waSettings.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messaging_product: 'whatsapp',
+              to: senderPhone,
+              type: 'text',
+              text: { body: "✅ I've notified our team. A human agent will be with you shortly! Feel free to leave more details about your request here." }
+            }),
+          }
+        );
+
+        return new Response(JSON.stringify({ status: 'ok', agent_requested: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Detect if user is asking for an agent/human via text
+      const agentKeywords = ['agent', 'human', 'help', 'person', 'speak to someone', 'talk to someone', 'support'];
+      const isAskingForAgent = !isAdmin && !interactiveReply && agentKeywords.some(kw => messageText.toLowerCase().includes(kw));
+
+      if (isAskingForAgent) {
+        console.log('Sending "Talk to Agent" interactive button to visitor:', senderPhone);
+        
+        await fetch(
+          `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${waSettings.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messaging_product: 'whatsapp',
+              to: senderPhone,
+              type: 'interactive',
+              interactive: {
+                type: 'button',
+                body: {
+                  text: "I can help with most questions, but would you like to speak with a human agent instead?"
+                },
+                action: {
+                  buttons: [
+                    {
+                      type: 'reply',
+                      reply: {
+                        id: 'request_agent',
+                        title: 'Talk to an Agent'
+                      }
+                    }
+                  ]
+                }
+              }
+            }),
+          }
+        );
+
+        // Still save the user's message so it appears in the transcript
+        // But we stop here so the AI doesn't double-reply
+        const visitorId = `whatsapp_${senderPhone}`;
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('business_id', businessId)
+          .eq('visitor_id', visitorId)
+          .eq('channel', 'whatsapp')
+          .is('ended_at', null)
+          .maybeSingle();
+
+        if (existingConv) {
+          await supabase.from('messages').insert({
+            conversation_id: existingConv.id,
+            role: 'user',
+            content: messageText
+          });
+        }
+
+        return new Response(JSON.stringify({ status: 'ok', offered_agent: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       // Check for conversation link code in the message
       const linkCodeMatch = messageContent.match(/\b([A-Z0-9]{6})\b/);
       let linkedConversationId: string | null = null;
@@ -752,19 +892,45 @@ Deno.serve(async (req) => {
 
       // Handle escalation if needed
       if (shouldEscalate) {
-        const { error: escalationError } = await supabase
-          .from('live_chat_sessions')
-          .insert({
-            conversation_id: conversationId,
-            status: 'queued',
-            queued_at: new Date().toISOString(),
-            transfer_reason: 'Customer requested live agent via WhatsApp'
-          });
-
-        if (escalationError) {
+        console.log('AI determined escalation is needed for WhatsApp visitor');
+        try {
+          await fetch(
+            `${supabaseUrl}/functions/v1/request-live-agent`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                businessId: businessId,
+                visitorId: visitorId,
+                conversationId: conversationId,
+                reason: 'AI Escalated: ' + cleanReply.substring(0, 200)
+              }),
+            }
+          );
+          
+          // Send an extra confirmation if the AI reply didn't already sound like a transfer
+          const escalationAck = "🔄 I've put you in the queue for a human agent. They will get back to you shortly!";
+          await fetch(
+            `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${waSettings.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                to: senderPhone,
+                type: 'text',
+                text: { body: escalationAck }
+              }),
+            }
+          );
+        } catch (escalationError) {
           console.error('Error creating escalation:', escalationError);
-        } else {
-          console.log('Created live chat session for escalation');
         }
       }
 
