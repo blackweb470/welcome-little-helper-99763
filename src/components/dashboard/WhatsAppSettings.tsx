@@ -37,6 +37,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const [isEnabled, setIsEnabled] = useState(false);
 
   const [metaConfig, setMetaConfig] = useState<{appId: string, configId: string} | null>(null);
+  const [sdkStatus, setSdkStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   useEffect(() => {
     const fetchPlatformSettings = async () => {
@@ -52,6 +53,12 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
           };
           setMetaConfig(config);
           console.log('Platform settings loaded from database');
+        } else if (import.meta.env.VITE_META_APP_ID) {
+          // Fallback to env if DB fetch fails but env exists
+          setMetaConfig({
+            appId: import.meta.env.VITE_META_APP_ID,
+            configId: import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
+          });
         }
       } catch (err) {
         console.error('Error fetching platform settings:', err);
@@ -69,7 +76,8 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   }, [businessId, metaConfig]);
 
   const loadFacebookSDK = () => {
-    if (window.FB) return;
+    // If already ready, just return
+    if (window.FB && sdkStatus === 'ready') return;
     
     const appId = metaConfig?.appId;
     if (!appId) {
@@ -77,19 +85,43 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
       return;
     }
 
+    setSdkStatus('loading');
+
+    // Timeout to prevent infinite loading state if blocked by ad-blocker
+    const timeoutId = setTimeout(() => {
+      if (!window.FB) {
+        console.error('Meta SDK load timed out. Likely blocked by an ad-blocker.');
+        setSdkStatus('error');
+      }
+    }, 10000);
+
     window.fbAsyncInit = function() {
-      window.FB.init({
-        appId: metaConfig?.appId,
-        autoLogAppEvents: true,
-        xfbml: true,
-        version: 'v21.0'
-      });
+      try {
+        window.FB.init({
+          appId: appId,
+          autoLogAppEvents: true,
+          xfbml: true,
+          version: 'v21.0'
+        });
+        console.log('Meta SDK Initialized');
+        setSdkStatus('ready');
+        clearTimeout(timeoutId);
+      } catch (e) {
+        console.error('Error initializing Meta SDK:', e);
+        setSdkStatus('error');
+      }
     };
 
     // Load script
     (function(d, s, id) {
       var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
+      if (d.getElementById(id)) {
+        // If script already exists, check if FB is available or wait for it
+        if (window.FB) {
+          window.fbAsyncInit();
+        }
+        return;
+      }
       js = d.createElement(s) as HTMLScriptElement; js.id = id;
       js.src = "https://connect.facebook.net/en_US/sdk.js";
       if (fjs && fjs.parentNode) {
@@ -119,12 +151,23 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   };
 
   const launchWhatsAppSignup = () => {
-    if (!window.FB) {
+    if (sdkStatus === 'error') {
       toast({
         variant: "destructive",
-        title: "SDK Not Loaded",
-        description: "Facebook SDK is still loading. Please wait a moment and try again."
+        title: "SDK Error",
+        description: "Failed to load Meta SDK. This is usually caused by an ad-blocker. Please disable it and refresh."
       });
+      return;
+    }
+
+    if (!window.FB || sdkStatus !== 'ready') {
+      toast({
+        variant: "default",
+        title: "Initializing...",
+        description: "Meta SDK is still setting up. Please wait a moment."
+      });
+      // Try to re-init just in case
+      loadFacebookSDK();
       return;
     }
 
@@ -341,19 +384,32 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
               </div>
 
               {!isManualMode ? (
-                <Button 
-                  size="lg" 
-                  onClick={launchWhatsAppSignup} 
-                  disabled={connecting}
-                  className="px-8 shadow-lg shadow-primary/20 gap-2 font-semibold text-lg h-14 bg-gradient-to-r from-primary to-primary/80 hover:scale-105 transition-transform"
-                >
-                  {connecting ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Zap className="h-5 w-5 fill-current" />
+                <div className="flex flex-col items-center gap-3">
+                  <Button 
+                    size="lg" 
+                    onClick={launchWhatsAppSignup} 
+                    disabled={connecting || sdkStatus === 'loading'}
+                    className={`px-8 shadow-lg shadow-primary/20 gap-2 font-semibold text-lg h-14 bg-gradient-to-r from-primary to-primary/80 transition-all ${sdkStatus === 'ready' ? 'hover:scale-105' : 'opacity-80 cursor-wait'}`}
+                  >
+                    {connecting || sdkStatus === 'loading' ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Zap className="h-5 w-5 fill-current" />
+                    )}
+                    {connecting ? "Connecting..." : sdkStatus === 'loading' ? "Initializing SDK..." : "Connect WhatsApp Now"}
+                  </Button>
+                  
+                  {sdkStatus === 'loading' && (
+                    <p className="text-xs text-muted-foreground animate-pulse">
+                      Loading Meta developer tools...
+                    </p>
+                  ) || sdkStatus === 'error' && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      SDK failed to load. Please disable ad-blockers and <button onClick={() => window.location.reload()} className="underline font-bold">refresh</button>.
+                    </p>
                   )}
-                  {connecting ? "Connecting..." : "Connect WhatsApp Now"}
-                </Button>
+                </div>
               ) : (
                 <div className="w-full max-w-lg space-y-4 bg-muted/30 p-6 rounded-2xl border border-border animate-in fade-in slide-in-from-bottom-4">
                   <div className="grid grid-cols-1 gap-4 text-left">
