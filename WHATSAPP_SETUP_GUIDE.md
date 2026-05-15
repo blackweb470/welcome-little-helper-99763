@@ -18,9 +18,9 @@ Follow these steps in order to connect your WhatsApp Business account to the Lyq
    - **JavaScript SDK**: Go to **WhatsApp > Configuration**. Add `https://lyqn.app` to the **Allowed Domains for the JavaScript SDK**.
 
 4. **Gather IDs**:
-   - **App ID**: Found at the top of the Meta Dashboard.
-   - **App Secret**: Found in **App Settings > Basic**.
-   - **Config ID**: Found in **WhatsApp > Embedded Signup**.
+   - **App ID**: `2143263399800980`
+   - **App Secret**: `41749704b6a11dacd44584f47e8e8a26`
+   - **Config ID**: `970530725626776`
 
 ---
 
@@ -28,15 +28,15 @@ Follow these steps in order to connect your WhatsApp Business account to the Lyq
 1. **Local Environment**:
    - Update your `.env` file with the IDs gathered above:
      ```env
-     VITE_META_APP_ID="your_app_id"
+     VITE_META_APP_ID="2143263399800980"
      VITE_WHATSAPP_CONFIG_ID="970530725626776"
-     META_APP_SECRET="your_app_secret"
+     META_APP_SECRET="41749704b6a11dacd44584f47e8e8a26"
      ```
 
 2. **Cloud Environment (Supabase)**:
    - Run this command in your terminal to sync the secrets to the Edge Functions:
      ```bash
-     npx supabase secrets set META_APP_SECRET="your_app_secret" VITE_META_APP_ID="your_app_id" --project-ref rgczbabidcqvpyiiqjfv
+     npx supabase secrets set META_APP_SECRET="41749704b6a11dacd44584f47e8e8a26" VITE_META_APP_ID="2143263399800980" --project-ref rgczbabidcqvpyiiqjfv
      ```
 
 ---
