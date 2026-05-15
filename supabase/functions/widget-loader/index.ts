@@ -1,3 +1,4 @@
+// @ts-ignore: Deno types
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const corsHeaders = {
@@ -5,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -13,8 +14,9 @@ serve(async (req) => {
   const url = new URL(req.url);
   const businessId = url.searchParams.get('id');
   
-  // These are automatically available in Supabase Edge Functions
+  // @ts-ignore: Deno namespace
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  // @ts-ignore: Deno namespace
   const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
   
   // The frontend URL (for the iframe)
