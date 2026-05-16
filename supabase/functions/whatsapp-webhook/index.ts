@@ -392,12 +392,13 @@ Deno.serve(async (req) => {
             messageContent = '[Image - failed to process]';
           }
         }
-      } else if (messageType !== 'text' || !messageText) {
+      } else if ((messageType !== 'text' && messageType !== 'interactive') || !messageText) {
         console.log('Unsupported message type, skipping');
         return new Response(JSON.stringify({ status: 'ok' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+
 
       // Handle "Talk to Agent" button click
       if (interactiveReply?.id === 'request_agent') {
