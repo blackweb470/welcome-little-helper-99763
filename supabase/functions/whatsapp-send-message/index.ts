@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { businessId, conversationId, message, interactive } = validationResult.data;
+    const { businessId, conversationId, message, interactive, imageUrl } = validationResult.data;
     console.log('Sending WhatsApp message:', { 
       businessId, 
       conversationId, 
