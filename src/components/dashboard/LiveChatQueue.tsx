@@ -136,33 +136,101 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
 
   const fetchSessions = async () => {
     try {
-      const { data: conversations } = await supabase
-        .from('conversations')
-        .select('id, channel, channel_metadata, visitor_id, visitor_name')
-        .eq('business_id', businessId);
-
-      if (!conversations) return;
-
-      const conversationIds = conversations.map(c => c.id);
-      
-      // Store conversation data for reference
-      const convMap: Record<string, Conversation> = {};
-      conversations.forEach(c => { convMap[c.id] = c; });
-      setSessionConversations(convMap);
-
-      const { data, error } = await supabase
+      const { data: liveChatSessions, error } = await supabase
         .from('live_chat_sessions')
         .select('*')
-        .in('conversation_id', conversationIds)
         .in('status', ['queued', 'active'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSessions(data || []);
+      
+      const sessionData = liveChatSessions || [];
+
+      if (sessionData.length === 0) {
+        setSessions([]);
+        setSessionConversations({});
+        setLoading(false);
+        return;
+      }
+
+      const conversationIds = sessionData.map(s => s.conversation_id);
+      
+      const { data: conversations } = await supabase
+        .from('conversations')
+        .select('id, channel, channel_metadata, visitor_id, visitor_name, business_id')
+        .in('id', conversationIds)
+        .eq('business_id', businessId);
+
+      if (!conversations) return;
+
+      const convMap: Record<string, Conversation> = {};
+      conversations.forEach(c => { convMap[c.id] = c; });
+      setSessionConversations(convMap);
+
+      // Only expose sessions that belong to this business — never set state with
+      // unfiltered sessions as that would momentarily expose cross-business session IDs.
+      const validSessions = sessionData.filter(s => convMap[s.conversation_id]);
+      setSessions(validSessions);
+
     } catch (error) {
       console.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendSystemMessage = async (conversationId: string, content: string) => {
+    try {
+      const conversation = selectedConversation || sessionConversations[conversationId];
+      
+      if (conversation?.channel === 'whatsapp') {
+        // Attempt WhatsApp delivery (the edge function saves to DB internally)
+        const { error: waError } = await supabase.functions.invoke('whatsapp-send-message', {
+          body: {
+            businessId: businessId,
+            conversationId: conversationId,
+            message: content
+          }
+        });
+
+        if (waError) {
+          // WhatsApp not configured for this business — save directly to DB as a fallback
+          console.warn('WhatsApp delivery failed, saving to DB only:', waError.message);
+          await supabase
+            .from('messages')
+            .insert({
+              conversation_id: conversationId,
+              role: 'assistant',
+              content: content
+            });
+        }
+      } else {
+        const { data: insertedMessage } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversationId,
+            role: 'assistant',
+            content: content
+          })
+          .select('id, content, role, created_at')
+          .single();
+
+        const broadcastChannel = supabase.channel(`visitor-messages-${conversationId}`);
+        await broadcastChannel.subscribe();
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'agent_message',
+          payload: {
+            id: insertedMessage?.id,
+            content: content,
+            role: 'assistant',
+            created_at: insertedMessage?.created_at,
+          },
+        });
+        await supabase.removeChannel(broadcastChannel);
+      }
+    } catch (err) {
+      console.error('Failed to send system message:', err);
     }
   };
 
@@ -279,6 +347,9 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
               acceptedAt: new Date().toISOString(),
             },
           });
+          
+          // Send automated system message
+          await sendSystemMessage(conversationIdForBroadcast, "An agent has joined the chat and will assist you shortly.");
         }
       } catch (broadcastErr) {
         console.error('Failed to broadcast agent_joined:', broadcastErr);
@@ -317,6 +388,14 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const endChat = async (sessionId: string) => {
     try {
       setEndingChat(sessionId);
+      
+      const sessionForBroadcast = sessions.find(s => s.id === sessionId);
+      const conversationIdForBroadcast = sessionForBroadcast?.conversation_id;
+      
+      if (conversationIdForBroadcast) {
+        await sendSystemMessage(conversationIdForBroadcast, "The agent has ended the chat.");
+      }
+
       const { error } = await supabase
         .from('live_chat_sessions')
         .update({
@@ -474,8 +553,8 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       
       // Check if this is a WhatsApp conversation
       if (conversation?.channel === 'whatsapp') {
-        // Send via WhatsApp API
-        const { data, error } = await supabase.functions.invoke('whatsapp-send-message', {
+        // Attempt WhatsApp delivery (the edge function saves to DB internally)
+        const { error: waError } = await supabase.functions.invoke('whatsapp-send-message', {
           body: {
             businessId: businessId,
             conversationId: selectedSession.conversation_id,
@@ -483,15 +562,29 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           }
         });
 
-        if (error) {
-          console.error('Error sending WhatsApp message:', error);
-          throw error;
-        }
+        if (waError) {
+          // WhatsApp not configured — save to DB directly as a fallback
+          console.warn('WhatsApp delivery failed, saving to DB only:', waError.message);
+          const { error: msgError } = await supabase
+            .from('messages')
+            .insert({
+              conversation_id: selectedSession.conversation_id,
+              role: 'assistant',
+              content: messageInput.trim()
+            });
+          if (msgError) throw msgError;
 
-        toast({
-          title: "Message sent",
-          description: "Your message has been delivered via WhatsApp"
-        });
+          toast({
+            title: "Message saved",
+            description: "Message recorded but WhatsApp delivery failed. Check your WhatsApp configuration.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Message sent",
+            description: "Your message has been delivered via WhatsApp"
+          });
+        }
       } else {
         // Send via regular database insert
         const messageContent = messageInput.trim();

@@ -714,60 +714,60 @@ Deno.serve(async (req) => {
         throw new Error('OPENAI_API_KEY not configured');
       }
 
-      // Fetch widget settings and context
-      const { data: widgetSettings } = await supabase
-        .from('widget_settings')
-        .select('*')
-        .eq('business_id', businessId)
-        .maybeSingle();
+      // Fetch all AI context in parallel for speed
+      const [widgetSettingsResult, learningsResult, historyResult, relevantChunks] = await Promise.all([
+        // 1. Widget settings
+        supabase.from('widget_settings').select('*').eq('business_id', businessId).maybeSingle(),
 
-      const { data: learnings } = await supabase
-        .from('business_learnings')
-        .select('content')
-        .eq('business_id', businessId)
-        .order('confidence_score', { ascending: false })
-        .limit(5);
+        // 2. Business learnings
+        supabase
+          .from('business_learnings')
+          .select('content')
+          .eq('business_id', businessId)
+          .order('confidence_score', { ascending: false })
+          .limit(5),
 
-      const { data: history } = await supabase
-        .from('messages')
-        .select('role, content')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+        // 3. Last 20 messages only — prevents token bloat in long conversations
+        supabase
+          .from('messages')
+          .select('role, content')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: false })
+          .limit(20),
 
-      // Generate embedding for the user's message to perform RAG
-      let relevantChunks = '';
-      try {
-        if (messageText && messageText.trim().length > 0) {
-          const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${OPENAI_API_KEY}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              input: messageText.replace(/\n/g, ' '),
-              model: 'text-embedding-3-small'
-            })
-          });
-          
-          if (embedRes.ok) {
-            const embedData = await embedRes.json();
-            const queryEmbedding = embedData.data[0].embedding;
-            
-            const { data: matchData, error: matchError } = await supabase.rpc('match_knowledge_chunks', {
-              query_embedding: queryEmbedding,
-              match_count: 5,
-              p_business_id: businessId
-            });
-            
-            if (!matchError && matchData && matchData.length > 0) {
-              relevantChunks = matchData.map((chunk: any) => `Source: ${chunk.source_type}\nContent: ${chunk.content}`).join('\n\n');
-            }
-          }
-        }
-      } catch (e) {
-        console.error('RAG Error:', e);
-      }
+        // 4. RAG knowledge search — skip for very short messages (greetings etc.)
+        messageText.trim().length > 10
+          ? (async (): Promise<string> => {
+              try {
+                const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ input: messageText.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
+                });
+                if (!embedRes.ok) return '';
+                const embedData = await embedRes.json();
+                const queryEmbedding = embedData.data[0].embedding;
+                const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
+                  query_embedding: queryEmbedding,
+                  match_count: 5,
+                  p_business_id: businessId
+                });
+                if (matchData && matchData.length > 0) {
+                  return matchData.map((chunk: any) => `Source: ${chunk.source_type}\nContent: ${chunk.content}`).join('\n\n');
+                }
+                return '';
+              } catch (e) {
+                console.error('RAG Error:', e);
+                return '';
+              }
+            })()
+          : Promise.resolve('')
+      ]);
+
+      const widgetSettings = widgetSettingsResult.data;
+      const learnings = learningsResult.data;
+      // Fetched DESC for limit efficiency — reverse to restore chronological order
+      const history = (historyResult.data || []).reverse();
 
       // Build system prompt
       let systemPrompt = widgetSettings?.system_prompt || 'You are a helpful AI assistant.';
