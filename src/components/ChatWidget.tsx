@@ -1659,9 +1659,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
   // Standalone widget with button (for demo page or direct use)
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
+    <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end">
       {isOpen ? (
-        <Card className="w-[360px] sm:w-[400px] h-[550px] sm:h-[600px] shadow-2xl flex flex-col overflow-hidden">
+        <Card className="w-[calc(100vw-1rem)] sm:w-[400px] h-[calc(100dvh-5rem)] sm:h-[600px] shadow-2xl flex flex-col overflow-hidden">
           <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
             <div className="flex items-center gap-2 sm:gap-3">
               <div 
@@ -1684,10 +1684,20 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 variant="header"
               />
               <button 
-                onClick={() => setIsOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-1 shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsOpen(false);
+                }}
+                className="text-muted-foreground hover:text-foreground p-2 -mr-1 shrink-0 touch-manipulation"
+                aria-label="Close chat window"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
             </div>
           </CardHeader>
