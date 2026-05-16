@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
             title: message.interactive.button_reply.title
           };
           // If it's a command button, use the ID as the message text
-          if (message.interactive.button_reply.id.startsWith('cmd_') || message.interactive.button_reply.id.includes('_')) {
+          if (message.interactive.button_reply.id.startsWith('cmd_') || (message.interactive.button_reply.id.includes('_') && message.interactive.button_reply.id !== 'request_agent')) {
             messageText = message.interactive.button_reply.id.replace('cmd_', '/');
             // If it doesn't start with /, and contains _, it might be an internal ID like accept_abc
             if (!messageText.startsWith('/')) {
@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
           };
           
           // If it's a command list item, use the ID as the message text
-          if (listId.startsWith('cmd_') || listId.includes('_')) {
+          if (listId.startsWith('cmd_') || (listId.includes('_') && listId !== 'request_agent')) {
             messageText = listId.replace('cmd_', '/');
             if (!messageText.startsWith('/')) {
               messageText = '/' + messageText.replace('_', ' ');
