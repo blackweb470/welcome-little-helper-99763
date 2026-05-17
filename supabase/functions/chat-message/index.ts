@@ -366,9 +366,9 @@ Deno.serve(async (req: Request) => {
               const queryEmbedding = embedData.data[0].embedding;
               const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
                 query_embedding: queryEmbedding,
-                match_count: 8,
+                match_count: 10,
                 p_business_id: businessId,
-                similarity_threshold: 0.25
+                similarity_threshold: 0.15
               });
               if (matchData && matchData.length > 0) {
                 console.log(`RAG: ${matchData.length} chunks matched (top similarity: ${matchData[0]?.similarity?.toFixed(3)})`);
