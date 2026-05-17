@@ -485,6 +485,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       const { data: urlData } = supabase.storage
         .from('message-attachments')
         .getPublicUrl(fileName);
+      const imageUrl = urlData.publicUrl;
       // If this is a WhatsApp conversation, send it via the WhatsApp API
       const conversation = selectedConversation || sessionConversations[selectedSession.conversation_id];
       if (conversation?.channel === 'whatsapp') {
