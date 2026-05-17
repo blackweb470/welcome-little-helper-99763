@@ -323,9 +323,17 @@ Deno.serve(async (req: Request) => {
       throw new Error('OPENAI_API_KEY not configured');
     }
 
-    // Fetch learnings, history, and RAG knowledge all in parallel
-    const [learningsResult, historyResult, relevantChunks] = await Promise.all([
-      // 1. Business learnings
+    // 1. Fetch conversation history first so it's fully populated and accessible for the RAG query context augmentation
+    const historyResult = await supabase
+      .from('messages')
+      .select('role, content')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    // 2. Fetch learnings and RAG knowledge in parallel
+    const [learningsResult, relevantChunks] = await Promise.all([
+      // A. Business learnings
       supabase
         .from('business_learnings')
         .select('content')
@@ -333,15 +341,7 @@ Deno.serve(async (req: Request) => {
         .order('confidence_score', { ascending: false })
         .limit(5),
 
-      // 2. Last 20 messages only — prevents token bloat in long conversations
-      supabase
-        .from('messages')
-        .select('role, content')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: false })
-        .limit(20),
-
-      // 3. RAG knowledge search — context-augmented query for better short/follow-up question handling
+      // B. RAG knowledge search — context-augmented query for better short/follow-up question handling
       message.trim().length >= 1
         ? (async (): Promise<string> => {
             try {
@@ -361,7 +361,10 @@ Deno.serve(async (req: Request) => {
                 headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ input: augmentedQuery.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
               });
-              if (!embedRes.ok) return '';
+              if (!embedRes.ok) {
+                console.error('Embeddings API Error:', await embedRes.text());
+                return '';
+              }
               const embedData = await embedRes.json();
               const queryEmbedding = embedData.data[0].embedding;
               const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {

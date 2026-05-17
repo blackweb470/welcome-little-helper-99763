@@ -713,12 +713,20 @@ Deno.serve(async (req) => {
         throw new Error('OPENAI_API_KEY not configured');
       }
 
-      // Fetch all AI context in parallel for speed
-      const [widgetSettingsResult, learningsResult, historyResult, qaPairsResult, relevantChunks] = await Promise.all([
-        // 1. Widget settings
+      // 1. Fetch conversation history first so it's fully populated and accessible for the RAG query context augmentation
+      const historyResult = await supabase
+        .from('messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // 2. Fetch all other AI context in parallel for speed
+      const [widgetSettingsResult, learningsResult, qaPairsResult, relevantChunks] = await Promise.all([
+        // A. Widget settings
         supabase.from('widget_settings').select('*').eq('business_id', businessId).maybeSingle(),
 
-        // 2. Business learnings
+        // B. Business learnings
         supabase
           .from('business_learnings')
           .select('content')
@@ -726,15 +734,7 @@ Deno.serve(async (req) => {
           .order('confidence_score', { ascending: false })
           .limit(5),
 
-        // 3. Last 20 messages only — prevents token bloat in long conversations
-        supabase
-          .from('messages')
-          .select('role, content')
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: false })
-          .limit(20),
-
-        // 4. Q&A Pairs
+        // C. Q&A Pairs
         supabase
           .from('bot_qa_pairs')
           .select('*')
@@ -742,7 +742,7 @@ Deno.serve(async (req) => {
           .eq('enabled', true)
           .order('priority', { ascending: false }),
 
-        // 5. RAG knowledge search — context-augmented query for better short/follow-up question handling
+        // D. RAG knowledge search — context-augmented query for better short/follow-up question handling
         messageText.trim().length >= 1
           ? (async (): Promise<string> => {
               try {
@@ -762,7 +762,10 @@ Deno.serve(async (req) => {
                   headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
                   body: JSON.stringify({ input: augmentedQuery.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
                 });
-                if (!embedRes.ok) return '';
+                if (!embedRes.ok) {
+                  console.error('Embeddings API Error:', await embedRes.text());
+                  return '';
+                }
                 const embedData = await embedRes.json();
                 const queryEmbedding = embedData.data[0].embedding;
                 const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
