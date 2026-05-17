@@ -1700,7 +1700,16 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
   // Standalone widget with button (for demo page or direct use)
   return (
-    <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end">
+    <>
+      {/* Mobile Backdrop to close when clicking outside */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 sm:hidden bg-black/20 backdrop-blur-sm transition-opacity" 
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end">
       {isOpen ? (
         <Card className="w-[calc(100vw-1rem)] sm:w-[400px] h-[calc(100dvh-5rem)] sm:h-[600px] shadow-2xl flex flex-col overflow-hidden">
           <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
@@ -1730,13 +1739,9 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                   e.stopPropagation();
                   setIsOpen(false);
                 }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsOpen(false);
-                }}
-                className="text-muted-foreground hover:text-foreground p-2 -mr-1 shrink-0 touch-manipulation"
+                className="text-muted-foreground hover:text-foreground p-3 -mr-1 shrink-0 cursor-pointer"
                 aria-label="Close chat window"
+                type="button"
               >
                 <X className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
@@ -1827,6 +1832,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           </Button>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 };
