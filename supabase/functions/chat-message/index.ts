@@ -341,26 +341,46 @@ Deno.serve(async (req: Request) => {
         .order('created_at', { ascending: false })
         .limit(20),
 
-      // 3. RAG knowledge search — skip for very short messages (greetings etc.)
-      message.trim().length > 10
+      // 3. RAG knowledge search — context-augmented query for better short/follow-up question handling
+      message.trim().length >= 1
         ? (async (): Promise<string> => {
             try {
+              // Build a richer query: combine the current message with recent conversation context
+              // This helps short messages like "how much?" find the right content
+              const recentHistory = (historyResult.data || []).slice(-4); // last 2 exchanges
+              const userContext = recentHistory
+                .filter((m: any) => m.role === 'user')
+                .map((m: any) => m.content)
+                .join(' ');
+              const augmentedQuery = userContext
+                ? `${userContext} ${message}`.trim().slice(0, 800)
+                : message;
+
               const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: message.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
+                body: JSON.stringify({ input: augmentedQuery.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
               });
               if (!embedRes.ok) return '';
               const embedData = await embedRes.json();
               const queryEmbedding = embedData.data[0].embedding;
               const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
                 query_embedding: queryEmbedding,
-                match_count: 5,
-                p_business_id: businessId
+                match_count: 8,
+                p_business_id: businessId,
+                similarity_threshold: 0.25
               });
               if (matchData && matchData.length > 0) {
-                return matchData.map((chunk: any) => `Source: ${chunk.source_type}\nContent: ${chunk.content}`).join('\n\n');
+                console.log(`RAG: ${matchData.length} chunks matched (top similarity: ${matchData[0]?.similarity?.toFixed(3)})`);
+                return matchData.map((chunk: any) => {
+                  const meta = chunk.metadata || {};
+                  const sourceLabel = meta.title
+                    ? `${chunk.source_type === 'website' ? '🌐' : '📄'} ${meta.title}${meta.url ? ` (${meta.url})` : ''}`
+                    : `${chunk.source_type}`;
+                  return `Source: ${sourceLabel}\nContent: ${chunk.content}`;
+                }).join('\n\n---\n\n');
               }
+              console.log('RAG: no chunks above similarity threshold');
               return '';
             } catch (e) {
               console.error('RAG Error:', e);
@@ -380,7 +400,15 @@ Deno.serve(async (req: Request) => {
     systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
     
     if (relevantChunks) {
-      systemPrompt += '\n\nRelevant Business Knowledge:\n' + relevantChunks;
+      systemPrompt += '\n\nRelevant Business Knowledge (use this information to answer accurately — each block shows its source):\n\n' + relevantChunks;
+      systemPrompt += '\n\nIMPORTANT: When answering, use the information above. If you reference specific details, you may mention the source (e.g., "According to our website..."). Do NOT make up information not present in the knowledge above.';
+    }
+
+    if (qaPairs && qaPairs.length > 0) {
+      systemPrompt += '\n\nFrequently Asked Questions (Use these to answer user queries accurately):\n';
+      qaPairs.forEach((pair: any) => {
+        systemPrompt += `Q: ${pair.question}\nA: ${pair.answer}\n\n`;
+      });
     }
 
     let contextAdded = 0;

@@ -5,6 +5,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
+// ─── Sentence-aware chunking with overlap ────────────────────────────────────
+// 500-char chunks, 100-char overlap, splits at sentence/paragraph boundaries
+function chunkTextWithOverlap(
+  text: string,
+  chunkSize = 500,
+  overlap = 100
+): string[] {
+  const chunks: string[] = [];
+  const step = chunkSize - overlap;
+
+  const sentences = text.split(/(?<=[.!?])\s+|\n\n+/);
+  let buffer = '';
+
+  for (const sentence of sentences) {
+    if ((buffer + ' ' + sentence).trim().length <= chunkSize) {
+      buffer = (buffer + ' ' + sentence).trim();
+    } else {
+      if (buffer.length > 0) {
+        chunks.push(buffer);
+        buffer = buffer.slice(-overlap) + ' ' + sentence.trim();
+        buffer = buffer.trim();
+      } else {
+        // Force-split long sentences
+        let i = 0;
+        while (i < sentence.length) {
+          chunks.push(sentence.slice(i, i + chunkSize));
+          i += step;
+        }
+        buffer = '';
+      }
+    }
+  }
+  if (buffer.length > 50) chunks.push(buffer);
+
+  return chunks.filter(c => c.trim().length > 30);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,6 +68,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const openAiKey = Deno.env.get('OPENAI_API_KEY');
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Format URL
@@ -57,7 +95,7 @@ Deno.serve(async (req) => {
     });
 
     const mapData = await mapResponse.json();
-    
+
     if (!mapResponse.ok || !mapData.success) {
       console.error('Map failed:', mapData);
       return new Response(
@@ -82,7 +120,7 @@ Deno.serve(async (req) => {
       .from('business_website_content')
       .delete()
       .eq('business_id', businessId);
-      
+
     await supabase
       .from('knowledge_chunks')
       .delete()
@@ -94,13 +132,12 @@ Deno.serve(async (req) => {
     const results = [];
     const errors = [];
 
-    // Limit concurrent requests
     const urlsToScrape = urls.slice(0, maxPages);
-    
+
     for (const url of urlsToScrape) {
       try {
         console.log(`Scraping: ${url}`);
-        
+
         const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
           method: 'POST',
           headers: {
@@ -115,13 +152,14 @@ Deno.serve(async (req) => {
         });
 
         const scrapeData = await scrapeResponse.json();
-        
+
         if (scrapeResponse.ok && scrapeData.success) {
           const content = scrapeData.data?.markdown || scrapeData.markdown || '';
           const title = scrapeData.data?.metadata?.title || scrapeData.metadata?.title || url;
-          
+          const description = scrapeData.data?.metadata?.description || scrapeData.metadata?.description || '';
+
           if (content && content.trim().length > 50) {
-            // Store in database
+            // Store raw page content
             const { error: insertError } = await supabase
               .from('business_website_content')
               .insert({
@@ -136,42 +174,53 @@ Deno.serve(async (req) => {
               console.error(`Failed to store content for ${url}:`, insertError);
               errors.push({ url, error: insertError.message });
             } else {
-              // Generate embeddings for RAG
-              try {
-                const openAiKey = Deno.env.get('OPENAI_API_KEY');
-                if (openAiKey) {
-                  const chunkSize = 1000;
-                  for (let i = 0; i < content.length; i += chunkSize) {
-                    const chunk = content.slice(i, i + chunkSize);
-                    
+              // Generate embeddings with sentence-aware chunking + overlap
+              if (openAiKey) {
+                try {
+                  const chunks = chunkTextWithOverlap(content, 500, 100);
+                  console.log(`Page "${title}": ${chunks.length} chunks from ${content.length} chars`);
+
+                  let pageChunks = 0;
+                  for (let idx = 0; idx < chunks.length; idx++) {
+                    const chunk = chunks[idx];
+
                     const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${openAiKey}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
                         input: chunk.replace(/\n/g, ' '),
-                        model: 'text-embedding-3-small'
-                      })
+                        model: 'text-embedding-3-small',
+                      }),
                     });
-                    
+
                     if (embedRes.ok) {
                       const embedData = await embedRes.json();
                       const embedding = embedData.data[0].embedding;
-                      
+
                       await supabase.from('knowledge_chunks').insert({
                         business_id: businessId,
                         source_type: 'website',
                         source_id: url,
                         content: chunk,
-                        embedding: embedding
+                        embedding,
+                        chunk_index: idx,
+                        metadata: {
+                          title,
+                          url,
+                          description: description.slice(0, 200),
+                          total_chunks: chunks.length,
+                        },
                       });
+                      pageChunks++;
                     }
                   }
+                  console.log(`Stored ${pageChunks} chunks for: ${title}`);
+                } catch (embedError) {
+                  console.error(`Failed to generate embeddings for ${url}:`, embedError);
                 }
-              } catch (embedError) {
-                console.error(`Failed to generate embeddings for ${url}:`, embedError);
               }
 
               results.push({ url, title, contentLength: content.length });

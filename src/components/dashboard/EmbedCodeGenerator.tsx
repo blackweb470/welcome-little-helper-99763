@@ -18,10 +18,7 @@ export const EmbedCodeGenerator = ({ businessId }: EmbedCodeGeneratorProps) => {
 
   // ── Snippets ──────────────────────────────────────────
   const scriptSnippet = `<!-- LYQN Chat Widget -->
-<script
-  src="${baseUrl}/widget-loader.js"
-  data-business-id="${businessId}"
-></script>`;
+<script src="https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/widget-loader?id=${businessId}" async></script>`;
 
   const iframeSnippet = `<!-- LYQN Chat Widget (iframe) -->
 <iframe

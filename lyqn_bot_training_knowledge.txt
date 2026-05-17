@@ -1,0 +1,114 @@
+# Lyqn AI Bot Training Knowledge Base
+This document is generated directly from the Lyqn AI codebase. Use this precise, factual information to answer inquiries from businesses interested in using the Lyqn AI agent.
+
+---
+
+## 1. PRODUCT OVERVIEW
+Lyqn AI is an advanced customer support platform that provides businesses with automated AI agents, real-time live human agent handoff, voice chat capabilities, and omnichannel support via Web and Meta WhatsApp.
+
+---
+
+## 2. PRICING PLANS & SUBSCRIPTIONS
+All subscription billing is handled securely via Polar with automatic trial-to-paid conversion. The Basic plan includes a 1-month free trial.
+
+- **Basic Plan ($9.99/month)**
+  - 1 Month Free Trial
+  - Up to 3 Businesses
+  - Pre-Chat Forms
+  - Canned Responses
+  - Basic Analytics
+
+- **Pro Plan ($29.99/month)**
+  - Up to 10 Businesses
+  - Live Agent Transfer (Handoff)
+  - Advanced Analytics
+  - Sentiment Analysis
+  - Voice Chat (BETA)
+
+- **Business Plan ($99.99/month)**
+  - Unlimited Businesses
+  - AI Learning (Custom training)
+  - Business Documents Support
+  - Advanced Tracking
+  - API Access
+
+---
+
+## 3. CORE FEATURES
+
+### A. Proactive Chat Rules
+Automatically engage visitors on your website based on specific behavioral triggers:
+- **Time on Page:** Triggers after a visitor spends X seconds on the page.
+- **Specific Page:** Triggers when a visitor lands on a particular URL (e.g., pricing page).
+- **Exit Intent:** Triggers when a visitor moves their mouse to leave the page, reducing bounce rates.
+- **Scroll Depth:** Triggers after a visitor scrolls X% down the page.
+
+### B. Ticketing System
+Automatically creates support tickets from chat conversations to help track unresolved issues.
+- **When created:** When a live agent conversation ends unresolved, is manually escalated, or a visitor requests human support.
+- **Properties:** Status (open, in_progress, resolved, closed), Priority (low, medium, high, urgent), and Assignable to specific team members.
+
+### C. Voice Chat (BETA)
+Allows visitors to speak naturally with the AI assistant using their microphone.
+- **Capabilities:** Real-time voice recognition, natural language understanding, voice responses from AI, automatic transcription, and sentiment analysis.
+- **Tech Stack:** Powered by OpenAI Realtime API via Supabase Edge Functions.
+
+### D. Live Agent Transfer
+Available on Pro and Business plans, allowing a seamless transition from the AI bot to a human agent, including the entire conversation history.
+
+---
+
+## 4. WHATSAPP BUSINESS INTEGRATION
+
+Lyqn AI integrates natively with the Meta WhatsApp Business API.
+- **Setup Requirements:** A verified Meta Business Account and an App created in the Meta Developer Portal.
+- **Whitelisting:** Your domain must be whitelisted (e.g., lyqn.app) in the Meta App settings.
+- **Manual Setup:** If businesses face domain whitelisting errors from Meta, Lyqn provides a Manual Setup route using a Phone Number ID, WhatsApp Business Account ID, and a Permanent Access Token.
+- **Functionality:** Both the AI and your live agents can respond to WhatsApp messages from the unified Lyqn dashboard.
+
+---
+
+## 5. INSTALLATION & SETUP
+
+**Web Widget Installation:**
+1. Include the provided JavaScript embed code in the `<head>` or `<body>` tag of your website.
+2. The code snippet initializes the widget on every page where it is placed.
+3. To test the widget before going live, you can use the `/widget-demo` route in the Lyqn dashboard.
+
+**Signup & Onboarding Flow:**
+1. Businesses sign up using email/password.
+2. If it's a new account, they are redirected to the pricing page.
+3. They select a plan (e.g., Basic for a 1-month free trial) and add their payment card via the Polar checkout.
+4. They immediately get access to the dashboard. The card is only charged after the 1-month trial ends.
+5. Subscriptions can be managed, upgraded, downgraded, or canceled directly from the `/billing` page in the dashboard.
+
+---
+
+## 6. FREQUENTLY ASKED QUESTIONS FROM BUSINESSES (Bot Q&A)
+
+**Q: Do you offer a free trial?**
+A: Yes! Our Basic Plan ($9.99/month) comes with a 1-month free trial. You can test the platform completely risk-free before being charged.
+
+**Q: Can customers talk to the AI using their voice?**
+A: Yes, if you are on the Pro or Business plan, we offer a Voice Chat feature (currently in BETA) that allows real-time voice recognition and AI voice responses using professional-grade audio processing.
+
+**Q: What happens if the AI cannot solve a customer's issue?**
+A: If you are on the Pro or Business plan, the AI can seamlessly transfer the conversation to a live human agent. Furthermore, our Ticketing System will automatically create a ticket for unresolved issues so your team can track and follow up later.
+
+**Q: How do I install the chat widget on my website?**
+A: It's very simple. You just copy a short HTML `<script>` snippet from your dashboard and paste it into your website's code. It works on almost any website platform.
+
+**Q: Does the platform integrate with WhatsApp?**
+A: Absolutely. We have a complete Meta WhatsApp integration. You can connect your WhatsApp Business account via the Meta Developer Portal and manage all WhatsApp conversations directly inside the Lyqn dashboard.
+
+**Q: What if I have multiple businesses?**
+A: The Basic plan supports up to 3 businesses. If you have more, the Pro plan supports up to 10, and the Business plan ($99.99/month) supports unlimited businesses.
+
+**Q: How do proactive chat rules work?**
+A: You can set up smart triggers in the dashboard to automatically open the chat and send a message. For example, you can trigger a message when a user is about to leave the site (Exit Intent), when they scroll halfway down the page (Scroll Depth), or after they spend 30 seconds on your pricing page.
+
+**Q: How can I cancel my subscription?**
+A: You can manage your subscription, view your next billing date, change plans, or cancel directly from the `/billing` page in your dashboard.
+
+**Q: Does the AI learn from my business documents?**
+A: Yes, if you are on the Business plan ($99.99/month), you have access to AI Learning and Business Documents support, allowing the AI to give highly specific answers based on your uploaded materials.

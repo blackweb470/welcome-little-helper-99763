@@ -714,7 +714,7 @@ Deno.serve(async (req) => {
       }
 
       // Fetch all AI context in parallel for speed
-      const [widgetSettingsResult, learningsResult, historyResult, relevantChunks] = await Promise.all([
+      const [widgetSettingsResult, learningsResult, historyResult, qaPairsResult, relevantChunks] = await Promise.all([
         // 1. Widget settings
         supabase.from('widget_settings').select('*').eq('business_id', businessId).maybeSingle(),
 
@@ -734,26 +734,54 @@ Deno.serve(async (req) => {
           .order('created_at', { ascending: false })
           .limit(20),
 
-        // 4. RAG knowledge search — skip for very short messages (greetings etc.)
-        messageText.trim().length > 10
+        // 4. Q&A Pairs
+        supabase
+          .from('bot_qa_pairs')
+          .select('*')
+          .eq('business_id', businessId)
+          .eq('enabled', true)
+          .order('priority', { ascending: false }),
+
+        // 5. RAG knowledge search — context-augmented query for better short/follow-up question handling
+        messageText.trim().length >= 1
           ? (async (): Promise<string> => {
               try {
+                // Build richer query by combining recent user messages with current message
+                // This ensures short messages like "price?" or "how much?" still find relevant content
+                const recentHistory = (historyResult.data || []).slice(-4);
+                const userContext = recentHistory
+                  .filter((m: any) => m.role === 'user')
+                  .map((m: any) => m.content)
+                  .join(' ');
+                const augmentedQuery = userContext
+                  ? `${userContext} ${messageText}`.trim().slice(0, 800)
+                  : messageText;
+
                 const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ input: messageText.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
+                  body: JSON.stringify({ input: augmentedQuery.replace(/\n/g, ' '), model: 'text-embedding-3-small' })
                 });
                 if (!embedRes.ok) return '';
                 const embedData = await embedRes.json();
                 const queryEmbedding = embedData.data[0].embedding;
                 const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
                   query_embedding: queryEmbedding,
-                  match_count: 5,
-                  p_business_id: businessId
+                  match_count: 8,
+                  p_business_id: businessId,
+                  similarity_threshold: 0.25
                 });
                 if (matchData && matchData.length > 0) {
-                  return matchData.map((chunk: any) => `Source: ${chunk.source_type}\nContent: ${chunk.content}`).join('\n\n');
+                  console.log(`RAG: ${matchData.length} chunks matched (top similarity: ${matchData[0]?.similarity?.toFixed(3)})`);
+                  return matchData.map((chunk: any) => {
+                    const meta = chunk.metadata || {};
+                    const sourceLabel = meta.title
+                      ? `${chunk.source_type === 'website' ? '🌐' : '📄'} ${meta.title}`
+                      : `${chunk.source_type}`;
+                    return `Source: ${sourceLabel}\nContent: ${chunk.content}`;
+                  }).join('\n\n---\n\n');
                 }
+                console.log('RAG: no chunks above similarity threshold');
                 return '';
               } catch (e) {
                 console.error('RAG Error:', e);
@@ -765,6 +793,7 @@ Deno.serve(async (req) => {
 
       const widgetSettings = widgetSettingsResult.data;
       const learnings = learningsResult.data;
+      const qaPairs = qaPairsResult.data;
       // Fetched DESC for limit efficiency — reverse to restore chronological order
       const history = (historyResult.data || []).reverse();
 
@@ -779,7 +808,15 @@ Deno.serve(async (req) => {
       systemPrompt += '\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
       
       if (relevantChunks) {
-        systemPrompt += '\n\nRelevant Business Knowledge:\n' + relevantChunks;
+        systemPrompt += '\n\nRelevant Business Knowledge (use this to answer accurately — each block shows its source):\n\n' + relevantChunks;
+        systemPrompt += '\n\nIMPORTANT: Use the knowledge above to answer questions. Do NOT make up information not found in the knowledge above.';
+      }
+
+      if (qaPairs && qaPairs.length > 0) {
+        systemPrompt += '\n\nFrequently Asked Questions (Use these to answer user queries accurately):\n';
+        qaPairs.forEach((pair: any) => {
+          systemPrompt += `Q: ${pair.question}\nA: ${pair.answer}\n\n`;
+        });
       }
 
       let contextAdded = 0;
