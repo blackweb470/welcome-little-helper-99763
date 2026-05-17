@@ -44,7 +44,7 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
     queryFn: async () => {
       const { data, error } = await supabase
         .from('whatsapp_settings')
-        .select('*')
+        .select('id, business_id, admin_phone_numbers, phone_number_id, phone_number, display_name, enabled')
         .eq('business_id', businessId)
         .maybeSingle();
 
@@ -87,37 +87,27 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
   });
   const testAdminMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
-      if (!settings?.phone_number_id || !settings?.access_token) {
+      if (!settings?.phone_number_id) {
         throw new Error("WhatsApp settings not configured");
       }
 
-      // Send a test message directly to the admin's phone
-      const response = await fetch(
-        `https://graph.facebook.com/v19.0/${settings.phone_number_id}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${settings.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            recipient_type: 'individual',
-            to: phoneNumber.replace(/\+/g, ''),
-            type: 'text',
-            text: { 
-              body: `✅ *LYQN Admin Test Successful!*\n\nYour phone number is now configured as an admin.\n\n📱 *Available Commands:*\n• /help - Show all commands\n• /queue - View pending chats\n• /accept [id] - Accept a chat\n• /stats - View statistics\n\nReply with */help* to get started!` 
-            }
-          }),
+      // Send a test message securely via edge function
+      const { data, error } = await supabase.functions.invoke('whatsapp-test-connection', {
+        body: {
+          businessId,
+          recipientPhone: phoneNumber.replace(/\+/g, '')
         }
-      );
+      });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Failed to send test message');
+      if (error) {
+        throw new Error(error.message || 'Failed to send test message');
       }
 
-      return await response.json();
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to send test message');
+      }
+
+      return data;
     },
     onSuccess: (_, phoneNumber) => {
       setTestResult({ phone: phoneNumber, success: true, message: 'Test message sent! Check your WhatsApp.' });

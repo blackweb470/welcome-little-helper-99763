@@ -141,7 +141,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
       setLoading(true);
       const { data, error } = await supabase
         .from('whatsapp_settings')
-        .select('*')
+        .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method')
         .eq('business_id', businessId)
         .maybeSingle();
 

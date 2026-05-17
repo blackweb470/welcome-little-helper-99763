@@ -19,13 +19,12 @@ Deno.serve(async (req) => {
     const token = url.searchParams.get('hub.verify_token') || url.searchParams.get('hub_verify_token');
     const challenge = url.searchParams.get('hub.challenge') || url.searchParams.get('hub_challenge');
 
-    console.log('Extracted verification data:', { mode, token, challenge });
+    console.log('Extracted verification data:', { mode, hasToken: !!token, hasChallenge: !!challenge });
 
     if (mode === 'subscribe' && token && challenge) {
       const masterToken = Deno.env.get('WHATSAPP_VERIFY_TOKEN');
       console.log('Master Token check:', { 
         hasMasterToken: !!masterToken, 
-        receivedToken: token,
         matches: masterToken === token
       });
       

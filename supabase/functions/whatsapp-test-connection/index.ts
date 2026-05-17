@@ -11,10 +11,38 @@ serve(async (req) => {
   }
 
   try {
-    const { phoneNumberId, accessToken, recipientPhone } = await req.json()
+    const { phoneNumberId: reqPhoneNumberId, accessToken: reqAccessToken, recipientPhone, businessId } = await req.json()
 
-    if (!phoneNumberId || !accessToken || !recipientPhone) {
-      throw new Error('Missing required fields: phoneNumberId, accessToken, and recipientPhone are all required.')
+    if (!recipientPhone) {
+      throw new Error('Missing required field: recipientPhone')
+    }
+
+    let phoneNumberId = reqPhoneNumberId;
+    let accessToken = reqAccessToken;
+
+    // If businessId is provided, fetch credentials securely from DB
+    if (businessId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      
+      const res = await fetch(`${supabaseUrl}/rest/v1/whatsapp_settings?business_id=eq.${businessId}&select=phone_number_id,access_token`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      });
+      const data = await res.json();
+      
+      if (data && data.length > 0) {
+        phoneNumberId = data[0].phone_number_id;
+        accessToken = data[0].access_token;
+      } else {
+        throw new Error('WhatsApp settings not found for this business.');
+      }
+    }
+
+    if (!phoneNumberId || !accessToken) {
+      throw new Error('Missing required credentials. Either provide them directly or pass a valid businessId.')
     }
 
     console.log(`Testing WhatsApp connection for Phone ID: ${phoneNumberId} to Recipient: ${recipientPhone}`)

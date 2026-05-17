@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     );
     const debugData = await debugTokenResponse.json();
     
-    console.log('Debug token data:', JSON.stringify(debugData));
+    console.log('Successfully validated token. Granular scopes count:', debugData.data?.granular_scopes?.length || 0);
 
     let wabaId = null;
     
