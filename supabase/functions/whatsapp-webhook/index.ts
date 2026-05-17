@@ -660,14 +660,48 @@ Deno.serve(async (req) => {
       // Check if there's an active live chat session
       const { data: liveSession } = await supabase
         .from('live_chat_sessions')
-        .select('*')
+        .select('*, conversations(visitor_name, visitor_email, visitor_phone)')
         .eq('conversation_id', conversationId)
         .eq('status', 'active')
         .maybeSingle();
 
       if (liveSession) {
-        console.log('Human agent active, skipping AI response');
-        return new Response(JSON.stringify({ status: 'ok' }), {
+        console.log('Human agent active, forwarding visitor message to WhatsApp admin:', liveSession.metadata?.agent_whatsapp_phone);
+        
+        const agentPhone = liveSession.metadata?.agent_whatsapp_phone;
+        if (agentPhone && messageContent) {
+          try {
+            const conv = liveSession.conversations;
+            const visitorName = conv?.visitor_name || conv?.visitor_email || conv?.visitor_phone || `+${senderPhone}`;
+            
+            let forwardBody = `👤 *${visitorName}*:\n${messageContent}`;
+            if (imageUrl) {
+              forwardBody += `\n\n🖼️ [Image URL]: ${imageUrl}`;
+            }
+
+            // Forward message to admin on WhatsApp
+            await fetch(
+              `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${waSettings.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  messaging_product: 'whatsapp',
+                  to: agentPhone,
+                  type: 'text',
+                  text: { body: forwardBody }
+                }),
+              }
+            );
+          } catch (forwardErr) {
+            console.error('Error forwarding visitor message to WhatsApp admin:', forwardErr);
+          }
+        }
+
+        return new Response(JSON.stringify({ status: 'ok', forwarded: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
