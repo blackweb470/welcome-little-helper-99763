@@ -792,6 +792,43 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
     }
   };
 
+  const renderAgentMessageContent = (content: string) => {
+    if (!content) return null;
+    
+    const isQuickReply = content.includes('[Quick Reply Options: ');
+    const isListMenu = content.includes('[List Menu: ');
+    
+    if (isQuickReply || isListMenu) {
+      const lines = content.split('\n');
+      const interactiveLineIndex = lines.findIndex(l => l.startsWith('[Quick Reply Options: ') || l.startsWith('[List Menu: '));
+      
+      if (interactiveLineIndex !== -1) {
+        const interactiveLine = lines[interactiveLineIndex];
+        const optionsStr = interactiveLine.replace(/\[(Quick Reply Options|List Menu):\s*/, '').replace(/\]$/, '');
+        const options = optionsStr.split(', ').filter(Boolean);
+        const textOnly = lines.filter((_, i) => i !== interactiveLineIndex).join('\n');
+        
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm whitespace-pre-wrap break-words">{textOnly}</p>
+            <div className={`flex ${isQuickReply ? 'flex-row flex-wrap' : 'flex-col'} gap-1.5 mt-1`}>
+              {options.map((opt, i) => (
+                <div
+                  key={i}
+                  className="bg-background/20 text-xs px-2.5 py-1 rounded-md border border-background/30 inline-block font-medium"
+                >
+                  {opt}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+    }
+    
+    return <p className="text-sm whitespace-pre-wrap break-words">{content}</p>;
+  };
+
   // If viewing a chat, show the chat interface
   if (selectedSession) {
     return (
@@ -864,7 +901,7 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                       />
                     )}
                     <AttachmentDisplay messageId={msg.id} />
-                    {msg.content && <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>}
+                    {msg.content && renderAgentMessageContent(msg.content)}
                     <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
                       <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
                       {msg.role === 'assistant' && (

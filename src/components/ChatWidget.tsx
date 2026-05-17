@@ -1327,6 +1327,47 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     </div>
   );
 
+  const renderInteractiveMessage = (text: string, role: string) => {
+    if (!text) return null;
+    
+    const isQuickReply = text.includes('[Quick Reply Options: ');
+    const isListMenu = text.includes('[List Menu: ');
+    
+    if (isQuickReply || isListMenu) {
+      const lines = text.split('\n');
+      const interactiveLineIndex = lines.findIndex(l => l.startsWith('[Quick Reply Options: ') || l.startsWith('[List Menu: '));
+      
+      if (interactiveLineIndex !== -1) {
+        const interactiveLine = lines[interactiveLineIndex];
+        const optionsStr = interactiveLine.replace(/\[(Quick Reply Options|List Menu):\s*/, '').replace(/\]$/, '');
+        const options = optionsStr.split(', ').filter(Boolean);
+        const textOnly = lines.filter((_, i) => i !== interactiveLineIndex).join('\n');
+        
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{textOnly}</p>
+            {role === 'assistant' && options.length > 0 && (
+              <div className={`flex ${isQuickReply ? 'flex-row flex-wrap' : 'flex-col'} gap-1.5 mt-1`}>
+                {options.map((opt, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSendText(opt)}
+                    className="bg-background text-foreground text-xs sm:text-sm px-3 py-1.5 rounded-md sm:rounded-full border shadow-sm hover:opacity-90 transition-opacity text-left font-medium"
+                    style={{ borderColor: primaryColor, color: primaryColor }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+    }
+    
+    return <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{text}</p>;
+  };
+
   // Render Chat Tab Content
   const renderChatContent = () => {
     // Still determining whether to show form (settings loading)
@@ -1399,7 +1440,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                         style={{ cursor: 'pointer' }}
                       />
                     )}
-                    <p className="text-xs sm:text-sm leading-relaxed break-words whitespace-pre-wrap">{item.text}</p>
+                    {renderInteractiveMessage(item.text, item.role)}
                   </div>
                 </div>
               ))}
