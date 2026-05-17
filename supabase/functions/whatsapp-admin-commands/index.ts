@@ -75,7 +75,8 @@ Deno.serve(async (req: Request) => {
           `📋 *Chat Management*\n` +
           `/queue - View pending requests\n` +
           `/accept [id] - Accept a chat request\n` +
-          `/end - End your active chat session\n\n` +
+          `/active - View active chats\n` +
+          `/end [id] - End a chat (current session if ID omitted)\n\n` +
           `💡 *Tip:* You can click buttons and list items to quickly accept chats without typing IDs!`;
         break;
 
@@ -148,22 +149,75 @@ Deno.serve(async (req: Request) => {
         }
         break;
 
+      case 'active':
+        {
+          const { data: activeSessions } = await supabase
+            .from('live_chat_sessions')
+            .select(`
+              id,
+              accepted_at,
+              conversation_id,
+              conversations!inner(visitor_name, visitor_email, visitor_phone, channel, business_id)
+            `)
+            .eq('status', 'active')
+            .eq('conversations.business_id', businessId)
+            .order('accepted_at', { ascending: false });
+
+          if (!activeSessions || activeSessions.length === 0) {
+            responseText = '✅ No active chat sessions at the moment.';
+          } else {
+            responseText = `🟢 *Active Chats (${activeSessions.length})*\n\n`;
+            activeSessions.forEach((session: any) => {
+              const conv = session.conversations;
+              const visitorName = conv?.visitor_name || conv?.visitor_email || conv?.visitor_phone || 'Anonymous';
+              responseText += `👤 *${visitorName}*\n`;
+              responseText += `🆔 ID: \`${session.id.substring(0, 8)}\`\n`;
+              responseText += `⏱️ Joined: ${getTimeAgo(session.accepted_at)}\n`;
+              responseText += `🔌 Channel: ${conv.channel === 'whatsapp' ? '🟢 WhatsApp' : '🌐 Web'}\n\n`;
+            });
+            responseText += `💡 *Tip:* Type \`/end [id]\` to end a specific chat.`;
+          }
+        }
+        break;
+
       case 'end':
       case 'e':
         {
-          // Find active session for this admin
-          const { data: activeSessions } = await supabase
-            .from('live_chat_sessions')
-            .select('id, conversation_id')
-            .eq('status', 'active')
-            .contains('metadata', { agent_whatsapp_phone: senderPhone })
-            .order('accepted_at', { ascending: false })
-            .limit(1);
+          let sessionToEnd = null;
 
-          if (!activeSessions || activeSessions.length === 0) {
-            responseText = '❌ You don\'t have an active chat session to end.';
+          if (args.length > 0) {
+            const sessionIdPrefix = args[0];
+            // Find active session matching the prefix for this business
+            const { data: sessions } = await supabase
+              .from('live_chat_sessions')
+              .select('id, conversation_id, conversations!inner(business_id)')
+              .eq('status', 'active')
+              .eq('conversations.business_id', businessId);
+
+            sessionToEnd = sessions?.find(s => s.id.startsWith(sessionIdPrefix));
+
+            if (!sessionToEnd) {
+              responseText = `❌ No active session found with ID starting with "${sessionIdPrefix}"`;
+              break;
+            }
           } else {
-            const sessionToEnd = activeSessions[0];
+            // Find active session for this admin
+            const { data: activeSessions } = await supabase
+              .from('live_chat_sessions')
+              .select('id, conversation_id')
+              .eq('status', 'active')
+              .contains('metadata', { agent_whatsapp_phone: senderPhone })
+              .order('accepted_at', { ascending: false })
+              .limit(1);
+
+            if (!activeSessions || activeSessions.length === 0) {
+              responseText = '❌ You don\'t have an active chat session to end. Type \`/active\` to view all active sessions.';
+              break;
+            }
+            sessionToEnd = activeSessions[0];
+          }
+
+          if (sessionToEnd) {
             const now = new Date().toISOString();
 
             // End session
