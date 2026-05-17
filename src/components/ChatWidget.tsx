@@ -1704,7 +1704,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       {/* Mobile Backdrop to close when clicking outside */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 sm:hidden bg-black/20 backdrop-blur-sm transition-opacity" 
+          className="fixed inset-0 z-40 sm:hidden bg-black/20 backdrop-blur-sm transition-opacity cursor-pointer" 
           onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
@@ -1734,11 +1734,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 variant="header"
               />
               <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsOpen(false);
-                }}
+                onClick={() => setIsOpen(false)}
                 className="text-muted-foreground hover:text-foreground p-3 -mr-1 shrink-0 cursor-pointer"
                 aria-label="Close chat window"
                 type="button"
