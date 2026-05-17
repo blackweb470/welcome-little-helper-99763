@@ -45,21 +45,21 @@ export const WhatsAppInteractiveButtons = ({ onSend, disabled }: WhatsAppInterac
   // Quick Reply state
   const [quickReplyBody, setQuickReplyBody] = useState('');
   const [quickReplyButtons, setQuickReplyButtons] = useState<QuickReplyButton[]>([
-    { id: 'btn_1', title: '' }
+    { id: 'btn-1', title: '' }
   ]);
 
   // List Message state
   const [listBody, setListBody] = useState('');
   const [listButtonText, setListButtonText] = useState('View Options');
   const [listSections, setListSections] = useState<ListSection[]>([
-    { title: 'Options', rows: [{ id: 'row_1', title: '', description: '' }] }
+    { title: 'Options', rows: [{ id: 'row-1', title: '', description: '' }] }
   ]);
 
   const addQuickReplyButton = () => {
     if (quickReplyButtons.length < 3) {
       setQuickReplyButtons([
         ...quickReplyButtons,
-        { id: `btn_${Date.now()}`, title: '' }
+        { id: `btn-${Date.now()}`, title: '' }
       ]);
     }
   };
@@ -80,7 +80,7 @@ export const WhatsAppInteractiveButtons = ({ onSend, disabled }: WhatsAppInterac
     if (listSections[sectionIndex].rows.length < 10) {
       const updated = [...listSections];
       updated[sectionIndex].rows.push({
-        id: `row_${Date.now()}`,
+        id: `row-${Date.now()}`,
         title: '',
         description: ''
       });
@@ -116,7 +116,7 @@ export const WhatsAppInteractiveButtons = ({ onSend, disabled }: WhatsAppInterac
 
     // Reset form
     setQuickReplyBody('');
-    setQuickReplyButtons([{ id: 'btn_1', title: '' }]);
+    setQuickReplyButtons([{ id: 'btn-1', title: '' }]);
   };
 
   const handleSendList = () => {
@@ -133,7 +133,7 @@ export const WhatsAppInteractiveButtons = ({ onSend, disabled }: WhatsAppInterac
     // Reset form
     setListBody('');
     setListButtonText('View Options');
-    setListSections([{ title: 'Options', rows: [{ id: 'row_1', title: '', description: '' }] }]);
+    setListSections([{ title: 'Options', rows: [{ id: 'row-1', title: '', description: '' }] }]);
   };
 
   return (
