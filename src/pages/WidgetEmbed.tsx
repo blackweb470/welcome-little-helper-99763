@@ -53,13 +53,23 @@ const WidgetEmbed = () => {
     }
   }, []);
 
-  // Make the page background transparent for embedding
+  // Make the page background transparent and fix height for embedding
   useEffect(() => {
     document.body.style.background = 'transparent';
+    document.body.style.height = '100%';
+    document.body.style.overflow = 'hidden';
+    document.body.style.margin = '0';
     document.documentElement.style.background = 'transparent';
+    document.documentElement.style.height = '100%';
+    document.documentElement.style.overflow = 'hidden';
     return () => {
       document.body.style.background = '';
+      document.body.style.height = '';
+      document.body.style.overflow = '';
+      document.body.style.margin = '';
       document.documentElement.style.background = '';
+      document.documentElement.style.height = '';
+      document.documentElement.style.overflow = '';
     };
   }, []);
 
