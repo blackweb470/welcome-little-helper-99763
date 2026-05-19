@@ -1540,7 +1540,29 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               </div>
             )}
             
-            <div className="px-2 sm:px-3 pt-2 pb-2">
+            {/* WhatsApp continuation and Live Agent buttons */}
+            <div className="px-2 sm:px-3 pt-2 pb-1 space-y-1.5">
+              <ContinueOnWhatsApp 
+                businessId={businessId}
+                conversationId={conversationId}
+                primaryColor={primaryColor}
+              />
+              
+              {(!liveChatSession || liveChatSession.status === 'ended' || liveChatSession.status === 'ai') && (
+                <Button
+                  onClick={() => requestLiveAgent('User requested live agent support')}
+                  disabled={requestingAgent}
+                  size="sm"
+                  className="w-full h-9 text-xs font-medium text-white gap-1.5"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  {requestingAgent ? 'Connecting…' : 'Connect to a Human Agent'}
+                </Button>
+              )}
+            </div>
+
+            <div className="px-2 sm:px-3 pt-1 pb-2">
               <div className="flex gap-1.5 sm:gap-2 items-center">
                 {/* Image upload button */}
                 <input
@@ -1590,28 +1612,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 </Button>
               </div>
             </div>
-
-            {/* WhatsApp continuation and Live Agent buttons */}
-            <div className="px-2 sm:px-3 pb-2 space-y-1.5">
-              <ContinueOnWhatsApp 
-                businessId={businessId}
-                conversationId={conversationId}
-                primaryColor={primaryColor}
-              />
-              
-              {(!liveChatSession || liveChatSession.status === 'ended' || liveChatSession.status === 'ai') && (
-                <Button
-                  onClick={() => requestLiveAgent('User requested live agent support')}
-                  disabled={requestingAgent}
-                  size="sm"
-                  className="w-full h-9 text-xs font-medium text-white gap-1.5"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <User className="w-3.5 h-3.5" />
-                  {requestingAgent ? 'Connecting…' : 'Connect to a Human Agent'}
-                </Button>
-              )}
-            </div>
+            
             
           </div>
         </div>

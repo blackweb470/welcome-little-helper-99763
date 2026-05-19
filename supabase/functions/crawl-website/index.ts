@@ -172,6 +172,16 @@ Deno.serve(async (req) => {
 
     console.log(`Starting website crawl for business ${businessId}: ${formattedUrl}`);
 
+    // Extract target domain for filtering subdomains
+    let targetDomain = '';
+    try {
+      const targetUrlObj = new URL(formattedUrl);
+      const targetHostname = targetUrlObj.hostname.toLowerCase();
+      targetDomain = targetHostname.startsWith('www.') ? targetHostname.slice(4) : targetHostname;
+    } catch (e) {
+      console.error('Failed to parse target domain from:', formattedUrl, e);
+    }
+
     // Step 1: Map the website to discover all URLs
     console.log('Step 1: Mapping website URLs...');
     const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
@@ -183,7 +193,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         url: formattedUrl,
         limit: Math.max(500, maxPages * 10), // Scan up to 500 or more pages for discovery
-        includeSubdomains: false,
+        includeSubdomains: true,
       }),
     });
 
@@ -200,6 +210,53 @@ Deno.serve(async (req) => {
     const rawUrls: string[] = mapData.links || [];
     console.log(`Discovered ${rawUrls.length} total URLs from site map`);
 
+    // Generate common potential paths to ensure they are crawled even if map doesn't return them
+    if (targetDomain) {
+      const commonPaths = [
+        '/principal-officers-2/',
+        '/principal-officers/',
+        '/governance/bursary/',
+        '/bursary/',
+        '/fees-structure/',
+        '/fee-structure/',
+        '/bursar/',
+        '/leadership/',
+        '/administration/',
+        '/governance/',
+        '/admission/',
+        '/admissions/',
+        '/fees/',
+        '/tuition/',
+        '/school-fees/',
+        '/post-graduate-fees/',
+        '/pg-fees/',
+      ];
+      const protocols = ['https://', 'http://'];
+      const prefixes = ['www.', ''];
+      
+      const generatedUrls: string[] = [];
+      for (const proto of protocols) {
+        for (const pref of prefixes) {
+          const base = `${proto}${pref}${targetDomain}`;
+          for (const path of commonPaths) {
+            generatedUrls.push(`${base}${path}`);
+          }
+        }
+      }
+      
+      // Also add the base URLs themselves just in case
+      for (const proto of protocols) {
+        for (const pref of prefixes) {
+          generatedUrls.push(`${proto}${pref}${targetDomain}/`);
+        }
+      }
+      
+      rawUrls.push(...generatedUrls);
+    }
+    
+    // Remove duplicates and filter
+    const uniqueRawUrls = Array.from(new Set(rawUrls));
+
     // Filter out junk/archive URLs and sort to prioritize important pages (fees, admission, colleges)
     const junkPatterns = [
       /\/category\//i,
@@ -214,14 +271,28 @@ Deno.serve(async (req) => {
       /\?feed=/i,
     ];
 
-    const highPriorityKeywords = ['fee', 'tuition', 'cost', 'price', 'charge', 'payment', 'bill', 'admission', 'structure'];
-    const mediumPriorityKeywords = ['academic', 'course', 'program', 'school', 'college', 'medicine', 'health', 'nursing', 'law', 'engineering', 'pharmacy', 'basic'];
+    const highPriorityKeywords = ['fee', 'tuition', 'cost', 'price', 'charge', 'payment', 'bill', 'admission', 'structure', 'bursar', 'bursary', 'principal', 'officer', 'officers', 'management'];
+    const mediumPriorityKeywords = ['academic', 'course', 'program', 'school', 'college', 'medicine', 'health', 'nursing', 'law', 'engineering', 'pharmacy', 'basic', 'registrar', 'chancellor', 'staff', 'personnel', 'about'];
 
-    const filteredAndSortedUrls = rawUrls
+    const filteredAndSortedUrls = uniqueRawUrls
       .filter((url: string) => {
         // Skip junk pages
         if (junkPatterns.some(pattern => pattern.test(url))) {
           return false;
+        }
+
+        // Ensure the URL belongs to the target domain or its subdomains
+        if (targetDomain) {
+          try {
+            const u = new URL(url);
+            const h = u.hostname.toLowerCase();
+            const d = h.startsWith('www.') ? h.slice(4) : h;
+            if (d !== targetDomain && !h.endsWith('.' + targetDomain)) {
+              return false;
+            }
+          } catch {
+            return false;
+          }
         }
         return true;
       })
@@ -276,7 +347,7 @@ Deno.serve(async (req) => {
     let totalTablesExtracted = 0;
 
     const urlsToScrape = urls.slice(0, maxPages);
-    const batchSize = 3;
+    const batchSize = 6;
 
     for (let i = 0; i < urlsToScrape.length; i += batchSize) {
       const batch = urlsToScrape.slice(i, i + batchSize);
