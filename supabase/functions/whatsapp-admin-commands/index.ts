@@ -257,36 +257,57 @@ Deno.serve(async (req: Request) => {
               .select()
               .single();
               
-            // Broadcast to web widget via realtime
+            // Notify visitor via WhatsApp or Web Widget
             try {
-              // Also fetch the conversation to get the correct business_id for the broadcast
               const { data: conv } = await supabase
                 .from('conversations')
-                .select('business_id')
+                .select('business_id, channel, channel_metadata')
                 .eq('id', sessionToEnd.conversation_id)
                 .single();
 
-              const broadcastBusinessId = conv?.business_id || businessId;
-
-              const endChannel = supabase.channel(`visitor-messages-${sessionToEnd.conversation_id}`);
-              await new Promise<void>(r => {
-                endChannel.subscribe(status => status === 'SUBSCRIBED' ? r() : null);
-                setTimeout(r, 1200);
-              });
-              
-              await endChannel.send({
-                type: 'broadcast',
-                event: 'agent_message',
-                payload: {
-                  id: savedMsg?.id || ('end-' + Date.now()),
-                  content: endMsg,
-                  role: 'assistant',
-                  created_at: now,
-                  businessId: broadcastBusinessId,
-                  conversationId: sessionToEnd.conversation_id
+              if (conv?.channel === 'whatsapp') {
+                const customerPhone = (conv.channel_metadata as any)?.phone_number;
+                if (customerPhone) {
+                  await fetch(
+                    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        messaging_product: 'whatsapp',
+                        to: customerPhone,
+                        type: 'text',
+                        text: { body: endMsg }
+                      }),
+                    }
+                  );
                 }
-              });
-              await supabase.removeChannel(endChannel);
+              } else {
+                const broadcastBusinessId = conv?.business_id || businessId;
+
+                const endChannel = supabase.channel(`visitor-messages-${sessionToEnd.conversation_id}`);
+                await new Promise<void>(r => {
+                  endChannel.subscribe(status => status === 'SUBSCRIBED' ? r() : null);
+                  setTimeout(r, 1200);
+                });
+                
+                await endChannel.send({
+                  type: 'broadcast',
+                  event: 'agent_message',
+                  payload: {
+                    id: savedMsg?.id || ('end-' + Date.now()),
+                    content: endMsg,
+                    role: 'assistant',
+                    created_at: now,
+                    businessId: broadcastBusinessId,
+                    conversationId: sessionToEnd.conversation_id
+                  }
+                });
+                await supabase.removeChannel(endChannel);
+              }
             } catch (err) {
               console.error('Failed to broadcast end message:', err);
             }
