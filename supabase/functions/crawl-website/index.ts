@@ -81,12 +81,10 @@ function extractTablesFromHtml(html: string): string[] {
           .replace(/\s+/g, ' ')          // normalize whitespace
           .trim();
         
-        if (cellText) {
-          cells.push(cellText);
-        }
+        cells.push(cellText);
       }
 
-      if (cells.length > 0) {
+      if (cells.some(c => c.length > 0)) {
         rows.push(cells);
       }
     }
@@ -94,7 +92,6 @@ function extractTablesFromHtml(html: string): string[] {
     if (rows.length === 0) continue;
 
     // Build structured text from the table
-    // Detect if the first row is likely a header (contains typical header words)
     const headers = rows[0];
     const dataRows = rows.slice(1);
 
@@ -109,16 +106,20 @@ function extractTablesFromHtml(html: string): string[] {
 
     if (dataRows.length > 0 && headers.length > 0) {
       // Format as header: value pairs for each data row — more semantic for AI
-      tableText += `Columns: ${headers.join(' | ')}\n`;
+      tableText += `Columns: ${headers.map((h, i) => h.trim() || `Column ${i + 1}`).join(' | ')}\n`;
 
       for (const row of dataRows) {
         const pairs: string[] = [];
-        for (let i = 0; i < Math.max(headers.length, row.length); i++) {
-          const header = headers[i] || `Column${i + 1}`;
-          const value = row[i] || '-';
-          pairs.push(`${header}: ${value}`);
+        for (let i = 0; i < headers.length; i++) {
+          const headerName = headers[i]?.trim() || `Column ${i + 1}`;
+          const val = row[i]?.trim() || '';
+          if (val) {
+            pairs.push(`${headerName}: ${val}`);
+          }
         }
-        tableText += pairs.join(' | ') + '\n';
+        if (pairs.length > 0) {
+          tableText += `- ${pairs.join(', ')}\n`;
+        }
       }
     } else {
       // No clear header row — output as plain rows
