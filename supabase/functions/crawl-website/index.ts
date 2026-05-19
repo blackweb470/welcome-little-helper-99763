@@ -288,7 +288,14 @@ Deno.serve(async (req) => {
               // Generate embeddings with sentence-aware chunking + overlap
               if (openAiKey) {
                 try {
-                  const chunks = chunkTextWithOverlap(enrichedContent, 500, 100);
+                  // Chunk only the markdown content to prevent tables from being broken up
+                  const chunks = chunkTextWithOverlap(markdownContent, 500, 100);
+                  
+                  // Add each extracted table as a standalone chunk to guarantee structural integrity
+                  for (const table of extractedTables) {
+                    chunks.push(`Table from page "${title}":\n${table}`);
+                  }
+                  
                   console.log(`Page "${title}": ${chunks.length} chunks from ${enrichedContent.length} chars (${tablesFound} tables)`);
 
                   let pageChunks = 0;
