@@ -9,19 +9,19 @@ const corsHeaders = {
 function extractTablesFromHtml(html: string): { tables: string[]; tableCount: number } {
   const tables: string[] = [];
 
-  const tableRegex = /<table[\s\S]*?>([\s\S]*?)<\/table>/gi;
+  const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
   let tableMatch: RegExpExecArray | null;
 
   while ((tableMatch = tableRegex.exec(html)) !== null) {
     const tableHtml = tableMatch[0];
     const rows: string[][] = [];
-    const rowRegex = /<tr[\s>]([\s\S]*?)<\/tr>/gi;
+    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
     let rowMatch: RegExpExecArray | null;
 
     while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
       const rowHtml = rowMatch[1];
       const cells: string[] = [];
-      const cellRegex = /<(?:td|th)[\s>]([\s\S]*?)<\/(?:td|th)>/gi;
+      const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
       let cellMatch: RegExpExecArray | null;
 
       while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {

@@ -49,7 +49,7 @@ function extractTablesFromHtml(html: string): string[] {
   const tables: string[] = [];
 
   // Match all <table>...</table> blocks (case-insensitive, allows nested tags)
-  const tableRegex = /<table[\s\S]*?>([\s\S]*?)<\/table>/gi;
+  const tableRegex = /<table[^>]*>([\s\S]*?)<\/table>/gi;
   let tableMatch: RegExpExecArray | null;
 
   while ((tableMatch = tableRegex.exec(html)) !== null) {
@@ -57,7 +57,7 @@ function extractTablesFromHtml(html: string): string[] {
 
     // Extract all rows
     const rows: string[][] = [];
-    const rowRegex = /<tr[\s>]([\s\S]*?)<\/tr>/gi;
+    const rowRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
     let rowMatch: RegExpExecArray | null;
 
     while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
@@ -65,7 +65,7 @@ function extractTablesFromHtml(html: string): string[] {
       const cells: string[] = [];
 
       // Match both <th> and <td> cells
-      const cellRegex = /<(?:td|th)[\s>]([\s\S]*?)<\/(?:td|th)>/gi;
+      const cellRegex = /<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi;
       let cellMatch: RegExpExecArray | null;
 
       while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
@@ -78,9 +78,12 @@ function extractTablesFromHtml(html: string): string[] {
           .replace(/&quot;/g, '"')
           .replace(/&#39;/g, "'")
           .replace(/&nbsp;/g, ' ')
-          .replace(/\s+/g, ' ')          // collapse whitespace
+          .replace(/\s+/g, ' ')          // normalize whitespace
           .trim();
-        if (cellText) cells.push(cellText);
+        
+        if (cellText) {
+          cells.push(cellText);
+        }
       }
 
       if (cells.length > 0) {
