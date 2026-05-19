@@ -220,150 +220,173 @@ Deno.serve(async (req) => {
       .eq('source_type', 'website');
 
     // Step 3: Scrape each URL and store content (now with table extraction)
-    console.log('Step 3: Scraping pages (with table extraction)...');
-    const results = [];
-    const errors = [];
+    console.log('Step 3: Scraping pages in parallel (with table extraction)...');
+    const results: Array<{ url: string; title: string; contentLength: number; tablesFound: number }> = [];
+    const errors: Array<{ url: string; error: string }> = [];
     let totalTablesExtracted = 0;
 
     const urlsToScrape = urls.slice(0, maxPages);
+    const batchSize = 3;
 
-    for (const url of urlsToScrape) {
-      try {
-        console.log(`Scraping: ${url}`);
+    for (let i = 0; i < urlsToScrape.length; i += batchSize) {
+      const batch = urlsToScrape.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (url) => {
+        try {
+          console.log(`Scraping: ${url}`);
 
-        // Request both markdown AND html so we can extract tables from raw HTML
-        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url,
-            formats: ['markdown', 'html'],
-            onlyMainContent: true,
-          }),
-        });
+          // Request both markdown AND html so we can extract tables from raw HTML
+          const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              url,
+              formats: ['markdown', 'html'],
+              onlyMainContent: true,
+            }),
+          });
 
-        const scrapeData = await scrapeResponse.json();
+          const scrapeData = await scrapeResponse.json();
 
-        if (scrapeResponse.ok && scrapeData.success) {
-          const markdownContent = scrapeData.data?.markdown || scrapeData.markdown || '';
-          const htmlContent = scrapeData.data?.html || scrapeData.html || '';
-          const title = scrapeData.data?.metadata?.title || scrapeData.metadata?.title || url;
-          const description = scrapeData.data?.metadata?.description || scrapeData.metadata?.description || '';
+          if (scrapeResponse.ok && scrapeData.success) {
+            const markdownContent = scrapeData.data?.markdown || scrapeData.markdown || '';
+            const htmlContent = scrapeData.data?.html || scrapeData.html || '';
+            const title = scrapeData.data?.metadata?.title || scrapeData.metadata?.title || url;
+            const description = scrapeData.data?.metadata?.description || scrapeData.metadata?.description || '';
 
-          // Extract tables from the raw HTML
-          const extractedTables = htmlContent ? extractTablesFromHtml(htmlContent) : [];
-          const tablesFound = extractedTables.length;
-          totalTablesExtracted += tablesFound;
+            // Extract tables from the raw HTML
+            const extractedTables = htmlContent ? extractTablesFromHtml(htmlContent) : [];
+            const tablesFound = extractedTables.length;
+            totalTablesExtracted += tablesFound;
 
-          if (tablesFound > 0) {
-            console.log(`  Found ${tablesFound} table(s) on: ${url}`);
-          }
+            if (tablesFound > 0) {
+              console.log(`  Found ${tablesFound} table(s) on: ${url}`);
+            }
 
-          // Combine markdown content with extracted table data
-          let enrichedContent = markdownContent;
-          if (extractedTables.length > 0) {
-            enrichedContent += '\n\n--- STRUCTURED TABLE DATA EXTRACTED FROM PAGE ---\n';
-            enrichedContent += extractedTables.join('\n');
-          }
+            // Combine markdown content with extracted table data
+            let enrichedContent = markdownContent;
+            if (extractedTables.length > 0) {
+              enrichedContent += '\n\n--- STRUCTURED TABLE DATA EXTRACTED FROM PAGE ---\n';
+              enrichedContent += extractedTables.join('\n');
+            }
 
-          if (enrichedContent && enrichedContent.trim().length > 50) {
-            // Store raw page content (enriched with table data)
-            const { error: insertError } = await supabase
-              .from('business_website_content')
-              .insert({
-                business_id: businessId,
-                url,
-                title,
-                content: enrichedContent,
-                content_type: tablesFound > 0 ? 'page_with_tables' : 'page',
-              });
+            if (enrichedContent && enrichedContent.trim().length > 50) {
+              // Store raw page content (enriched with table data)
+              const { error: insertError } = await supabase
+                .from('business_website_content')
+                .insert({
+                  business_id: businessId,
+                  url,
+                  title,
+                  content: enrichedContent,
+                  content_type: tablesFound > 0 ? 'page_with_tables' : 'page',
+                });
 
-            if (insertError) {
-              console.error(`Failed to store content for ${url}:`, insertError);
-              errors.push({ url, error: insertError.message });
-            } else {
-              // Generate embeddings with sentence-aware chunking + overlap
-              if (openAiKey) {
-                try {
-                  // Chunk only the markdown content to prevent tables from being broken up
-                  const chunks = chunkTextWithOverlap(markdownContent, 500, 100);
-                  
-                  // Add each extracted table as a standalone chunk to guarantee structural integrity
-                  for (const table of extractedTables) {
-                    chunks.push(`Table from page "${title}":\n${table}`);
-                  }
-                  
-                  console.log(`Page "${title}": ${chunks.length} chunks from ${enrichedContent.length} chars (${tablesFound} tables)`);
-
-                  let pageChunks = 0;
-                  for (let idx = 0; idx < chunks.length; idx++) {
-                    const chunk = chunks[idx];
-
-                    const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${openAiKey}`,
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        input: chunk.replace(/\n/g, ' '),
-                        model: 'text-embedding-3-small',
-                      }),
-                    });
-
-                    if (embedRes.ok) {
-                      const embedData = await embedRes.json();
-                      const embedding = embedData.data[0].embedding;
-
-                      await supabase.from('knowledge_chunks').insert({
-                        business_id: businessId,
-                        source_type: 'website',
-                        source_id: url,
-                        content: chunk,
-                        embedding,
-                        chunk_index: idx,
-                        metadata: {
-                          title,
-                          url,
-                          description: description.slice(0, 200),
-                          total_chunks: chunks.length,
-                          has_table_data: tablesFound > 0,
-                          tables_found: tablesFound,
-                        },
-                      });
-                      pageChunks++;
+              if (insertError) {
+                console.error(`Failed to store content for ${url}:`, insertError);
+                errors.push({ url, error: insertError.message });
+              } else {
+                // Generate embeddings with sentence-aware chunking + overlap
+                if (openAiKey) {
+                  try {
+                    // Chunk only the markdown content to prevent tables from being broken up
+                    const chunks = chunkTextWithOverlap(markdownContent, 500, 100);
+                    
+                    // Add each extracted table as a standalone chunk to guarantee structural integrity
+                    for (const table of extractedTables) {
+                      chunks.push(`Table from page "${title}":\n${table}`);
                     }
-                  }
-                  console.log(`Stored ${pageChunks} chunks for: ${title}`);
-                } catch (embedError) {
-                  console.error(`Failed to generate embeddings for ${url}:`, embedError);
-                }
-              }
+                    
+                    if (chunks.length > 0) {
+                      console.log(`Page "${title}": Requesting ${chunks.length} embeddings concurrently...`);
 
-              results.push({
-                url,
-                title,
-                contentLength: enrichedContent.length,
-                tablesFound,
-              });
-              console.log(`Stored content for: ${title} (${enrichedContent.length} chars, ${tablesFound} tables)`);
+                      const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${openAiKey}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          input: chunks.map(chunk => chunk.replace(/\n/g, ' ')),
+                          model: 'text-embedding-3-small',
+                        }),
+                      });
+
+                      if (embedRes.ok) {
+                        const embedData = await embedRes.json();
+                        
+                        // Map each chunk to its insert record
+                        const insertRows = chunks.map((chunk, idx) => {
+                          const embedding = embedData.data?.[idx]?.embedding;
+                          return {
+                            business_id: businessId,
+                            source_type: 'website',
+                            source_id: url,
+                            content: chunk,
+                            embedding,
+                            chunk_index: idx,
+                            metadata: {
+                              title,
+                              url,
+                              description: description.slice(0, 200),
+                              total_chunks: chunks.length,
+                              has_table_data: tablesFound > 0,
+                              tables_found: tablesFound,
+                            },
+                          };
+                        }).filter(row => row.embedding);
+
+                        if (insertRows.length > 0) {
+                          const { error: batchInsertError } = await supabase
+                            .from('knowledge_chunks')
+                            .insert(insertRows);
+
+                          if (batchInsertError) {
+                            console.error(`Failed to bulk insert knowledge chunks for ${url}:`, batchInsertError);
+                            errors.push({ url, error: `Embedding DB Insert Failed: ${batchInsertError.message}` });
+                          } else {
+                            console.log(`Stored ${insertRows.length} chunks for: ${title}`);
+                          }
+                        }
+                      } else {
+                        const embedErrText = await embedRes.text();
+                        console.error(`Embeddings API error for ${url}:`, embedErrText);
+                        errors.push({ url, error: `Embeddings API Error: ${embedErrText}` });
+                      }
+                    }
+                  } catch (embedError) {
+                    console.error(`Failed to generate embeddings for ${url}:`, embedError);
+                    errors.push({ url, error: `Embedding generation crashed: ${embedError instanceof Error ? embedError.message : 'Unknown'}` });
+                  }
+                }
+
+                results.push({
+                  url,
+                  title,
+                  contentLength: enrichedContent.length,
+                  tablesFound,
+                });
+                console.log(`Stored content for: ${title} (${enrichedContent.length} chars, ${tablesFound} tables)`);
+              }
+            } else {
+              console.log(`Skipping ${url} - content too short`);
             }
           } else {
-            console.log(`Skipping ${url} - content too short`);
+            console.error(`Failed to scrape ${url}:`, scrapeData.error);
+            errors.push({ url, error: scrapeData.error || 'Scrape failed' });
           }
-        } else {
-          console.error(`Failed to scrape ${url}:`, scrapeData.error);
-          errors.push({ url, error: scrapeData.error || 'Scrape failed' });
+        } catch (error) {
+          console.error(`Error scraping ${url}:`, error);
+          errors.push({ url, error: error instanceof Error ? error.message : 'Unknown error' });
         }
+      }));
 
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        console.error(`Error scraping ${url}:`, error);
-        errors.push({ url, error: error instanceof Error ? error.message : 'Unknown error' });
+      // Small delay between batches to avoid aggressive rate limiting
+      if (i + batchSize < urlsToScrape.length) {
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
     }
 
