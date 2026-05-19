@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        limit: maxPages,
+        limit: Math.max(500, maxPages * 10), // Scan up to 500 or more pages for discovery
         includeSubdomains: false,
       }),
     });
@@ -197,12 +197,61 @@ Deno.serve(async (req) => {
       );
     }
 
-    const urls = mapData.links || [];
-    console.log(`Found ${urls.length} URLs to scrape`);
+    const rawUrls: string[] = mapData.links || [];
+    console.log(`Discovered ${rawUrls.length} total URLs from site map`);
+
+    // Filter out junk/archive URLs and sort to prioritize important pages (fees, admission, colleges)
+    const junkPatterns = [
+      /\/category\//i,
+      /\/personnel_category\//i,
+      /\/author\//i,
+      /\/tag\//i,
+      /\/page\//i,
+      /\/feed\//i,
+      /\/comments\//i,
+      /\/wp-json\//i,
+      /\/wp-content\//i,
+      /\?feed=/i,
+    ];
+
+    const highPriorityKeywords = ['fee', 'tuition', 'cost', 'price', 'charge', 'payment', 'bill', 'admission', 'structure'];
+    const mediumPriorityKeywords = ['academic', 'course', 'program', 'school', 'college', 'medicine', 'health', 'nursing', 'law', 'engineering', 'pharmacy', 'basic'];
+
+    const filteredAndSortedUrls = rawUrls
+      .filter((url: string) => {
+        // Skip junk pages
+        if (junkPatterns.some(pattern => pattern.test(url))) {
+          return false;
+        }
+        return true;
+      })
+      .map((url: string) => {
+        let score = 0;
+        const lowercaseUrl = url.toLowerCase();
+
+        // Assign score based on keywords in URL
+        for (const kw of highPriorityKeywords) {
+          if (lowercaseUrl.includes(kw)) score += 100;
+        }
+        for (const kw of mediumPriorityKeywords) {
+          if (lowercaseUrl.includes(kw)) score += 50;
+        }
+
+        // Shorter paths get slightly higher priority
+        const pathLength = url.replace('://', '').split('/').length;
+        score -= pathLength * 2;
+
+        return { url, score };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.url);
+
+    const urls = filteredAndSortedUrls.slice(0, maxPages);
+    console.log(`Selected top ${urls.length} prioritized URLs to scrape:`, urls);
 
     if (urls.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, error: 'No pages found on the website' }),
+        JSON.stringify({ success: false, error: 'No relevant pages found on the website' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
