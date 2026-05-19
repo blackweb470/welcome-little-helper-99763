@@ -3,6 +3,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
+// ─── HTML Table Extraction ───────────────────────────────────────────────────
+// Parses raw HTML to find <table> elements and converts each into structured
+// plain-text so downstream consumers (AI training, knowledge base) can use it.
+function extractTablesFromHtml(html: string): { tables: string[]; tableCount: number } {
+  const tables: string[] = [];
+
+  const tableRegex = /<table[\s\S]*?>([\s\S]*?)<\/table>/gi;
+  let tableMatch: RegExpExecArray | null;
+
+  while ((tableMatch = tableRegex.exec(html)) !== null) {
+    const tableHtml = tableMatch[0];
+    const rows: string[][] = [];
+    const rowRegex = /<tr[\s>]([\s\S]*?)<\/tr>/gi;
+    let rowMatch: RegExpExecArray | null;
+
+    while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
+      const rowHtml = rowMatch[1];
+      const cells: string[] = [];
+      const cellRegex = /<(?:td|th)[\s>]([\s\S]*?)<\/(?:td|th)>/gi;
+      let cellMatch: RegExpExecArray | null;
+
+      while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
+        let cellText = cellMatch[1]
+          .replace(/<[^>]*>/g, '')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&nbsp;/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (cellText) cells.push(cellText);
+      }
+
+      if (cells.length > 0) rows.push(cells);
+    }
+
+    if (rows.length === 0) continue;
+
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    let tableText = '\n=== TABLE DATA ===\n';
+
+    const captionMatch = tableHtml.match(/<caption[\s>]([\s\S]*?)<\/caption>/i);
+    if (captionMatch) {
+      const caption = captionMatch[1].replace(/<[^>]*>/g, '').trim();
+      if (caption) tableText += `Table: ${caption}\n`;
+    }
+
+    if (dataRows.length > 0 && headers.length > 0) {
+      tableText += `Columns: ${headers.join(' | ')}\n`;
+      for (const row of dataRows) {
+        const pairs: string[] = [];
+        for (let i = 0; i < Math.max(headers.length, row.length); i++) {
+          const header = headers[i] || `Column${i + 1}`;
+          const value = row[i] || '-';
+          pairs.push(`${header}: ${value}`);
+        }
+        tableText += pairs.join(' | ') + '\n';
+      }
+    } else {
+      for (const row of rows) {
+        tableText += row.join(' | ') + '\n';
+      }
+    }
+
+    tableText += '=== END TABLE ===\n';
+    tables.push(tableText);
+  }
+
+  return { tables, tableCount: tables.length };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,6 +110,12 @@ Deno.serve(async (req) => {
 
     console.log('Scraping URL:', formattedUrl);
 
+    // Always request html alongside markdown so we can extract tables
+    const requestedFormats = options?.formats || ['markdown'];
+    const formats = requestedFormats.includes('html')
+      ? requestedFormats
+      : [...requestedFormats, 'html'];
+
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
@@ -43,7 +124,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         url: formattedUrl,
-        formats: options?.formats || ['markdown'],
+        formats,
         onlyMainContent: options?.onlyMainContent ?? true,
         waitFor: options?.waitFor,
         location: options?.location,
@@ -60,7 +141,34 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Scrape successful');
+    // Extract tables from the HTML content
+    const htmlContent = data?.data?.html || data?.html || '';
+    const { tables, tableCount } = htmlContent
+      ? extractTablesFromHtml(htmlContent)
+      : { tables: [], tableCount: 0 };
+
+    if (tableCount > 0) {
+      console.log(`Extracted ${tableCount} table(s) from ${formattedUrl}`);
+
+      // Append structured table data to the markdown output
+      const existingMarkdown = data?.data?.markdown || data?.markdown || '';
+      const enrichedMarkdown = existingMarkdown +
+        '\n\n--- STRUCTURED TABLE DATA EXTRACTED FROM PAGE ---\n' +
+        tables.join('\n');
+
+      // Enrich the response with table data
+      if (data?.data) {
+        data.data.markdown = enrichedMarkdown;
+        data.data.extractedTables = tables;
+        data.data.tableCount = tableCount;
+      } else {
+        data.markdown = enrichedMarkdown;
+        data.extractedTables = tables;
+        data.tableCount = tableCount;
+      }
+    }
+
+    console.log(`Scrape successful (${tableCount} tables found)`);
     return new Response(
       JSON.stringify(data),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

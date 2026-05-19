@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { firecrawlApi } from '@/lib/api/firecrawl';
-import { Globe, Loader2, CheckCircle2, XCircle, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
+import { Globe, Loader2, CheckCircle2, XCircle, Trash2, RefreshCw, ExternalLink, Table2 } from 'lucide-react';
 
 interface WebsiteCrawlerProps {
   businessId: string;
@@ -86,9 +86,12 @@ export function WebsiteCrawler({ businessId }: WebsiteCrawlerProps) {
       const result = await firecrawlApi.crawlWebsite(businessId, websiteUrl, maxPages);
 
       if (result.success && result.data) {
+        const tableMsg = result.data.tablesExtracted 
+          ? ` (${result.data.tablesExtracted} tables extracted)` 
+          : '';
         toast({
           title: 'Website Crawled Successfully',
-          description: `Stored ${result.data.pagesStored} pages for AI training`,
+          description: `Stored ${result.data.pagesStored} pages for AI training${tableMsg}`,
         });
         setCurrentWebsite(websiteUrl);
         fetchWebsiteContent();
@@ -241,6 +244,12 @@ export function WebsiteCrawler({ businessId }: WebsiteCrawlerProps) {
             <Badge variant="secondary" className="ml-auto">
               {crawledContent.length} pages
             </Badge>
+            {crawledContent.some(c => c.content_type === 'page_with_tables') && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Table2 className="h-3 w-3" />
+                {crawledContent.filter(c => c.content_type === 'page_with_tables').length} with tables
+              </Badge>
+            )}
           </div>
         )}
 
@@ -264,6 +273,12 @@ export function WebsiteCrawler({ businessId }: WebsiteCrawlerProps) {
                       <p className="text-xs text-muted-foreground truncate">{content.url}</p>
                     </div>
                     <div className="flex items-center gap-2">
+                      {content.content_type === 'page_with_tables' && (
+                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                          <Table2 className="h-3 w-3" />
+                          Tables
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="text-xs">
                         {Math.round(content.content.length / 1000)}k chars
                       </Badge>

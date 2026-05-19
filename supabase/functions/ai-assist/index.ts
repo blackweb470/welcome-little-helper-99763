@@ -44,7 +44,7 @@ serve(async (req) => {
 
       let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.';
 
-      // Fetch business documents
+      // Fetch business documents (summaries for general context)
       const { data: documents } = await supabase
         .from('business_documents')
         .select('file_name, summary, content_text')
@@ -64,6 +64,62 @@ serve(async (req) => {
           }
           systemPrompt += '\n';
         }
+      }
+
+      // ── RAG: Semantic search on knowledge_chunks (website + document embeddings) ──
+      // This brings in table data, website content, and document chunks that are
+      // semantically relevant to the user's question.
+      let ragContext = '';
+      try {
+        // Build embedding for the user's message
+        const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            input: message.replace(/\n/g, ' '),
+            model: 'text-embedding-3-small',
+          }),
+        });
+
+        if (embedRes.ok) {
+          const embedData = await embedRes.json();
+          const queryEmbedding = embedData.data[0].embedding;
+
+          // Semantic search across all knowledge chunks (websites + documents + tables)
+          const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
+            query_embedding: queryEmbedding,
+            match_count: 10,
+            p_business_id: businessId,
+            similarity_threshold: 0.15,
+          });
+
+          if (matchData && matchData.length > 0) {
+            console.log(`RAG: ${matchData.length} chunks matched (top similarity: ${matchData[0]?.similarity?.toFixed(3)})`);
+            ragContext = matchData.map((chunk: any) => {
+              const meta = chunk.metadata || {};
+              const hasTableData = meta.has_table_data ? ' [contains table data]' : '';
+              const sourceLabel = meta.title
+                ? `${chunk.source_type === 'website' ? '🌐' : '📄'} ${meta.title}${meta.url ? ` (${meta.url})` : ''}${hasTableData}`
+                : `${chunk.source_type}`;
+              return `Source: ${sourceLabel}\nContent: ${chunk.content}`;
+            }).join('\n\n---\n\n');
+          } else {
+            console.log('RAG: no chunks above similarity threshold');
+          }
+        } else {
+          console.error('Embeddings API Error:', await embedRes.text());
+        }
+      } catch (ragError) {
+        console.error('RAG search error:', ragError);
+      }
+
+      if (ragContext) {
+        systemPrompt += '\n\n=== Relevant Knowledge (from website crawl & documents, including table data) ===\n';
+        systemPrompt += ragContext;
+        systemPrompt += '\n\nIMPORTANT: Use the knowledge above to answer accurately. If table data is present, use it for precise answers about pricing, specifications, schedules, comparisons, etc. Do NOT make up information not present in the knowledge.';
       }
 
       // Fetch business learnings

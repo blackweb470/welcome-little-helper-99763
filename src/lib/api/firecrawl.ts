@@ -9,8 +9,9 @@ type FirecrawlResponse<T = any> = {
 type CrawlResult = {
   pagesFound: number;
   pagesStored: number;
+  tablesExtracted: number;
   errors: number;
-  results: Array<{ url: string; title: string; contentLength: number }>;
+  results: Array<{ url: string; title: string; contentLength: number; tablesFound: number }>;
   errorDetails?: Array<{ url: string; error: string }>;
 };
 

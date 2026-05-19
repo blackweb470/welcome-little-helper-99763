@@ -42,6 +42,95 @@ function chunkTextWithOverlap(
   return chunks.filter(c => c.trim().length > 30);
 }
 
+// ─── HTML Table Extraction ───────────────────────────────────────────────────
+// Parses raw HTML to find <table> elements and converts each into structured
+// plain-text so the AI can learn from tabular data (pricing, specs, etc.).
+function extractTablesFromHtml(html: string): string[] {
+  const tables: string[] = [];
+
+  // Match all <table>...</table> blocks (case-insensitive, allows nested tags)
+  const tableRegex = /<table[\s\S]*?>([\s\S]*?)<\/table>/gi;
+  let tableMatch: RegExpExecArray | null;
+
+  while ((tableMatch = tableRegex.exec(html)) !== null) {
+    const tableHtml = tableMatch[0];
+
+    // Extract all rows
+    const rows: string[][] = [];
+    const rowRegex = /<tr[\s>]([\s\S]*?)<\/tr>/gi;
+    let rowMatch: RegExpExecArray | null;
+
+    while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
+      const rowHtml = rowMatch[1];
+      const cells: string[] = [];
+
+      // Match both <th> and <td> cells
+      const cellRegex = /<(?:td|th)[\s>]([\s\S]*?)<\/(?:td|th)>/gi;
+      let cellMatch: RegExpExecArray | null;
+
+      while ((cellMatch = cellRegex.exec(rowHtml)) !== null) {
+        // Strip inner HTML tags and decode basic entities
+        let cellText = cellMatch[1]
+          .replace(/<[^>]*>/g, '')       // strip HTML tags
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&nbsp;/g, ' ')
+          .replace(/\s+/g, ' ')          // collapse whitespace
+          .trim();
+        if (cellText) cells.push(cellText);
+      }
+
+      if (cells.length > 0) {
+        rows.push(cells);
+      }
+    }
+
+    if (rows.length === 0) continue;
+
+    // Build structured text from the table
+    // Detect if the first row is likely a header (contains typical header words)
+    const headers = rows[0];
+    const dataRows = rows.slice(1);
+
+    let tableText = '\n=== TABLE DATA ===\n';
+
+    // Try to find a caption
+    const captionMatch = tableHtml.match(/<caption[\s>]([\s\S]*?)<\/caption>/i);
+    if (captionMatch) {
+      const caption = captionMatch[1].replace(/<[^>]*>/g, '').trim();
+      if (caption) tableText += `Table: ${caption}\n`;
+    }
+
+    if (dataRows.length > 0 && headers.length > 0) {
+      // Format as header: value pairs for each data row — more semantic for AI
+      tableText += `Columns: ${headers.join(' | ')}\n`;
+
+      for (const row of dataRows) {
+        const pairs: string[] = [];
+        for (let i = 0; i < Math.max(headers.length, row.length); i++) {
+          const header = headers[i] || `Column${i + 1}`;
+          const value = row[i] || '-';
+          pairs.push(`${header}: ${value}`);
+        }
+        tableText += pairs.join(' | ') + '\n';
+      }
+    } else {
+      // No clear header row — output as plain rows
+      for (const row of rows) {
+        tableText += row.join(' | ') + '\n';
+      }
+    }
+
+    tableText += '=== END TABLE ===\n';
+    tables.push(tableText);
+  }
+
+  return tables;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -127,10 +216,11 @@ Deno.serve(async (req) => {
       .eq('business_id', businessId)
       .eq('source_type', 'website');
 
-    // Step 3: Scrape each URL and store content
-    console.log('Step 3: Scraping pages...');
+    // Step 3: Scrape each URL and store content (now with table extraction)
+    console.log('Step 3: Scraping pages (with table extraction)...');
     const results = [];
     const errors = [];
+    let totalTablesExtracted = 0;
 
     const urlsToScrape = urls.slice(0, maxPages);
 
@@ -138,6 +228,7 @@ Deno.serve(async (req) => {
       try {
         console.log(`Scraping: ${url}`);
 
+        // Request both markdown AND html so we can extract tables from raw HTML
         const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
           method: 'POST',
           headers: {
@@ -146,7 +237,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             url,
-            formats: ['markdown'],
+            formats: ['markdown', 'html'],
             onlyMainContent: true,
           }),
         });
@@ -154,20 +245,37 @@ Deno.serve(async (req) => {
         const scrapeData = await scrapeResponse.json();
 
         if (scrapeResponse.ok && scrapeData.success) {
-          const content = scrapeData.data?.markdown || scrapeData.markdown || '';
+          const markdownContent = scrapeData.data?.markdown || scrapeData.markdown || '';
+          const htmlContent = scrapeData.data?.html || scrapeData.html || '';
           const title = scrapeData.data?.metadata?.title || scrapeData.metadata?.title || url;
           const description = scrapeData.data?.metadata?.description || scrapeData.metadata?.description || '';
 
-          if (content && content.trim().length > 50) {
-            // Store raw page content
+          // Extract tables from the raw HTML
+          const extractedTables = htmlContent ? extractTablesFromHtml(htmlContent) : [];
+          const tablesFound = extractedTables.length;
+          totalTablesExtracted += tablesFound;
+
+          if (tablesFound > 0) {
+            console.log(`  Found ${tablesFound} table(s) on: ${url}`);
+          }
+
+          // Combine markdown content with extracted table data
+          let enrichedContent = markdownContent;
+          if (extractedTables.length > 0) {
+            enrichedContent += '\n\n--- STRUCTURED TABLE DATA EXTRACTED FROM PAGE ---\n';
+            enrichedContent += extractedTables.join('\n');
+          }
+
+          if (enrichedContent && enrichedContent.trim().length > 50) {
+            // Store raw page content (enriched with table data)
             const { error: insertError } = await supabase
               .from('business_website_content')
               .insert({
                 business_id: businessId,
                 url,
                 title,
-                content,
-                content_type: 'page',
+                content: enrichedContent,
+                content_type: tablesFound > 0 ? 'page_with_tables' : 'page',
               });
 
             if (insertError) {
@@ -177,8 +285,8 @@ Deno.serve(async (req) => {
               // Generate embeddings with sentence-aware chunking + overlap
               if (openAiKey) {
                 try {
-                  const chunks = chunkTextWithOverlap(content, 500, 100);
-                  console.log(`Page "${title}": ${chunks.length} chunks from ${content.length} chars`);
+                  const chunks = chunkTextWithOverlap(enrichedContent, 500, 100);
+                  console.log(`Page "${title}": ${chunks.length} chunks from ${enrichedContent.length} chars (${tablesFound} tables)`);
 
                   let pageChunks = 0;
                   for (let idx = 0; idx < chunks.length; idx++) {
@@ -212,6 +320,8 @@ Deno.serve(async (req) => {
                           url,
                           description: description.slice(0, 200),
                           total_chunks: chunks.length,
+                          has_table_data: tablesFound > 0,
+                          tables_found: tablesFound,
                         },
                       });
                       pageChunks++;
@@ -223,8 +333,13 @@ Deno.serve(async (req) => {
                 }
               }
 
-              results.push({ url, title, contentLength: content.length });
-              console.log(`Stored content for: ${title} (${content.length} chars)`);
+              results.push({
+                url,
+                title,
+                contentLength: enrichedContent.length,
+                tablesFound,
+              });
+              console.log(`Stored content for: ${title} (${enrichedContent.length} chars, ${tablesFound} tables)`);
             }
           } else {
             console.log(`Skipping ${url} - content too short`);
@@ -249,13 +364,14 @@ Deno.serve(async (req) => {
       .update({ website_url: formattedUrl })
       .eq('id', businessId);
 
-    console.log(`Crawl complete. Stored ${results.length} pages, ${errors.length} errors`);
+    console.log(`Crawl complete. Stored ${results.length} pages, ${totalTablesExtracted} tables extracted, ${errors.length} errors`);
 
     return new Response(
       JSON.stringify({
         success: true,
         pagesFound: urls.length,
         pagesStored: results.length,
+        tablesExtracted: totalTablesExtracted,
         errors: errors.length,
         results,
         errorDetails: errors.length > 0 ? errors : undefined,
