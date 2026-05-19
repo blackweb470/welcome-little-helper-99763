@@ -385,8 +385,8 @@ Deno.serve(async (req) => {
     console.error('Error in crawl-website:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to crawl website';
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: errorMessage, stack: error instanceof Error ? error.stack : undefined }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
