@@ -118,8 +118,8 @@ export const useFeatureAccess = (userId: string | undefined) => {
       visitor_tracking: 'business',
       custom_integrations: 'business',
       api_access: 'business',
-      white_label: 'enterprise',
-      sla_guarantees: 'enterprise',
+      white_label: 'business',
+      sla_guarantees: 'business',
     };
     return featurePlanMap[feature];
   };

@@ -229,7 +229,7 @@ const Pricing = () => {
               { q: "Can I change plans later?", a: "Yes — upgrade or downgrade anytime. Changes apply immediately with prorated charges." },
               { q: "What happens at the business limit?", a: "You'll need to upgrade to create more businesses. Existing ones keep working." },
               { q: "Is there a setup fee?", a: "No setup fees, no hidden charges. Just the monthly subscription." },
-              { q: "Do you offer annual billing?", a: "Annual billing with 20% discount is coming soon. Contact us for enterprise contracts." },
+              { q: "Do you offer annual billing?", a: "Annual billing with 20% discount is coming soon. Contact us for business contracts." },
             ].map((faq, i) => (
               <div key={i} className="border border-border rounded-xl p-5">
                 <h3 className="font-medium mb-1.5">{faq.q}</h3>

@@ -47,6 +47,9 @@ serve(async (req) => {
 
     console.log(`Testing WhatsApp connection for Phone ID: ${phoneNumberId} to Recipient: ${recipientPhone}`)
     
+    // For Meta's test numbers and outside the 24h window, template messages are more reliable.
+    // However, since we don't know if they have templates approved, we use a standard text message.
+    // IMPORTANT: Free-form text messages require the user to have messaged the bot within the last 24 hours.
     const payload = {
       messaging_product: 'whatsapp',
       to: recipientPhone,

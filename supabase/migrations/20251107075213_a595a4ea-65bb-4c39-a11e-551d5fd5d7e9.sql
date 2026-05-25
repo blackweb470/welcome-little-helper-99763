@@ -75,7 +75,7 @@ BEGIN
 END;
 $$;
 
--- Update get_user_plan_info to show enterprise for admins
+-- Update get_user_plan_info to show business for admins
 CREATE OR REPLACE FUNCTION public.get_user_plan_info(p_user_id uuid)
 RETURNS TABLE(plan_name text, business_limit integer, current_businesses integer, can_create_more boolean)
 LANGUAGE plpgsql
@@ -86,17 +86,21 @@ DECLARE
   v_plan_name TEXT;
   v_subscription RECORD;
   v_is_admin BOOLEAN;
+  v_limit INTEGER;
 BEGIN
   -- Check if user is admin
   v_is_admin := public.has_role(p_user_id, 'admin'::app_role);
   
   IF v_is_admin THEN
-    -- Return unlimited access for admins
+    SELECT sp.business_limit INTO v_limit
+    FROM subscription_plans sp
+    WHERE sp.name = 'business';
+
     RETURN QUERY SELECT 
-      'enterprise'::text as plan_name,
-      999999 as business_limit,
+      'business'::text as plan_name,
+      v_limit as business_limit,
       (SELECT COUNT(*)::integer FROM businesses WHERE owner_id = p_user_id) as current_businesses,
-      true as can_create_more;
+      ((SELECT COUNT(*)::integer FROM businesses WHERE owner_id = p_user_id) < v_limit) as can_create_more;
     RETURN;
   END IF;
   
@@ -151,29 +155,29 @@ BEGIN
   v_is_admin := public.has_role(p_user_id, 'admin'::app_role);
   
   IF v_is_admin THEN
-    RETURN true;
-  END IF;
-  
-  -- Get user's current subscription with expiration check
-  SELECT 
-    plan_name,
-    expires_at,
-    cancel_at_period_end
-  INTO v_subscription
-  FROM user_subscriptions
-  WHERE user_id = p_user_id
-  ORDER BY created_at DESC
-  LIMIT 1;
-  
-  -- Check if subscription is expired or cancelled
-  IF v_subscription IS NULL THEN
-    v_plan_name := 'free';
-  ELSIF v_subscription.expires_at IS NOT NULL AND v_subscription.expires_at < NOW() THEN
-    v_plan_name := 'free';
-  ELSIF v_subscription.cancel_at_period_end AND v_subscription.expires_at < NOW() THEN
-    v_plan_name := 'free';
+    v_plan_name := 'business';
   ELSE
-    v_plan_name := v_subscription.plan_name;
+    -- Get user's current subscription with expiration check
+    SELECT 
+      plan_name,
+      expires_at,
+      cancel_at_period_end
+    INTO v_subscription
+    FROM user_subscriptions
+    WHERE user_id = p_user_id
+    ORDER BY created_at DESC
+    LIMIT 1;
+    
+    -- Check if subscription is expired or cancelled
+    IF v_subscription IS NULL THEN
+      v_plan_name := 'free';
+    ELSIF v_subscription.expires_at IS NOT NULL AND v_subscription.expires_at < NOW() THEN
+      v_plan_name := 'free';
+    ELSIF v_subscription.cancel_at_period_end AND v_subscription.expires_at < NOW() THEN
+      v_plan_name := 'free';
+    ELSE
+      v_plan_name := v_subscription.plan_name;
+    END IF;
   END IF;
   
   -- Get business limit for the plan

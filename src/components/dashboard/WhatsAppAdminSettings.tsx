@@ -256,9 +256,14 @@ export const WhatsAppAdminSettings = ({ businessId }: WhatsAppAdminSettingsProps
             </Button>
           </div>
           
-          <p className="text-xs text-muted-foreground">
-            Add phone numbers in international format (e.g., +1234567890)
-          </p>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Add phone numbers in international format (e.g., +1234567890)
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1">
+              Note: To receive test messages, you MUST have sent a message to the bot within the last 24 hours. If using a Meta test number, make sure your number is added to the recipients list in the Meta portal.
+            </p>
+          </div>
 
           {adminPhones.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">

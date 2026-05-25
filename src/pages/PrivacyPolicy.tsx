@@ -46,7 +46,7 @@ const PrivacyPolicy = () => {
 
       <h2>5. Data Security</h2>
       <p>
-        We implement enterprise-grade security measures to protect your data. This includes end-to-end encryption for sensitive data, regular security audits, and hosting on secure cloud infrastructure provided by Supabase (PostgreSQL) and Google Cloud.
+        We implement business-grade security measures to protect your data. This includes end-to-end encryption for sensitive data, regular security audits, and hosting on secure cloud infrastructure provided by Supabase (PostgreSQL) and Google Cloud.
       </p>
 
       <h2>6. Data Retention and Deletion</h2>

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X, MessageSquare, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ConversationsListProps {
   businessId: string;
@@ -205,7 +206,23 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
 
           <ScrollArea className="h-[400px]">
             {isLoading ? (
-              <div className="text-center text-muted-foreground">Loading...</div>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="border-b pb-4 last:border-0 p-2 rounded">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-4 w-4 rounded-full" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : conversations?.length === 0 ? (
               <div className="text-center text-muted-foreground">No conversations yet</div>
             ) : (

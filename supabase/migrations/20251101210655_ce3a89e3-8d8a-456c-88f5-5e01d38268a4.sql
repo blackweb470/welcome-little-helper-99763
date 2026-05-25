@@ -52,7 +52,7 @@ INSERT INTO public.subscription_plans (name, business_limit, price_monthly, feat
   ('free', 1, 0, '["1 Business", "Basic AI Chat", "Email Support"]'::jsonb),
   ('basic', 3, 9.99, '["3 Businesses", "Advanced AI Chat", "Priority Email Support", "Analytics Dashboard"]'::jsonb),
   ('pro', 10, 29.99, '["10 Businesses", "Premium AI Chat", "Live Agent Support", "Advanced Analytics", "Custom Branding"]'::jsonb),
-  ('business', -1, 99.99, '["Unlimited Businesses", "Enterprise AI Chat", "24/7 Priority Support", "Custom Integrations", "Dedicated Account Manager"]'::jsonb);
+  ('business', -1, 99.99, '["Unlimited Businesses", "Business AI Chat", "24/7 Priority Support", "Custom Integrations", "Dedicated Account Manager"]'::jsonb);
 
 -- Function to check if user can create more businesses
 CREATE OR REPLACE FUNCTION public.can_create_business(p_user_id UUID)

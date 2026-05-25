@@ -510,7 +510,7 @@ const Index = () => {
               {[
                 { icon: Users, title: "Team Management", desc: "Add team members with role-based permissions. Control who can access what." },
                 { icon: BarChart3, title: "Performance Analytics", desc: "Track agent performance, response times, and resolution rates with detailed reports." },
-                { icon: Shield, title: "Enterprise Security", desc: "Enterprise-grade security with data encryption, compliance standards, and audit logs." },
+                { icon: Shield, title: "Business Security", desc: "Business-grade security with data encryption, compliance standards, and audit logs." },
               ].map((c, i) => (
                 <div key={i} className="cio-card cio-reveal" style={{ transitionDelay: `${i * 80}ms` }}>
                   <div className="w-12 h-12 rounded-md flex items-center justify-center mb-6" style={{ background: "var(--mint)" }}>

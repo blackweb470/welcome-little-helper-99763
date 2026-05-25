@@ -9,6 +9,7 @@ import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckC
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { WhatsAppInteractiveButtons, type InteractiveMessage } from "./WhatsAppInteractiveButtons";
 import { AttachmentDisplay } from "./MessageAttachments";
@@ -1152,7 +1153,25 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           <div>
             <h3 className="font-semibold mb-3">Waiting ({queuedSessions.length})</h3>
             <div className="space-y-3">
-              {queuedSessions.length === 0 ? (
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="border rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-4 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <Skeleton className="h-8 w-full mt-4" />
+                    </div>
+                  ))}
+                </div>
+              ) : queuedSessions.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No chats waiting</p>
               ) : (
                 queuedSessions.map((session) => (
@@ -1208,7 +1227,28 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           <div>
             <h3 className="font-semibold mb-3">Active ({activeSessions.length})</h3>
             <div className="space-y-3">
-              {activeSessions.length === 0 ? (
+              {loading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="border rounded-lg p-4 bg-primary/5">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-4 w-4 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                      </div>
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : activeSessions.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No active chats</p>
               ) : (
                 activeSessions.map((session) => (
