@@ -777,11 +777,12 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
     const interval = setInterval(async () => {
       try {
-        const { data } = await supabase
+        const { data: rawData } = await supabase
           .from('live_chat_sessions_public' as any)
           .select('*')
           .eq('conversation_id', conversationId)
           .maybeSingle();
+        const data = rawData as any;
 
         if (data && data.status !== 'queued') {
           console.log('Polling detected status change:', data.status);
