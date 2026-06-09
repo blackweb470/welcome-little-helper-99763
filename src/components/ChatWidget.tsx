@@ -164,7 +164,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   // Restore live chat session from database
   const restoreLiveChatSession = async (convId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: rawData, error } = await supabase
         .from('live_chat_sessions_public' as any)
         .select('*')
         .eq('conversation_id', convId)
@@ -174,6 +174,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         .maybeSingle();
 
       if (error) throw error;
+      const data = rawData as any;
       if (data) {
         console.log('Restored live chat session:', data);
         setLiveChatSession(data);
