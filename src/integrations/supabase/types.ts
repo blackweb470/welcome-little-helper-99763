@@ -176,57 +176,6 @@ export type Database = {
           },
         ]
       }
-      business_guides: {
-        Row: {
-          business_id: string
-          content: string
-          created_at: string
-          display_order: number | null
-          enabled: boolean | null
-          icon: string | null
-          id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          content: string
-          created_at?: string
-          display_order?: number | null
-          enabled?: boolean | null
-          icon?: string | null
-          id?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          content?: string
-          created_at?: string
-          display_order?: number | null
-          enabled?: boolean | null
-          icon?: string | null
-          id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "business_guides_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "business_guides_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses_public"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       business_learnings: {
         Row: {
           business_id: string
@@ -705,6 +654,57 @@ export type Database = {
           },
         ]
       }
+      knowledge_chunks: {
+        Row: {
+          business_id: string | null
+          chunk_index: number | null
+          content: string
+          created_at: string
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          source_id: string
+          source_type: string
+        }
+        Insert: {
+          business_id?: string | null
+          chunk_index?: number | null
+          content: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          source_id: string
+          source_type: string
+        }
+        Update: {
+          business_id?: string | null
+          chunk_index?: number | null
+          content?: string
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          source_id?: string
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_chunks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_chunks_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_chat_sessions: {
         Row: {
           accepted_at: string | null
@@ -713,6 +713,7 @@ export type Database = {
           created_at: string | null
           ended_at: string | null
           id: string
+          metadata: Json | null
           queued_at: string | null
           status: string
           transfer_reason: string | null
@@ -724,6 +725,7 @@ export type Database = {
           created_at?: string | null
           ended_at?: string | null
           id?: string
+          metadata?: Json | null
           queued_at?: string | null
           status?: string
           transfer_reason?: string | null
@@ -735,6 +737,7 @@ export type Database = {
           created_at?: string | null
           ended_at?: string | null
           id?: string
+          metadata?: Json | null
           queued_at?: string | null
           status?: string
           transfer_reason?: string | null
@@ -1079,6 +1082,30 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }
@@ -1743,6 +1770,48 @@ export type Database = {
       }
     }
     Views: {
+      bot_qa_pairs_public: {
+        Row: {
+          answer: string | null
+          business_id: string | null
+          enabled: boolean | null
+          id: string | null
+          priority: number | null
+          question: string | null
+        }
+        Insert: {
+          answer?: string | null
+          business_id?: string | null
+          enabled?: boolean | null
+          id?: string | null
+          priority?: number | null
+          question?: string | null
+        }
+        Update: {
+          answer?: string | null
+          business_id?: string | null
+          enabled?: boolean | null
+          id?: string | null
+          priority?: number | null
+          question?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_qa_pairs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_qa_pairs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses_public: {
         Row: {
           average_response_time_seconds: number | null
@@ -1792,6 +1861,99 @@ export type Database = {
           },
           {
             foreignKeyName: "conversations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_chat_sessions_public: {
+        Row: {
+          accepted_at: string | null
+          conversation_id: string | null
+          created_at: string | null
+          ended_at: string | null
+          id: string | null
+          queued_at: string | null
+          status: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string | null
+          queued_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string | null
+          queued_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_sessions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_analytics"
+            referencedColumns: ["conversation_id"]
+          },
+          {
+            foreignKeyName: "live_chat_sessions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proactive_chat_rules_public: {
+        Row: {
+          business_id: string | null
+          enabled: boolean | null
+          id: string | null
+          message: string | null
+          name: string | null
+          priority: number | null
+          trigger_type: string | null
+          trigger_value: Json | null
+        }
+        Insert: {
+          business_id?: string | null
+          enabled?: boolean | null
+          id?: string | null
+          message?: string | null
+          name?: string | null
+          priority?: number | null
+          trigger_type?: string | null
+          trigger_value?: Json | null
+        }
+        Update: {
+          business_id?: string | null
+          enabled?: boolean | null
+          id?: string | null
+          message?: string | null
+          name?: string | null
+          priority?: number | null
+          trigger_type?: string | null
+          trigger_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proactive_chat_rules_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proactive_chat_rules_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses_public"
@@ -1940,6 +2102,23 @@ export type Database = {
       is_team_member_of_business: {
         Args: { _business_id: string; _user_id: string }
         Returns: boolean
+      }
+      match_knowledge_chunks: {
+        Args: {
+          match_count?: number
+          p_business_id?: string
+          query_embedding: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          business_id: string
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+          source_id: string
+          source_type: string
+        }[]
       }
       search_conversations: {
         Args: {
