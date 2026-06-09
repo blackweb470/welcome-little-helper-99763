@@ -364,7 +364,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const runProactiveChecks = async () => {
       try {
         console.log('[Proactive] Running checks for business:', businessId, 'URL:', parentPageUrl || window.location.href);
-        const { data: rules, error } = await supabase
+        const { data: rawRules, error } = await supabase
           .from('proactive_chat_rules_public' as any)
           .select('*')
           .eq('business_id', businessId)
@@ -376,7 +376,8 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           return;
         }
 
-        if (!rules?.length) {
+        const rules = (rawRules as any[]) || [];
+        if (!rules.length) {
           console.log('[Proactive] No active proactive rules found');
           return;
         }
