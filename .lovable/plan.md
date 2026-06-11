@@ -1,34 +1,67 @@
 
+# Product Hunt Launch Kit for LYQN
 
-## Problem
+Goal: ship everything needed to support a live Product Hunt launch — copy you can paste into PH, a dedicated `/launch` page on lyqn.app, social-share metadata that looks sharp when hunters share it, and a polished gallery image set.
 
-The `/embed/:businessId` and `/widget/:businessId` URLs are being indexed by search engines because:
+## 1. Product Hunt copy (paste-ready)
 
-1. **`robots.txt` allows all crawlers** to index every page — no paths are disallowed
-2. **No `noindex` meta tag** exists on the embed/widget pages
-3. **No canonical URL** points crawlers away from these pages
+Delivered as `PRODUCT_HUNT_LAUNCH.md` in `/mnt/documents/` so you can copy/paste into the PH submission form.
 
-When Google finds these URLs (via links, sitemaps, or crawling), it indexes them as standalone pages instead of recognizing them as embeddable widgets.
+Includes:
+- **Name**: LYQN
+- **Tagline** (60 char max, 3 options to pick from), e.g. "AI support that learns your business — and hands off to humans"
+- **Description** (260 char) — what it is, who it's for, why it's different
+- **First comment from the maker** (the long-form pitch PH hunters expect): story, problem, what makes it different, 2-week free trial offer, ask for feedback
+- **Topics** to tag: Artificial Intelligence, Customer Communication, SaaS, Chatbots, Sales
+- **Reply templates** for the 5 most likely PH comment threads (pricing, vs Intercom, self-hosting, data privacy, WhatsApp)
+- **Hunter outreach DM** + **launch-day tweet/LinkedIn thread**
 
-## Plan
+## 2. `/launch` landing page
 
-### 1. Update `robots.txt` to block widget/embed paths
+New route `src/pages/Launch.tsx` mounted at `/launch` in `src/App.tsx`. Dark theme, matches existing landing page design system (LYQN monochrome + glassmorphism accents).
 
-Disallow `/widget/` and `/embed/` paths for all crawlers so search engines stop crawling them.
+Sections (single scroll):
+1. **PH badge hero** — "We're live on Product Hunt 🎉" with the official Product Hunt embed badge (links to your PH page) + primary CTA "Upvote on Product Hunt" and secondary "Start 2-week free trial"
+2. **The pitch** — one-line value prop + 3 bullet "why LYQN" cards (self-learning RAG, one-click human handoff, WhatsApp bridge)
+3. **2-week free trial offer banner** — your launch-day incentive, links to `/auth` then Basic checkout
+4. **Live demo** — embedded `LyqnWidgetEmbed` so visitors can chat with the bot on the page itself
+5. **Feature gallery grid** — 6 tiles with the gallery images (see §4)
+6. **Pricing recap** — Basic / Pro / Business cards (links to `/pricing`)
+7. **Maker note + social proof slot** — quote, founder bio, link to PH discussion
+8. **Footer CTA** — "Try LYQN free for 2 weeks"
 
-### 2. Add `noindex` meta tag in `WidgetEmbed.tsx`
+The PH badge will use the official `<a href="https://www.producthunt.com/posts/lyqn">` + badge `<img>` markup; you'll paste your real PH post slug after submission.
 
-Add a `<meta name="robots" content="noindex, nofollow">` tag dynamically when the embed page loads, as a second layer of protection for pages already indexed.
+## 3. SEO + OG polish (sitewide + /launch)
 
-### 3. Add `X-Frame-Options` consideration
+- `index.html` — verify `<title>`, `<meta name="description">`, `og:title`, `og:description`, `og:type=website`, `og:url=https://lyqn.app/`, `twitter:card=summary_large_image`. Replace any stale Lovable defaults.
+- Add `og:image` pointing to a new 1200×630 launch social card (generated in §4) — this is what shows when your PH link gets shared on X/LinkedIn.
+- Add `react-helmet-async` so `/launch` can override title/description/og to "LYQN is live on Product Hunt — 2 weeks free" (better social previews when hunters share the launch page specifically).
+- Add `<link rel="canonical" href="https://lyqn.app/launch">` on the launch route via Helmet (and remove the sitewide canonical from `index.html` to avoid duplicates, per project SEO rules).
+- Add `/launch` to `public/sitemap.xml`.
 
-Add a small notice in the embed page that when accessed directly (not in an iframe), shows a message like "This widget is meant to be embedded" or redirects to the main site — so direct visitors aren't confused.
+## 4. Gallery assets
 
-### Technical Details
+Generated via `imagegen` (premium quality for anything with text) and stored under `src/assets/launch/` as `.asset.json` pointers:
 
-**Files to modify:**
-- `public/robots.txt` — add `Disallow: /widget/` and `Disallow: /embed/`
-- `src/pages/WidgetEmbed.tsx` — add dynamic `noindex` meta tag + detect if not in iframe and show redirect/message
+1. **OG / social share card** — 1200×630, "LYQN — AI support that learns your business", dark monochrome, brand mark
+2. **PH gallery image 1 (hero)** — 1270×760, product shot of widget + dashboard collage
+3. **PH gallery image 2** — self-learning loop diagram
+4. **PH gallery image 3** — human handoff / live agent queue screenshot-style
+5. **PH gallery image 4** — WhatsApp bridge illustration
+6. **PH gallery image 5** — pricing/2-week trial card
+7. **PH thumbnail** — 240×240 square logo lockup
 
-**Note:** Already-indexed pages may take a few days/weeks to be removed from Google after these changes. You can also use Google Search Console to request removal of specific URLs for faster de-indexing.
+QA'd visually after generation (per artifact craft rules).
 
+## Out of scope (call out, don't do)
+- No new backend, no schema changes, no pricing changes — Basic plan already ships with a 2-week trial, so the "2 weeks free" offer needs zero backend work.
+- Not generating a launch video — say the word if you want one and I'll add it.
+- Not auto-submitting to Product Hunt — you'll paste the copy into the PH form yourself.
+
+## Technical details
+
+- Files added: `src/pages/Launch.tsx`, `src/assets/launch/*.asset.json`, `/mnt/documents/PRODUCT_HUNT_LAUNCH.md`
+- Files edited: `src/App.tsx` (add `/launch` route), `src/main.tsx` (wrap in `HelmetProvider`), `index.html` (OG/Twitter polish, remove sitewide canonical), `public/sitemap.xml` (add `/launch`)
+- New dep: `react-helmet-async`
+- After build: I'll ask if you want to publish so the launch page is live before you hit "Submit" on PH.
