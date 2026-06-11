@@ -25,6 +25,7 @@ import TermsOfService from "./pages/TermsOfService";
 import DataDeletion from "./pages/DataDeletion";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Launch from "./pages/Launch";
 
 const AuthListener = () => {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ const App = () => (
         <AuthListener />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/launch" element={<Launch />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
