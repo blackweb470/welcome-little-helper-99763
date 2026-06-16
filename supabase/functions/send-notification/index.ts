@@ -91,83 +91,281 @@ const handler = async (req: Request): Promise<Response> => {
     let html = "";
     let recipientEmail = ownerEmail; // Default to owner
 
+    const createNotificationEmail = (title: string, contentHtml: string) => `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: #0a0a0a;
+        padding: 40px 20px;
+        font-family: 'DM Mono', monospace;
+        -webkit-font-smoothing: antialiased;
+      }
+      .email-card {
+        max-width: 560px;
+        margin: 0 auto;
+        background: #0f0f0f;
+        border: 0.5px solid #2a2a2a;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .email-header {
+        padding: 56px 48px 48px;
+        border-bottom: 0.5px solid #1e1e1e;
+        position: relative;
+      }
+      .corner-mark {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        color: #3a3a3a;
+        text-transform: uppercase;
+      }
+      .logo {
+        font-family: 'DM Serif Display', serif;
+        font-size: 42px;
+        color: #f5f5f5;
+        letter-spacing: -1px;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .tagline {
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        color: #404040;
+        text-transform: uppercase;
+      }
+      .index-num {
+        position: absolute;
+        bottom: 20px;
+        left: 48px;
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        color: #2a2a2a;
+      }
+      .email-body {
+        padding: 48px 48px 40px;
+      }
+      .greeting {
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #505050;
+        margin-bottom: 28px;
+      }
+      .headline {
+        font-family: 'DM Serif Display', serif;
+        font-size: 28px;
+        color: #f0f0f0;
+        line-height: 1.25;
+        letter-spacing: -0.5px;
+        margin-bottom: 20px;
+      }
+      .body-text {
+        font-size: 13px;
+        line-height: 1.9;
+        color: #666;
+        margin-bottom: 40px;
+      }
+      .data-box {
+        border: 0.5px solid #222;
+        padding: 24px;
+        margin-bottom: 40px;
+      }
+      .data-label {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #505050;
+        margin-bottom: 8px;
+        display: block;
+      }
+      .data-value {
+        font-size: 13px;
+        color: #f0f0f0;
+        display: block;
+        margin-bottom: 16px;
+      }
+      .data-value:last-child {
+        margin-bottom: 0;
+      }
+      .divider {
+        border: none;
+        border-top: 0.5px solid #1e1e1e;
+        margin-bottom: 28px;
+      }
+      .footnote {
+        font-size: 11px;
+        color: #303030;
+        line-height: 1.8;
+      }
+      .email-footer {
+        padding: 20px 48px;
+        border-top: 0.5px solid #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .footer-brand {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #2a2a2a;
+      }
+      .footer-rule {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        color: #252525;
+        letter-spacing: 0.1em;
+      }
+      .footer-dash {
+        width: 20px;
+        height: 0.5px;
+        background: #252525;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-card">
+      <div class="email-header">
+        <div class="corner-mark">Notification</div>
+        <div class="logo">Lyqn.</div>
+        <div class="tagline">System Alert</div>
+        <div class="index-num">01 / 01</div>
+      </div>
+      <div class="email-body">
+        <p class="greeting">Update —</p>
+        <h1 class="headline">${title}</h1>
+        <div class="body-text">
+          ${contentHtml}
+        </div>
+        <hr class="divider">
+        <p class="footnote">
+          This is an automated system notification from your Lyqn workspace.
+        </p>
+      </div>
+      <div class="email-footer">
+        <span class="footer-brand">Lyqn</span>
+        <div class="footer-rule">
+          <div class="footer-dash"></div>
+          <span>Automated message</span>
+          <div class="footer-dash"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+    `;
+
     switch (type) {
       case 'agent_accepted':
-        // Send to visitor when agent accepts
         recipientEmail = data.visitorEmail || '';
         if (!recipientEmail) {
-          console.error('No visitor email provided for agent_accepted notification');
           return new Response(
             JSON.stringify({ error: 'No visitor email provided' }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
         subject = `✅ Agent Joined Your Chat - ${sanitizedBusinessName}`;
-        html = `
-          <h1>An agent has joined your chat!</h1>
-          <p>Your chat request has been accepted by ${data.agentName || 'our team'}.</p>
+        html = createNotificationEmail('Chat Accepted', `
+          <p>Your chat request has been accepted by <strong style="color: #f0f0f0;">${data.agentName || 'our team'}</strong>.</p>
           <p>You can now continue your conversation.</p>
-          <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
+          <div class="data-box">
+            <span class="data-label">Conversation ID</span>
+            <span class="data-value">${data.conversationId || 'N/A'}</span>
+          </div>
           <p>Please return to the chat window to continue.</p>
-        `;
+        `);
         break;
 
       case 'chat_transfer':
         subject = `🔔 Live Chat Transfer Request - ${sanitizedBusinessName}`;
-        html = `
-          <h1>New Live Chat Transfer</h1>
+        html = createNotificationEmail('New Live Chat Transfer', `
           <p>A visitor has requested to speak with a live agent.</p>
-          <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
-          <p><strong>Visitor ID:</strong> ${data.visitorId || 'N/A'}</p>
-          ${data.visitorEmail ? `<p><strong>Visitor Email:</strong> ${data.visitorEmail}</p>` : ''}
-          ${data.message ? `<p><strong>Reason:</strong> ${data.message.substring(0, 500)}</p>` : ''}
+          <div class="data-box">
+            <span class="data-label">Conversation ID</span>
+            <span class="data-value">${data.conversationId || 'N/A'}</span>
+            
+            <span class="data-label">Visitor ID</span>
+            <span class="data-value">${data.visitorId || 'N/A'}</span>
+            
+            ${data.visitorEmail ? `
+              <span class="data-label">Visitor Email</span>
+              <span class="data-value">${data.visitorEmail}</span>
+            ` : ''}
+            
+            ${data.message ? `
+              <span class="data-label">Reason</span>
+              <span class="data-value">${data.message.substring(0, 500)}</span>
+            ` : ''}
+          </div>
           <p>Please log in to your dashboard to accept this chat.</p>
-        `;
+        `);
         break;
 
       case 'new_message':
         subject = `💬 New Message - ${sanitizedBusinessName}`;
-        html = `
-          <h1>New Message Received</h1>
-          <p>${data.message ? data.message.substring(0, 500) : 'No message content'}</p>
-          <p><strong>Conversation ID:</strong> ${data.conversationId || 'N/A'}</p>
-        `;
+        html = createNotificationEmail('New Message Received', `
+          <div class="data-box">
+            <p style="font-style: italic; color: #f0f0f0; margin: 0; font-size: 14px;">"${data.message ? data.message.substring(0, 500) : 'No message content'}"</p>
+          </div>
+          <span class="data-label">Conversation ID</span>
+          <span class="data-value">${data.conversationId || 'N/A'}</span>
+        `);
         break;
 
       case 'ticket_created':
         subject = `🎫 New Support Ticket - ${sanitizedBusinessName}`;
-        html = `
-          <h1>New Support Ticket Created</h1>
-          <p><strong>Ticket ID:</strong> ${data.ticketId || 'N/A'}</p>
-          ${data.message ? `<p><strong>Details:</strong> ${data.message.substring(0, 500)}</p>` : ''}
-        `;
+        html = createNotificationEmail('New Support Ticket Created', `
+          <div class="data-box">
+            <span class="data-label">Ticket ID</span>
+            <span class="data-value">${data.ticketId || 'N/A'}</span>
+            
+            ${data.message ? `
+              <span class="data-label">Details</span>
+              <span class="data-value">${data.message.substring(0, 500)}</span>
+            ` : ''}
+          </div>
+        `);
         break;
 
       case 'ticket_resolved':
         subject = `✅ Ticket Resolved - ${sanitizedBusinessName}`;
-        html = `
-          <h1>Support Ticket Resolved</h1>
-          <p><strong>Ticket ID:</strong> ${data.ticketId || 'N/A'}</p>
-        `;
+        html = createNotificationEmail('Support Ticket Resolved', `
+          <p>Your support ticket has been marked as resolved.</p>
+          <div class="data-box">
+            <span class="data-label">Ticket ID</span>
+            <span class="data-value" style="margin-bottom: 0;">${data.ticketId || 'N/A'}</span>
+          </div>
+        `);
         break;
 
       case 'team_member_removed':
         recipientEmail = data.userEmail || '';
         if (!recipientEmail) {
-          console.error('No user email provided for team_member_removed notification');
           return new Response(
             JSON.stringify({ error: 'No user email provided' }),
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
         subject = `⚠️ Team Access Removed - ${data.businessName || sanitizedBusinessName}`;
-        html = `
-          <h1>Your team access has been removed</h1>
-          <p>You have been removed from the team at <strong>${data.businessName || sanitizedBusinessName}</strong>.</p>
+        html = createNotificationEmail('Access Revoked', `
+          <p>You have been removed from the team at <strong style="color: #f0f0f0;">${data.businessName || sanitizedBusinessName}</strong>.</p>
           <p>Your access to the business dashboard and all related features has been revoked.</p>
-          <p>If you believe this was done in error, please contact the business owner directly.</p>
+          <div class="data-box" style="border-color: #3f1515;">
+            <p style="color: #a35d5d; margin: 0;">If you believe this was done in error, please contact the business owner directly.</p>
+          </div>
           <p>Thank you for your contributions to the team.</p>
-        `;
+        `);
         break;
 
       default:
@@ -178,7 +376,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "AI Chat Support <onboarding@resend.dev>",
+      from: "AI Chat Support <support@lyqn.app>",
       to: [recipientEmail],
       subject: subject,
       html: html,

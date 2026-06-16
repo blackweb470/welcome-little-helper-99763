@@ -39,8 +39,17 @@ const Onboarding = () => {
         .single();
 
       if (error || !data) {
-        // No subscription, redirect to pricing to select plan and add card
-        navigate("/pricing?new_user=true");
+        // No subscription, automatically start a 14-day free trial
+        try {
+          const { error: trialError } = await supabase.functions.invoke('start-free-trial');
+          if (trialError) throw trialError;
+          
+          navigate("/dashboard");
+        } catch (e) {
+          console.error("Failed to start free trial:", e);
+          // If automatic trial fails, fallback to pricing page
+          navigate("/pricing?new_user=true");
+        }
       } else {
         // Has subscription, go to dashboard
         navigate("/dashboard");

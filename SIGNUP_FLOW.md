@@ -17,29 +17,22 @@ This application implements a professional subscription flow where users:
 
 2. **Onboarding Check** (`/onboarding`)
    - Checks if user has active subscription
-   - If NO subscription → redirect to `/pricing?new_user=true`
+   - If NO subscription → Automatically starts a 14-day free trial on the Basic plan (no credit card required) and redirects to `/dashboard`.
    - If HAS subscription → redirect to `/dashboard`
 
-3. **Plan Selection** (`/pricing?new_user=true`)
-   - User sees all plans
-   - Basic plan offers 1-month free trial
-   - User clicks "Start Free Trial"
-   - Redirected to Polar checkout with card collection
-
-4. **Polar Checkout**
-   - User enters payment card
-   - Card is saved for future billing
-   - Trial starts immediately
-   - No charge until trial ends
-
-5. **Access Dashboard** (`/dashboard`)
-   - User has full access during trial
+3. **Access Dashboard** (`/dashboard`)
+   - User has full access during the 14-day trial
    - Can see trial end date in billing page
+   - Upgrading before trial ends is optional, handled via Polar checkout
+
+4. **Polar Checkout (Upgrade)**
+   - User enters payment card when they choose to upgrade
+   - Card is saved for future billing
 
 ### Trial End Behavior
-- After 1 month, Polar automatically charges the saved card
-- Subscription continues monthly
-- User receives notifications before charge
+- After 14 days, the trial ends.
+- Since no card was collected, there is no automatic charge.
+- The user is prompted to upgrade to a paid plan to continue using the application.
 
 ## Billing Management
 

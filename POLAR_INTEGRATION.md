@@ -2,10 +2,10 @@
 
 ## Overview
 This application uses Polar for subscription management with a professional signup flow:
-1. Users sign up → redirected to plan selection
-2. Select plan with 1-month free trial → Polar checkout
-3. Add payment card → trial starts
-4. Auto-charged after trial ends
+1. Users sign up → automatically enrolled in a 14-day free trial (no credit card required).
+2. Users access the dashboard immediately.
+3. When they choose to upgrade or when the trial ends, they select a plan and complete a Polar checkout.
+4. Auto-charged monthly after successful checkout.
 
 ## Current Configuration
 

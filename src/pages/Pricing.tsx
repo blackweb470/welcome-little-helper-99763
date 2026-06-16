@@ -119,8 +119,8 @@ const Pricing = () => {
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             {isNewUser
-              ? "Add your payment card to start your 2-week free trial. No charges until the trial ends."
-              : "Start with a 2-week free trial on Basic and scale as you grow. Cancel anytime."}
+              ? "Your 2-week free trial is ready. You can upgrade your plan below."
+              : "Start with a 2-week free trial on Basic and scale as you grow. No credit card required to start."}
           </p>
         </div>
 

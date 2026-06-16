@@ -174,14 +174,14 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         .maybeSingle();
 
       if (error) throw error;
-      const data = rawData as any;
-      if (data) {
-        console.log('Restored live chat session:', data);
-        setLiveChatSession(data);
+      const sessionData = rawData as any;
+      if (sessionData) {
+        console.log('Restored live chat session:', sessionData);
+        setLiveChatSession(sessionData);
         
         // Update queue position if queued
-        if (data.status === 'queued') {
-          await updateQueuePosition(data);
+        if (sessionData.status === 'queued') {
+          await updateQueuePosition(sessionData);
         }
       }
     } catch (error) {
@@ -784,12 +784,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           .maybeSingle();
         const data = rawData as any;
 
-        if (data && data.status !== 'queued') {
-          console.log('Polling detected status change:', data.status);
-          setLiveChatSession(data);
+        const sessionData = data as any;
+        if (sessionData && sessionData.status !== 'queued') {
+          console.log('Polling detected status change:', sessionData.status);
+          setLiveChatSession(sessionData);
           // If accepted, add the "You are speaking with a human agent" message
-          if (data.status === 'active') {
-            const dedupeKey = `agent-joined-${data.id}`;
+          if (sessionData.status === 'active') {
+            const dedupeKey = `agent-joined-${sessionData.id}`;
             if (!renderedMessageIdsRef.current.has(dedupeKey)) {
               renderedMessageIdsRef.current.add(dedupeKey);
               playNotificationSound();

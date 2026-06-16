@@ -243,7 +243,7 @@ const Index = () => {
 
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <button className="cio-pill cio-pill-ghost" aria-label="Menu">
+              <button className="cio-pill cio-pill-ghost md:!hidden" aria-label="Menu">
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>

@@ -17,50 +17,201 @@ const createInvitationEmail = (
   signupUrl: string
 ) => {
   const permissionsList = [];
-  if (permissions.can_chat) permissionsList.push('<li>Handle live chats with customers</li>');
-  if (permissions.can_view_analytics) permissionsList.push('<li>View analytics and reports</li>');
-  if (permissions.can_manage_settings) permissionsList.push('<li>Manage settings and configuration</li>');
+  if (permissions.can_chat) permissionsList.push('<li style="margin-bottom: 8px;">Handle live chats with customers</li>');
+  if (permissions.can_view_analytics) permissionsList.push('<li style="margin-bottom: 8px;">View analytics and reports</li>');
+  if (permissions.can_manage_settings) permissionsList.push('<li style="margin-bottom: 8px;">Manage settings and configuration</li>');
 
   return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-      </head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; background-color: #f6f9fc; margin: 0; padding: 0;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px 40px 48px;">
-          <h1 style="color: #333; font-size: 28px; font-weight: bold; margin: 40px 0 20px;">Team Invitation</h1>
-          
-          <p style="color: #333; font-size: 16px; line-height: 26px; margin: 16px 0;">
-            <strong>${inviterName}</strong> has invited you to join <strong>${businessName}</strong>'s support team as a <strong>${role}</strong>.
-          </p>
-
-          <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 24px 0;">
-            <p style="color: #333; font-size: 14px; font-weight: bold; margin: 0 0 12px 0;">Your Permissions:</p>
-            <ul style="color: #555; font-size: 14px; line-height: 24px; margin: 0; padding-left: 20px;">
-              ${permissionsList.join('')}
-            </ul>
-          </div>
-
-          <div style="text-align: center; padding: 27px 0;">
-            <a href="${signupUrl}" style="background-color: #000; border-radius: 6px; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block; padding: 12px 32px;">
-              Accept Invitation & Create Account
-            </a>
-          </div>
-
-          <hr style="border: none; border-top: 1px solid #e6ebf1; margin: 20px 0;">
-
-          <p style="color: #8898aa; font-size: 14px; line-height: 24px; margin: 16px 0;">
-            If you didn't expect this invitation, you can safely ignore this email.
-          </p>
-
-          <p style="color: #8898aa; font-size: 12px; line-height: 16px; margin-top: 32px;">
-            This invitation was sent by ${businessName}
-          </p>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background: #0a0a0a;
+        padding: 40px 20px;
+        font-family: 'DM Mono', monospace;
+        -webkit-font-smoothing: antialiased;
+      }
+      .email-card {
+        max-width: 560px;
+        margin: 0 auto;
+        background: #0f0f0f;
+        border: 0.5px solid #2a2a2a;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .email-header {
+        padding: 56px 48px 48px;
+        border-bottom: 0.5px solid #1e1e1e;
+        position: relative;
+      }
+      .corner-mark {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        color: #3a3a3a;
+        text-transform: uppercase;
+      }
+      .logo {
+        font-family: 'DM Serif Display', serif;
+        font-size: 42px;
+        color: #f5f5f5;
+        letter-spacing: -1px;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .tagline {
+        font-size: 10px;
+        letter-spacing: 0.25em;
+        color: #404040;
+        text-transform: uppercase;
+      }
+      .index-num {
+        position: absolute;
+        bottom: 20px;
+        left: 48px;
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        color: #2a2a2a;
+      }
+      .email-body {
+        padding: 48px 48px 40px;
+      }
+      .greeting {
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #505050;
+        margin-bottom: 28px;
+      }
+      .headline {
+        font-family: 'DM Serif Display', serif;
+        font-size: 28px;
+        color: #f0f0f0;
+        line-height: 1.25;
+        letter-spacing: -0.5px;
+        margin-bottom: 20px;
+      }
+      .body-text {
+        font-size: 13px;
+        line-height: 1.9;
+        color: #666;
+        margin-bottom: 40px;
+      }
+      .permissions-box {
+        border: 0.5px solid #222;
+        padding: 24px;
+        margin-bottom: 40px;
+      }
+      .permissions-title {
+        font-size: 10px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #505050;
+        margin-bottom: 16px;
+      }
+      .permissions-list {
+        font-size: 13px;
+        line-height: 1.9;
+        color: #888;
+        padding-left: 16px;
+      }
+      .cta-btn {
+        display: inline-block;
+        background: #f5f5f5;
+        color: #0a0a0a;
+        text-decoration: none;
+        padding: 14px 32px;
+        font-family: 'DM Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        border-radius: 2px;
+        margin-bottom: 40px;
+      }
+      .divider {
+        border: none;
+        border-top: 0.5px solid #1e1e1e;
+        margin-bottom: 28px;
+      }
+      .footnote {
+        font-size: 11px;
+        color: #303030;
+        line-height: 1.8;
+      }
+      .email-footer {
+        padding: 20px 48px;
+        border-top: 0.5px solid #1a1a1a;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .footer-brand {
+        font-size: 10px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #2a2a2a;
+      }
+      .footer-rule {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        color: #252525;
+        letter-spacing: 0.1em;
+      }
+      .footer-dash {
+        width: 20px;
+        height: 0.5px;
+        background: #252525;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-card">
+      <div class="email-header">
+        <div class="corner-mark">Team Invite</div>
+        <div class="logo">Lyqn.</div>
+        <div class="tagline">Workspace Access</div>
+        <div class="index-num">01 / 01</div>
+      </div>
+      <div class="email-body">
+        <p class="greeting">Action required —</p>
+        <h1 class="headline">You've been<br><em>invited</em></h1>
+        <p class="body-text">
+          <strong>${inviterName}</strong> has invited you to join <strong>${businessName}</strong>'s workspace as a <strong>${role}</strong>.
+        </p>
+        <div class="permissions-box">
+          <div class="permissions-title">Your Access Permissions</div>
+          <ul class="permissions-list">
+            ${permissionsList.join('')}
+          </ul>
         </div>
-      </body>
-    </html>
+        <a href="${signupUrl}" class="cta-btn">Accept Invitation →</a>
+        <hr class="divider">
+        <p class="footnote">
+          If you didn't expect this invitation, you can safely ignore this email.<br>
+          This invitation was sent by ${businessName}.
+        </p>
+      </div>
+      <div class="email-footer">
+        <span class="footer-brand">Lyqn</span>
+        <div class="footer-rule">
+          <div class="footer-dash"></div>
+          <span>Automated message</span>
+          <div class="footer-dash"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
   `;
 };
 
@@ -326,7 +477,7 @@ async function sendInviteEmail(
     inviteUrl
   );
 
-  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'onboarding@resend.dev';
+  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'invites@lyqn.app';
   
   try {
     const { error: emailError } = await resendClient.emails.send({
