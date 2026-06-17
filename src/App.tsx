@@ -26,6 +26,7 @@ import DataDeletion from "./pages/DataDeletion";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Launch from "./pages/Launch";
+import Admin from "./pages/Admin";
 
 const AuthListener = () => {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ const App = () => (
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/delete" element={<DataDeletion />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

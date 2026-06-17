@@ -26,6 +26,8 @@ import { BotCustomization } from "@/components/dashboard/BotCustomization";
 import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
 import { WhatsAppAdminSettings } from "@/components/dashboard/WhatsAppAdminSettings";
 import { PendingInvitations } from "@/components/dashboard/PendingInvitations";
+import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
+import { SubscriptionManager } from "@/components/billing/SubscriptionManager";
 
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
@@ -187,6 +189,8 @@ const Dashboard = () => {
             <div className="flex-1 min-w-0 flex items-center gap-4">
               <h1 className="text-3xl font-display font-bold tracking-tight truncate">
                 {currentTab === 'businesses' ? 'Businesses' :
+                 currentTab === 'profile' ? 'Profile Settings' :
+                 currentTab === 'billing' ? 'Billing & Subscription' :
                  currentTab === 'analytics' ? 'Analytics' :
                  currentTab === 'conversations' ? 'Conversations' :
                  
@@ -232,6 +236,21 @@ const Dashboard = () => {
                     selectedBusinessId={selectedBusinessId}
                   />
                 </Card>
+              </div>
+            )}
+
+            {currentTab === 'profile' && (
+              <ProfileSettings />
+            )}
+
+            {currentTab === 'billing' && (
+              <div className="max-w-5xl">
+                <div className="space-y-2 mb-10">
+                  <p className="text-muted-foreground">
+                    Manage your plan, view invoices, and update billing preferences.
+                  </p>
+                </div>
+                <SubscriptionManager />
               </div>
             )}
 

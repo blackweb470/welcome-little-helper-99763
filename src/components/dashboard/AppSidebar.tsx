@@ -54,31 +54,38 @@ interface AppSidebarProps {
 
 const mainItems = [
   { title: "Businesses", path: "businesses", icon: Building2 },
+  { title: "Profile", path: "profile", icon: User },
+  { title: "Billing", path: "billing", icon: CreditCard },
 ];
 
-const externalLinks = [
-  { title: "Profile", path: "/profile", icon: User },
-  { title: "Billing", path: "/billing", icon: CreditCard },
-];
-
-const businessItems = [
-  { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics", permission: "can_view_analytics" },
-  { title: "Conversations", path: "conversations", icon: MessageSquare, permission: "can_chat" },
-  
-  { title: "Team", path: "team", icon: UsersRound, feature: "live_agent", ownerOnly: true },
-  { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent", permission: "can_chat" },
-  { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses", permission: "can_chat" },
-  { title: "Notifications", path: "notifications", icon: Bell, permission: "can_chat" },
-  { title: "Notification Settings", path: "notification-settings", icon: Settings, permission: "can_chat" },
-  
-  { title: "Proactive", path: "proactive", icon: Zap, feature: "proactive_chat", permission: "can_manage_settings" },
-  
-  { title: "Documents", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
-  
-  
-  { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
-  { title: "Customize Bot", path: "customize-bot", icon: Bot, ownerOnly: true },
-  { title: "WhatsApp", path: "whatsapp", icon: MessageCircle, ownerOnly: true },
+const businessGroups = [
+  {
+    label: "OVERVIEW & CHAT",
+    items: [
+      { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics", permission: "can_view_analytics" },
+      { title: "Conversations", path: "conversations", icon: MessageSquare, permission: "can_chat" },
+      { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent", permission: "can_chat" },
+      { title: "Notifications", path: "notifications", icon: Bell, permission: "can_chat" },
+    ]
+  },
+  {
+    label: "BOT & AUTOMATION",
+    items: [
+      { title: "Customize Bot", path: "customize-bot", icon: Bot, ownerOnly: true },
+      { title: "Documents Training", path: "documents", icon: FileText, feature: "business_documents", permission: "can_manage_settings" },
+      { title: "Canned Responses", path: "canned-responses", icon: FileStack, feature: "canned_responses", permission: "can_chat" },
+      { title: "Proactive Chat", path: "proactive", icon: Zap, feature: "proactive_chat", permission: "can_manage_settings" },
+    ]
+  },
+  {
+    label: "SETTINGS & INTEGRATIONS",
+    items: [
+      { title: "Widget Settings", path: "settings", icon: Settings, ownerOnly: true },
+      { title: "WhatsApp", path: "whatsapp", icon: MessageCircle, ownerOnly: true },
+      { title: "Team Management", path: "team", icon: UsersRound, feature: "live_agent", ownerOnly: true },
+      { title: "Notification Setup", path: "notification-settings", icon: Settings, permission: "can_chat" },
+    ]
+  }
 ];
 
 export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatureClick, businessId, hasPermission, isOwner }: AppSidebarProps) {
@@ -127,29 +134,16 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              {externalLinks.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.path}
-                      className="bg-secondary/50 font-semibold hover:bg-muted transition-colors"
-                    >
-                      <item.icon className="w-5 h-5 text-foreground" />
-                      {open && <span className="text-foreground">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {hasSelectedBusiness && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-bold tracking-wider">BUSINESS TOOLS</SidebarGroupLabel>
+        {hasSelectedBusiness && businessGroups.map((group, index) => (
+          <SidebarGroup key={group.label} className={index > 0 ? "mt-4" : ""}>
+            <SidebarGroupLabel className="text-xs font-bold tracking-wider text-muted-foreground/70">{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {businessItems.map((item) => {
+                {group.items.map((item) => {
                   // Check feature access (plan-based)
                   const isFeatureLocked = item.feature && !hasAccess(item.feature as FeatureName);
                   
@@ -216,7 +210,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ))}
       </SidebarContent>
 
       <SidebarFooter className="border-t p-4">
