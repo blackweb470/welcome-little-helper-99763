@@ -252,6 +252,17 @@ const Index = () => {
           "text": faq.a
         }
       }))
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "LYQN",
+      "url": "https://lyqn.app/",
+      "logo": "https://lyqn.app/lyqn-icon.png",
+      "description": "LYQN provides self-learning AI chatbots and WhatsApp bridges for businesses globally.",
+      "sameAs": [
+        "https://twitter.com/lyqn_ai"
+      ]
     }
   ]);
 
