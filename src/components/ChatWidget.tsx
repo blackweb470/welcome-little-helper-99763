@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Bell, User } from "lucide-react";
+import { MessageCircle, X, HelpCircle, MessageSquare, Search, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Bell, User, BookOpen, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PreChatForm } from "./PreChatForm";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,24 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   const [uploadingImage, setUploadingImage] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const renderedMessageIdsRef = useRef<Set<string>>(new Set());
+  const widgetRef = useRef<HTMLDivElement>(null);
+
+  // Close widget when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (widgetRef.current && !widgetRef.current.contains(event.target as Node)) {
+        if (!isEmbedded && isOpen) {
+          setIsOpen(false);
+        }
+      }
+    }
+    
+    // Use capture phase to ensure it fires before other handlers might stop propagation
+    document.addEventListener("mousedown", handleClickOutside, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside, true);
+    };
+  }, [isOpen, isEmbedded]);
 
   // Restore session state from localStorage on mount
   useEffect(() => {
@@ -74,7 +92,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       try {
         setTranscript(JSON.parse(storedTranscript));
       } catch (e) {
-        console.error('Error parsing stored transcript:', e);
+// console.error('Error parsing stored transcript:', e);
       }
     }
     
@@ -88,7 +106,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       try {
         setVisitorInfo(JSON.parse(storedVisitorInfo));
       } catch (e) {
-        console.error('Error parsing stored visitor info:', e);
+// console.error('Error parsing stored visitor info:', e);
       }
     }
     
@@ -102,10 +120,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     if (storedSession) {
       try {
         const parsedSession = JSON.parse(storedSession);
-        console.log('Restored live chat session from localStorage:', parsedSession);
+// console.log('Restored live chat session from localStorage:', parsedSession);
         setLiveChatSession(parsedSession);
       } catch (e) {
-        console.error('Error parsing stored live chat session:', e);
+// console.error('Error parsing stored live chat session:', e);
       }
     }
     
@@ -176,7 +194,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       if (error) throw error;
       const sessionData = rawData as any;
       if (sessionData) {
-        console.log('Restored live chat session:', sessionData);
+// console.log('Restored live chat session:', sessionData);
         setLiveChatSession(sessionData);
         
         // Update queue position if queued
@@ -185,7 +203,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
       }
     } catch (error) {
-      console.error('Error restoring live chat session:', error);
+// console.error('Error restoring live chat session:', error);
     }
   };
 
@@ -215,7 +233,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         setEstimatedWaitMinutes(position * 3);
       }
     } catch (error) {
-      console.error('Error updating queue position:', error);
+// console.error('Error updating queue position:', error);
     }
   };
 
@@ -272,10 +290,24 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       }
     };
 
+    const fetchProactiveRules = async () => {
+      const { data } = await supabase
+        .from("proactive_chat_rules")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("enabled", true)
+        .order("priority", { ascending: false });
+      
+      if (data && isEmbedded) {
+        window.parent.postMessage({ type: 'SET_PROACTIVE_RULES', rules: data }, '*');
+      }
+    };
+
 
     fetchSettings();
     fetchBusinessInfo();
     fetchQaPairs();
+    fetchProactiveRules();
     
 
     // Subscribe to widget_settings changes
@@ -309,7 +341,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const checkAndFallback = async () => {
       try {
         const { data: rules } = await supabase
-          .from('proactive_chat_rules_public' as any)
+          .from('proactive_chat_rules' as any)
           .select('id')
           .eq('business_id', businessId)
           .eq('enabled', true)
@@ -317,16 +349,16 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         
         // Only show fallback if no real rules exist
         if (!cancelled && (!rules || rules.length === 0)) {
-          console.log('[Proactive] No rules found, setting fallback timer (3s)');
+// console.log('[Proactive] No rules found, setting fallback timer (3s)');
           const timer = setTimeout(() => {
             if (!cancelled && !isOpen) {
-              console.log('[Proactive] Triggering fallback message');
+// console.log('[Proactive] Triggering fallback message');
               setProactiveMessage("👋 Hi there! How can I help you today?");
             }
           }, 3000);
           return () => clearTimeout(timer);
         } else {
-          console.log(`[Proactive] Found ${rules?.length} active rules, skipping fallback`);
+// console.log(`[Proactive] Found ${rules?.length} active rules, skipping fallback`);
         }
       } catch (e) {
         // On error, show fallback anyway
@@ -363,35 +395,35 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
     const runProactiveChecks = async () => {
       try {
-        console.log('[Proactive] Running checks for business:', businessId, 'URL:', parentPageUrl || window.location.href);
+// console.log('[Proactive] Running checks for business:', businessId, 'URL:', parentPageUrl || window.location.href);
         const { data: rawRules, error } = await supabase
-          .from('proactive_chat_rules_public' as any)
+          .from('proactive_chat_rules' as any)
           .select('*')
           .eq('business_id', businessId)
           .eq('enabled', true)
           .order('priority', { ascending: false });
 
         if (error) {
-          console.error('[Proactive] Error fetching rules:', error);
+// console.error('[Proactive] Error fetching rules:', error);
           return;
         }
 
         const rules = (rawRules as any[]) || [];
         if (!rules.length) {
-          console.log('[Proactive] No active proactive rules found');
+// console.log('[Proactive] No active proactive rules found');
           return;
         }
-        console.log(`[Proactive] Evaluating ${rules.length} rules`);
+// console.log(`[Proactive] Evaluating ${rules.length} rules`);
 
         // Time on page trigger
         const timeRule = rules.find((r: any) => r.trigger_type === 'time_on_page');
         if (timeRule) {
           const triggerVal = timeRule.trigger_value as Record<string, any>;
           const timeoutSeconds = triggerVal?.seconds || 30;
-          console.log(`[Proactive] Setting time trigger for ${timeoutSeconds} seconds: ${timeRule.name}`);
+// console.log(`[Proactive] Setting time trigger for ${timeoutSeconds} seconds: ${timeRule.name}`);
           const timer = setTimeout(() => {
             if (!proactiveShown) {
-              console.log(`[Proactive] Triggering time_on_page: ${timeRule.name}`);
+// console.log(`[Proactive] Triggering time_on_page: ${timeRule.name}`);
               triggerProactive(timeRule.message);
             }
           }, timeoutSeconds * 1000);
@@ -406,10 +438,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           const triggerVal = pageRule.trigger_value as Record<string, any>;
           const targetUrl = triggerVal?.url || '';
           const currentUrl = parentPageUrl || window.location.href;
-          console.log(`[Proactive] Checking page trigger: "${targetUrl}" vs Current: "${currentUrl}"`);
+// console.log(`[Proactive] Checking page trigger: "${targetUrl}" vs Current: "${currentUrl}"`);
           
           if (targetUrl && currentUrl.toLowerCase().includes(targetUrl.toLowerCase())) {
-            console.log(`[Proactive] Triggering page_visit: ${pageRule.name}`);
+// console.log(`[Proactive] Triggering page_visit: ${pageRule.name}`);
             setTimeout(() => triggerProactive(pageRule.message), 500);
           }
         }
@@ -419,11 +451,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         if (exitRule) {
           const handleMouseLeave = (e: MouseEvent) => {
             if (e.clientY <= 0) {
-              console.log(`[Proactive] Triggering exit_intent: ${exitRule.name}`);
+// console.log(`[Proactive] Triggering exit_intent: ${exitRule.name}`);
               triggerProactive(exitRule.message);
             }
           };
-          console.log(`[Proactive] Setting exit_intent listener: ${exitRule.name}`);
+// console.log(`[Proactive] Setting exit_intent listener: ${exitRule.name}`);
           document.addEventListener('mouseleave', handleMouseLeave);
           listeners.push({ type: 'mouseleave', handler: handleMouseLeave as EventListener });
         }
@@ -436,11 +468,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           const handleScroll = () => {
             const scrollDepth = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight * 100;
             if (scrollDepth >= requiredDepth) {
-              console.log(`[Proactive] Triggering scroll_depth: ${scrollRule.name} at ${scrollDepth.toFixed(1)}%`);
+// console.log(`[Proactive] Triggering scroll_depth: ${scrollRule.name} at ${scrollDepth.toFixed(1)}%`);
               triggerProactive(scrollRule.message);
             }
           };
-          console.log(`[Proactive] Setting scroll listener (${requiredDepth}%): ${scrollRule.name}`);
+// console.log(`[Proactive] Setting scroll listener (${requiredDepth}%): ${scrollRule.name}`);
           window.addEventListener('scroll', handleScroll);
           listeners.push({ type: 'scroll', handler: handleScroll });
         }
@@ -454,7 +486,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             const visitorId = localStorage.getItem('visitor_id');
             if (!visitorId || proactiveShown) return;
             
-            console.log(`[Proactive] Checking engagement score (needs ${requiredScore})`);
+// console.log(`[Proactive] Checking engagement score (needs ${requiredScore})`);
             const { data: session } = await supabase
               .from('visitor_sessions')
               .select('engagement_score')
@@ -465,7 +497,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               .maybeSingle();
             
             if (session?.engagement_score && session.engagement_score >= requiredScore) {
-              console.log(`[Proactive] High engagement detected (${session.engagement_score})`);
+// console.log(`[Proactive] High engagement detected (${session.engagement_score})`);
               triggerProactive(engagementRule.message);
             }
           };
@@ -475,7 +507,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
 
       } catch (error) {
-        console.error('[Proactive] Error in checks:', error);
+// console.error('[Proactive] Error in checks:', error);
       }
     };
 
@@ -581,17 +613,17 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
       if (error) throw error;
       if (data) {
-        console.log('Fetched live chat session:', data);
+// console.log('Fetched live chat session:', data);
         setLiveChatSession(data);
         
         // Show agent joined message when status becomes active
         if (data.status === 'active' && liveChatSession?.status === 'queued') {
-          console.log('Status changed from queued to active - agent joined!');
+// console.log('Status changed from queued to active - agent joined!');
           handleTranscript('✅ You are now speaking with a live agent!', 'assistant');
         }
       }
     } catch (error) {
-      console.error('Error fetching live chat session:', error);
+// console.error('Error fetching live chat session:', error);
     }
   };
 
@@ -606,7 +638,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   useEffect(() => {
     if (!conversationId) return;
 
-    console.log('Setting up realtime subscription for new messages');
+// console.log('Setting up realtime subscription for new messages');
     const channel = supabase
       .channel(`messages-${conversationId}`)
       .on(
@@ -618,13 +650,13 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           filter: `conversation_id=eq.${conversationId}`
         },
         async (payload) => {
-          console.log('New message received via realtime:', payload);
+// console.log('New message received via realtime:', payload);
           const newMessage = payload.new as any;
           
           // Only show assistant messages (from agent) that weren't already rendered via HTTP
           if (newMessage.role === 'assistant') {
             if (renderedMessageIdsRef.current.has(newMessage.id)) {
-              console.log('Skipping duplicate message:', newMessage.id);
+// console.log('Skipping duplicate message:', newMessage.id);
               return;
             }
             renderedMessageIdsRef.current.add(newMessage.id);
@@ -651,7 +683,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
     const broadcastChannel = supabase
       .channel(`visitor-messages-${conversationId}`)
       .on('broadcast', { event: 'agent_message' }, (payload) => {
-        console.log('Agent message received via broadcast:', payload);
+// console.log('Agent message received via broadcast:', payload);
         const msg = payload.payload as any;
         if (!msg?.id || renderedMessageIdsRef.current.has(msg.id)) {
           return;
@@ -661,7 +693,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         handleTranscript(msg.content, 'assistant', msg.imageUrl);
       })
       .on('broadcast', { event: 'agent_joined' }, (payload) => {
-        console.log('Agent joined event received via broadcast:', payload);
+// console.log('Agent joined event received via broadcast:', payload);
         const data = payload.payload as any;
         const dedupeKey = `agent_joined:${data?.sessionId || conversationId}`;
         if (renderedMessageIdsRef.current.has(dedupeKey)) return;
@@ -675,7 +707,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       .subscribe();
 
     return () => {
-      console.log('Cleaning up messages subscription');
+// console.log('Cleaning up messages subscription');
       supabase.removeChannel(channel);
       supabase.removeChannel(broadcastChannel);
     };
@@ -685,7 +717,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   useEffect(() => {
     if (!conversationId) return;
 
-    console.log('Setting up live chat session subscription for:', conversationId);
+// console.log('Setting up live chat session subscription for:', conversationId);
 
     const channel = supabase
       .channel(`live-chat-session-${conversationId}`)
@@ -698,14 +730,14 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           filter: `conversation_id=eq.${conversationId}`
         },
         (payload) => {
-          console.log('Live chat session change received:', payload);
+// console.log('Live chat session change received:', payload);
           if (payload.new && Object.keys(payload.new).length > 0) {
             const newSession = payload.new as any;
             
             setLiveChatSession((prev: any) => {
               // If status changed from queued to active
               if (newSession.status === 'active' && prev?.status !== 'active') {
-                console.log('Agent has joined - status changed to active');
+// console.log('Agent has joined - status changed to active');
                 const dedupeKey = `agent_joined:${newSession.id || conversationId}`;
                 if (!renderedMessageIdsRef.current.has(dedupeKey)) {
                   renderedMessageIdsRef.current.add(dedupeKey);
@@ -732,11 +764,11 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
       )
       .subscribe((status) => {
-        console.log('Live chat subscription status:', status);
+// console.log('Live chat subscription status:', status);
       });
 
     return () => {
-      console.log('Cleaning up live chat session subscription');
+// console.log('Cleaning up live chat session subscription');
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
@@ -745,7 +777,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   useEffect(() => {
     if (!liveChatSession || liveChatSession.status !== 'queued') return;
 
-    console.log('Setting up queue position subscription');
+// console.log('Setting up queue position subscription');
 
     const channel = supabase
       .channel('queue-updates')
@@ -786,7 +818,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
         const sessionData = data as any;
         if (sessionData && sessionData.status !== 'queued') {
-          console.log('Polling detected status change:', sessionData.status);
+// console.log('Polling detected status change:', sessionData.status);
           setLiveChatSession(sessionData);
           // If accepted, add the "You are speaking with a human agent" message
           if (sessionData.status === 'active') {
@@ -804,7 +836,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           }
         }
       } catch (err) {
-        console.error('Polling live_chat_session failed:', err);
+// console.error('Polling live_chat_session failed:', err);
       }
     }, 4000);
 
@@ -844,7 +876,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       }
       return true;
     } catch (error) {
-      console.error('Error initializing text conversation:', error);
+// console.error('Error initializing text conversation:', error);
       handleTranscript('⚠️ Message failed to send. Please check your connection and try again.', 'assistant');
       return false;
     }
@@ -931,7 +963,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         if (convData) {
           currentConvId = convData.id;
           setConversationId(convData.id);
-          console.log('Created conversation for live agent:', convData.id);
+// console.log('Created conversation for live agent:', convData.id);
         }
       }
       
@@ -953,7 +985,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       );
 
       const data = await response.json();
-      console.log('Live agent request response:', data);
+// console.log('Live agent request response:', data);
 
       if (!response.ok) {
         // Check if visitor already has an active request
@@ -974,7 +1006,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         throw new Error('Failed to create live chat session');
       }
     } catch (error) {
-      console.error('Error requesting live agent:', error);
+// console.error('Error requesting live agent:', error);
       handleTranscript('Sorry, unable to connect to a live agent right now. Please try again.', 'assistant');
     } finally {
       setRequestingAgent(false);
@@ -1006,7 +1038,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       );
 
       const data = await response.json();
-      console.log('Cancel request response:', data);
+// console.log('Cancel request response:', data);
 
       if (response.ok) {
         setLiveChatSession(null);
@@ -1018,7 +1050,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         throw new Error(data.error || 'Failed to cancel request');
       }
     } catch (error) {
-      console.error('Error canceling live agent request:', error);
+// console.error('Error canceling live agent request:', error);
       handleTranscript('Sorry, unable to cancel the request. Please try again.', 'assistant');
     } finally {
       setCancelingRequest(false);
@@ -1073,7 +1105,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       );
 
       const data = await response.json();
-      console.log('Image upload response:', data);
+// console.log('Image upload response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to upload image');
@@ -1088,7 +1120,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       handleTranscript(`📷 ${file.name}`, 'user', data.imageUrl);
 
     } catch (error) {
-      console.error('Error uploading image:', error);
+// console.error('Error uploading image:', error);
       handleTranscript('Failed to upload image. Please try again.', 'assistant');
     } finally {
       setUploadingImage(false);
@@ -1122,7 +1154,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       const visitorId = localStorage.getItem('visitor_id') || `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem('visitor_id', visitorId);
 
-      console.log('Sending message to chat-message function');
+// console.log('Sending message to chat-message function');
       
       const response = await fetch(
         `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/chat-message`,
@@ -1141,26 +1173,26 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
         }
       );
 
-      console.log('Response status:', response.status);
+// console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Chat message error:', response.status, errorText);
+// console.error('Chat message error:', response.status, errorText);
         throw new Error(`Service error: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Response received:', data);
+// console.log('Response received:', data);
 
       // Update conversation ID if returned (handles session transitions)
       if (data.conversationId && data.conversationId !== conversationId) {
-        console.log('Conversation ID updated from backend:', data.conversationId);
+// console.log('Conversation ID updated from backend:', data.conversationId);
         setConversationId(data.conversationId);
       }
 
       // If human agent is active, don't show AI response
       if (data.humanAgentActive) {
-        console.log('Human agent is handling this conversation');
+// console.log('Human agent is handling this conversation');
         return;
       }
 
@@ -1175,7 +1207,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
       
       // Escalation handled via live agent button
     } catch (error) {
-      console.error('Error sending text message:', error);
+// console.error('Error sending text message:', error);
       handleTranscript('⚠️ Message failed to send. Please check your connection and try again.', 'assistant');
     } finally {
       setSendingMessage(false);
@@ -1204,117 +1236,159 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
   // Render FAQ Tab Content
   const renderFaqContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b bg-gradient-to-b from-muted/30 to-transparent">
-        <div className="flex items-center gap-3 mb-3">
-          <div 
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: `${primaryColor}15` }}
-          >
-            <HelpCircle className="w-5 h-5" style={{ color: primaryColor }} />
-          </div>
-          <div>
-            <h3 className="font-semibold text-base">Help Center</h3>
-            <p className="text-xs text-muted-foreground">Find answers to common questions</p>
-          </div>
+    <div className="flex flex-col h-full bg-[#fcfcfc] dark:bg-zinc-950/50">
+      {/* Header / Hero */}
+      <div 
+        className="px-5 pt-6 pb-8 relative overflow-hidden shrink-0 border-b border-black/[0.04] dark:border-white/[0.04]"
+        style={{ 
+          background: `linear-gradient(135deg, ${primaryColor}15 0%, transparent 100%)`,
+        }}
+      >
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <BookOpen className="w-24 h-24 transform translate-x-4 -translate-y-4" style={{ color: primaryColor }} />
+        </div>
+        
+        <div className="relative z-10 mb-5">
+          <h3 className="font-bold text-xl tracking-tight mb-1">Help Center</h3>
+          <p className="text-sm text-muted-foreground font-medium">Browse articles or search for answers</p>
         </div>
         
         {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative z-10 group">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-muted-foreground group-focus-within:text-foreground transition-colors" style={{ color: faqSearch ? primaryColor : undefined }} />
+          </div>
           <Input
             type="text"
             placeholder="Search for answers..."
             value={faqSearch}
             onChange={(e) => setFaqSearch(e.target.value)}
-            className="pl-9 h-9 text-sm bg-background border-muted-foreground/20 focus-visible:ring-1"
+            className="pl-10 h-11 text-sm bg-white dark:bg-zinc-900 border-black/[0.08] dark:border-white/[0.08] shadow-sm rounded-xl focus-visible:ring-1 focus-visible:ring-offset-0 transition-all duration-200 focus-visible:shadow-md pr-10"
             style={{ 
               '--tw-ring-color': primaryColor 
             } as React.CSSProperties}
           />
+          {faqSearch && (
+            <button 
+              onClick={() => setFaqSearch('')}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
       {/* FAQ List */}
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-2">
+      <ScrollArea className="flex-1 px-4 pb-4">
+        <div className="space-y-3 pt-4">
           {filteredFaqPairs.length > 0 ? (
             filteredFaqPairs.map((pair) => {
               const isExpanded = expandedFaqId === pair.id;
               return (
                 <div
                   key={pair.id}
-                  className="rounded-lg border bg-card overflow-hidden transition-all duration-200 hover:shadow-sm"
+                  className="rounded-xl border bg-white dark:bg-zinc-900 overflow-hidden transition-all duration-300 relative"
                   style={{ 
-                    borderColor: isExpanded ? primaryColor : undefined,
-                    boxShadow: isExpanded ? `0 0 0 1px ${primaryColor}20` : undefined
+                    borderColor: isExpanded ? primaryColor : 'var(--border)',
+                    boxShadow: isExpanded ? `0 4px 12px -4px ${primaryColor}30` : '0 1px 2px 0 rgba(0,0,0,0.03)'
                   }}
                 >
+                  {isExpanded && (
+                    <div 
+                      className="absolute top-0 left-0 w-1 h-full"
+                      style={{ backgroundColor: primaryColor }}
+                    />
+                  )}
                   {/* Question Header */}
                   <button
-                    className="w-full p-3 flex items-start justify-between gap-2 text-left hover:bg-muted/50 transition-colors"
+                    className="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left transition-colors group bg-transparent hover:bg-black/[0.01] dark:hover:bg-white/[0.01]"
                     onClick={() => setExpandedFaqId(isExpanded ? null : pair.id)}
                   >
-                    <span className="font-medium text-sm leading-tight flex-1">{pair.question}</span>
-                    <div 
-                      className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors"
-                      style={{ backgroundColor: isExpanded ? `${primaryColor}15` : 'transparent' }}
+                    <span 
+                      className="font-semibold text-[14px] leading-snug flex-1 transition-colors"
                     >
-                      {isExpanded ? (
-                        <ChevronUp className="w-4 h-4" style={{ color: primaryColor }} />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                      )}
+                      {pair.question}
+                    </span>
+                    <div 
+                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+                      style={{ 
+                        backgroundColor: isExpanded ? `${primaryColor}15` : 'transparent',
+                        color: isExpanded ? primaryColor : 'var(--muted-foreground)'
+                      }}
+                    >
+                      <ChevronDown 
+                        className="w-4 h-4 transition-transform duration-300" 
+                        style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                      />
                     </div>
                   </button>
                   
                   {/* Answer Content */}
-                  {isExpanded && (
-                    <div className="px-3 pb-3 border-t bg-muted/20">
-                      <p className="text-sm text-muted-foreground leading-relaxed pt-3 whitespace-pre-wrap">
-                        {pair.answer}
-                      </p>
-                      
-                      {/* Action Button */}
-                      <button
-                        className="mt-3 text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
-                        style={{ 
-                          backgroundColor: `${primaryColor}10`,
-                          color: primaryColor
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveTab("chat");
-                          handleTranscript(pair.question, 'user');
-                          handleTranscript(pair.answer, 'assistant');
-                          setExpandedFaqId(null);
-                        }}
-                      >
-                        Continue in chat →
-                      </button>
+                  <div 
+                    className="grid transition-all duration-300 ease-in-out"
+                    style={{
+                      gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                      opacity: isExpanded ? 1 : 0
+                    }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-4 pb-4 pt-1">
+                        <div className="w-full h-px mb-3 bg-black/[0.04] dark:bg-white/[0.04]" />
+                        <p className="text-[13.5px] text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">
+                          {pair.answer}
+                        </p>
+                        
+                        {/* Action Button */}
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            className="text-[12px] font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 hover:opacity-80 active:scale-95 border border-transparent hover:border-black/[0.05]"
+                            style={{ 
+                              backgroundColor: `${primaryColor}10`,
+                              color: primaryColor
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveTab("chat");
+                              handleTranscript(pair.question, 'user');
+                              handleTranscript(pair.answer, 'assistant');
+                              setExpandedFaqId(null);
+                            }}
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Discuss in chat
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })
           ) : (
-            <div className="text-center py-12">
+            <div className="text-center py-16 px-4">
               <div 
                 className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
                 style={{ backgroundColor: `${primaryColor}10` }}
               >
-                <HelpCircle className="w-8 h-8" style={{ color: primaryColor }} />
+                <BookOpen className="w-8 h-8 opacity-80" style={{ color: primaryColor }} />
               </div>
               {faqSearch ? (
                 <>
-                  <p className="text-sm font-medium mb-1">No results found</p>
-                  <p className="text-xs text-muted-foreground">Try searching with different keywords</p>
+                  <p className="text-base font-semibold mb-1">No articles found</p>
+                  <p className="text-sm text-muted-foreground">We couldn't find anything matching "{faqSearch}"</p>
+                  <button 
+                    onClick={() => setFaqSearch('')}
+                    className="mt-4 text-sm font-medium transition-colors"
+                    style={{ color: primaryColor }}
+                  >
+                    Clear search
+                  </button>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-medium mb-1">No FAQs available</p>
-                  <p className="text-xs text-muted-foreground">Check back later for helpful answers</p>
+                  <p className="text-base font-semibold mb-1">No FAQs available</p>
+                  <p className="text-sm text-muted-foreground">Check back later for helpful answers</p>
                 </>
               )}
             </div>
@@ -1323,7 +1397,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
         {/* Results count */}
         {filteredFaqPairs.length > 0 && (
-          <p className="text-xs text-muted-foreground text-center mt-4 pb-2">
+          <p className="text-[11px] font-medium text-muted-foreground text-center mt-6 pb-2 opacity-70">
             {filteredFaqPairs.length} {filteredFaqPairs.length === 1 ? 'article' : 'articles'} found
           </p>
         )}
@@ -1428,10 +1502,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                   className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-lg p-2 sm:p-2.5 md:p-3 ${
+                    className={`max-w-[85%] sm:max-w-[80%] px-4 py-3 shadow-sm text-[14px] leading-relaxed ${
                       item.role === "user"
-                        ? "text-white shadow-sm"
-                        : "bg-muted"
+                        ? "text-white rounded-[20px] rounded-br-[4px]"
+                        : "bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.06] rounded-[20px] rounded-bl-[4px] text-zinc-800 dark:text-zinc-100"
                     }`}
                     style={item.role === "user" ? { backgroundColor: primaryColor } : {}}
                   >
@@ -1451,7 +1525,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               
               {(sendingMessage || agentTyping) && (
                 <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg p-2 sm:p-2.5 md:p-3">
+                  <div className="bg-white dark:bg-zinc-900 border border-black/[0.06] dark:border-white/[0.06] rounded-[20px] rounded-bl-[4px] px-4 py-3 shadow-sm">
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -1592,28 +1666,37 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                   )}
                 </Button>
                 
-                <input
-                  type="text"
-                  value={textInput}
-                  onChange={(e) => {
-                    if (e.target.value.length <= maxInputChars) {
-                      setTextInput(e.target.value);
-                    }
-                  }}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  maxLength={maxInputChars}
-                  className="flex-1 px-2 sm:px-3 py-2 text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
-                />
-                <Button
-                  onClick={() => handleSendText()}
-                  disabled={!textInput.trim() || sendingMessage}
-                  size="sm"
-                  className="h-9 px-3 text-xs shrink-0"
-                  style={{ backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : undefined }}
-                >
-                  Send
-                </Button>
+                <div className="flex-1 relative flex items-center bg-white dark:bg-zinc-950 border border-black/[0.08] dark:border-white/[0.08] rounded-xl focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/20 transition-all shadow-sm">
+                  <input
+                    type="text"
+                    value={textInput}
+                    onChange={(e) => {
+                      if (e.target.value.length <= maxInputChars) {
+                        setTextInput(e.target.value);
+                      }
+                    }}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Write a reply..."
+                    maxLength={maxInputChars}
+                    className="w-full pl-4 pr-12 py-3 text-[14px] bg-transparent border-none focus:outline-none focus:ring-0"
+                  />
+                  <Button
+                    onClick={() => handleSendText()}
+                    disabled={!textInput.trim() || sendingMessage}
+                    size="icon"
+                    className="absolute right-1.5 w-8 h-8 rounded-lg transition-all"
+                    style={{ 
+                      backgroundColor: textInput.trim() && !sendingMessage ? primaryColor : 'transparent', 
+                      color: textInput.trim() && !sendingMessage ? 'white' : 'var(--muted-foreground)' 
+                    }}
+                    variant={textInput.trim() && !sendingMessage ? "default" : "ghost"}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={textInput.trim() && !sendingMessage ? "translate-x-[1px] translate-y-[1px]" : "opacity-60"}>
+                      <path d="m22 2-7 20-4-9-9-4Z"/>
+                      <path d="M22 2 11 13"/>
+                    </svg>
+                  </Button>
+                </div>
               </div>
             </div>
             
@@ -1635,17 +1718,17 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
   // When embedded in iframe, render full-size card directly without button
   if (isEmbedded) {
     return (
-      <Card className="w-full h-full shadow-none border-0 flex flex-col overflow-hidden rounded-none">
-        <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
-          <div className="flex items-center gap-2 sm:gap-3">
+      <Card className="w-full h-full shadow-none border-0 flex flex-col overflow-hidden rounded-none bg-[#fcfcfc] dark:bg-zinc-950">
+        <CardHeader className="border-b border-black/[0.06] dark:border-white/[0.06] p-4 bg-white dark:bg-zinc-900 shrink-0">
+          <div className="flex items-center gap-3">
             <div 
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-base shrink-0"
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-medium text-lg shrink-0 shadow-sm"
               style={{ backgroundColor: primaryColor }}
             >
               {agentName.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-xs sm:text-base truncate">{agentName}</h3>
+              <h3 className="font-semibold tracking-tight text-[16px] text-zinc-900 dark:text-zinc-100 truncate">{agentName}</h3>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse" />
                 <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
@@ -1657,10 +1740,24 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               primaryColor={primaryColor}
               variant="header"
             />
+            <div className="flex items-center">
+              <button 
+                onClick={() => {
+                  try {
+                    window.parent.postMessage({ type: 'CLOSE_WIDGET' }, '*');
+                  } catch (e) {}
+                }}
+                className="text-muted-foreground hover:text-foreground p-2 sm:p-3 -mr-1 shrink-0 cursor-pointer"
+                aria-label="Minimize chat window"
+                type="button"
+              >
+                <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            </div>
           </div>
         </CardHeader>
 
-        <div className="border-b shrink-0">
+        <div className="border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
           <div className="flex">
             {[
               { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
@@ -1669,14 +1766,14 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-colors text-[10px] sm:text-xs ${
+                className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 transition-colors text-[13px] font-medium ${
                   activeTab === tab.id
-                    ? "border-b-2 text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    ? "border-b-2 text-zinc-900 dark:text-white"
+                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b-2 border-transparent"
                 }`}
                 style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
               >
-                <tab.icon className="w-4 h-4 mb-0.5" />
+                <tab.icon className="w-4 h-4 mb-1" />
                 <span>{tab.label}</span>
               </button>
             ))}
@@ -1714,19 +1811,19 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           aria-hidden="true"
         />
       )}
-      <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end">
+      <div ref={widgetRef} className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-50 flex flex-col items-end">
       {isOpen ? (
-        <Card className="w-[calc(100vw-1rem)] sm:w-[400px] h-[calc(100dvh-5rem)] sm:h-[600px] shadow-2xl flex flex-col overflow-hidden">
-          <CardHeader className="border-b p-3 sm:p-4 bg-transparent shrink-0" style={{ borderColor: primaryColor, borderBottomWidth: '2px' }}>
-            <div className="flex items-center gap-2 sm:gap-3">
+        <Card className="w-[calc(100vw-1rem)] sm:w-[400px] h-[calc(100dvh-5rem)] sm:h-[600px] shadow-[0_16px_40px_-12px_rgba(0,0,0,0.15)] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl flex flex-col overflow-hidden animate-in zoom-in-[0.98] slide-in-from-bottom-2 duration-300 ease-out bg-[#fcfcfc] dark:bg-zinc-950">
+          <CardHeader className="border-b border-black/[0.06] dark:border-white/[0.06] p-4 sm:p-5 bg-white dark:bg-zinc-900 shrink-0">
+            <div className="flex items-center gap-3">
               <div 
-                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-base shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-medium text-lg shrink-0 shadow-sm"
                 style={{ backgroundColor: primaryColor }}
               >
                 {agentName.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-xs sm:text-base truncate">{agentName}</h3>
+                <h3 className="font-semibold tracking-tight text-[16px] text-zinc-900 dark:text-zinc-100 truncate">{agentName}</h3>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse" />
                   <span className="text-[10px] sm:text-xs text-muted-foreground">Online</span>
@@ -1738,18 +1835,20 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 primaryColor={primaryColor}
                 variant="header"
               />
-              <button 
-                onClick={() => setIsOpen(false)}
-                className="text-muted-foreground hover:text-foreground p-3 -mr-1 shrink-0 cursor-pointer"
-                aria-label="Close chat window"
-                type="button"
-              >
-                <X className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="text-muted-foreground hover:text-foreground p-2 sm:p-3 -mr-1 shrink-0 cursor-pointer"
+                  aria-label="Minimize chat window"
+                  type="button"
+                >
+                  <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </div>
             </div>
           </CardHeader>
 
-          <div className="border-b shrink-0">
+          <div className="border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
             <div className="flex">
               {[
                 { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
@@ -1758,14 +1857,14 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex flex-col items-center justify-center py-2 px-1 transition-colors text-[10px] sm:text-xs ${
+                  className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 transition-colors text-[13px] font-medium ${
                     activeTab === tab.id
-                      ? "border-b-2 text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      ? "border-b-2 text-zinc-900 dark:text-white"
+                      : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b-2 border-transparent"
                   }`}
                   style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
                 >
-                  <tab.icon className="w-4 h-4 mb-0.5" />
+                  <tab.icon className="w-4 h-4 mb-1" />
                   <span>{tab.label}</span>
                 </button>
               ))}
@@ -1796,7 +1895,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             <div className="mb-3">
               <div 
                 onClick={handleProactiveClick}
-                className="relative bg-card border rounded-2xl shadow-lg py-2.5 px-4 max-w-[220px] cursor-pointer animate-in slide-in-from-bottom-2 fade-in duration-300"
+                className="relative bg-background border border-black/[0.08] dark:border-white/[0.08] rounded-[1.25rem] shadow-[0_8px_30px_rgba(0,0,0,0.12)] py-3 px-4.5 max-w-[240px] cursor-pointer animate-in slide-in-from-bottom-4 fade-in zoom-in-95 duration-400 ease-out"
               >
                 <p className="text-sm text-foreground leading-snug">
                   {proactiveMessage || "👋 Hi there! How can I help you today?"}
@@ -1813,8 +1912,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
                 </button>
                 {/* Speech bubble pointer/arrow */}
                 <div 
-                  className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-r border-b rotate-45"
-                  style={{ borderColor: 'hsl(var(--border))' }}
+                  className="absolute -bottom-[5px] right-6 w-[10px] h-[10px] bg-background border-r border-b border-black/[0.08] dark:border-white/[0.08] rotate-45"
                 />
               </div>
             </div>
@@ -1826,10 +1924,10 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
               setProactiveMessage(null);
               setProactiveShown(true);
             }}
-            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-lg"
+            className="rounded-full w-14 h-14 sm:w-16 sm:h-16 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-105 active:scale-95 transition-all duration-300 border-none p-0 flex items-center justify-center"
             style={{ backgroundColor: primaryColor }}
           >
-            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
           </Button>
         </>
       )}

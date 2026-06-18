@@ -14,3 +14,5 @@ User-agent: *
 Allow: /
 Disallow: /widget/
 Disallow: /embed/
+
+Sitemap: https://lyqn.app/sitemap.xml

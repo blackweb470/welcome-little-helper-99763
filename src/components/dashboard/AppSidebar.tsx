@@ -119,7 +119,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.path)}>
+                  <SidebarMenuButton asChild isActive={isActive(item.path)} tooltip={item.title}>
                     <NavLink 
                       to={`/dashboard?tab=${item.path}`}
                       className={({ isActive }) => 
@@ -158,6 +158,7 @@ export function AppSidebar({ hasSelectedBusiness, onSignOut, hasAccess, onFeatur
                       <SidebarMenuButton 
                         asChild={!isLocked} 
                         isActive={isActive(item.path)}
+                        tooltip={item.title}
                         onClick={(e) => {
                           if (isLocked) {
                             e.preventDefault();

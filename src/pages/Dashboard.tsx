@@ -182,8 +182,8 @@ const Dashboard = () => {
           isOwner={selectedBusinessId ? isOwner(selectedBusinessId) : false}
         />
         
-      <main className="flex-1 overflow-auto bg-muted/30">
-        <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
+      <main className="flex-1 flex flex-col h-screen min-w-0 bg-muted/30">
+        <header className="flex-shrink-0 z-50 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
           <div className="flex h-20 items-center gap-6 px-8">
             <SidebarTrigger className="hover:bg-muted transition-colors" />
             <div className="flex-1 min-w-0 flex items-center gap-4">
@@ -222,6 +222,7 @@ const Dashboard = () => {
           </div>
         </header>
 
+        <div className="flex-1 overflow-auto">
           <div className="p-8 space-y-8 max-w-[1600px] mx-auto animate-fade-in">
             {currentTab === 'businesses' && (
               <div className="space-y-6">
@@ -331,6 +332,7 @@ const Dashboard = () => {
               </>
             )}
           </div>
+        </div>
         </main>
       </div>
 

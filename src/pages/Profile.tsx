@@ -24,6 +24,7 @@ const Profile = () => {
     avatar_url: "",
   });
   const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -102,8 +103,13 @@ const Profile = () => {
   };
 
   const handlePasswordChange = async () => {
+    if (!passwordData.currentPassword) {
+      toast.error("Please enter your current password");
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error("New passwords do not match");
       return;
     }
 
@@ -114,6 +120,17 @@ const Profile = () => {
 
     setChangingPassword(true);
     try {
+      // Industry standard: Verify current password first to prevent unauthorized changes
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: passwordData.currentPassword,
+      });
+
+      if (signInError) {
+        throw new Error("Invalid current password");
+      }
+
+      // If verification succeeds, update to the new password
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
@@ -121,10 +138,10 @@ const Profile = () => {
       if (error) throw error;
 
       toast.success("Password changed successfully");
-      setPasswordData({ newPassword: "", confirmPassword: "" });
-    } catch (error) {
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: any) {
       console.error("Error changing password:", error);
-      toast.error("Failed to change password");
+      toast.error(error.message || "Failed to change password");
     } finally {
       setChangingPassword(false);
     }
@@ -211,8 +228,8 @@ const Profile = () => {
           isOwner={false}
         />
         
-        <main className="flex-1 overflow-auto bg-muted/30">
-          <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
+        <main className="flex-1 flex flex-col h-screen min-w-0 bg-muted/30">
+          <header className="flex-shrink-0 z-50 border-b bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/90 shadow-elegant">
             <div className="flex h-20 items-center gap-6 px-8">
               <SidebarTrigger className="hover:bg-muted transition-colors" />
               <div className="flex-1 min-w-0">
@@ -221,7 +238,8 @@ const Profile = () => {
             </div>
           </header>
 
-          <div className="p-8 space-y-8 max-w-[1200px] mx-auto animate-fade-in">
+          <div className="flex-1 overflow-auto">
+            <div className="p-8 space-y-8 max-w-[1200px] mx-auto animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               
               {/* Left: Avatar & Identity */}
@@ -341,35 +359,49 @@ const Profile = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-8 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="new_password" className="text-sm font-semibold">New Password</Label>
+                        <Label htmlFor="current_password" className="text-sm font-semibold">Current Password</Label>
                         <Input
-                          id="new_password"
+                          id="current_password"
                           type="password"
-                          value={passwordData.newPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                           placeholder="••••••••"
                           className="h-12"
                         />
                       </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="new_password" className="text-sm font-semibold">New Password</Label>
+                          <Input
+                            id="new_password"
+                            type="password"
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            placeholder="••••••••"
+                            className="h-12"
+                          />
+                        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm_password" className="text-sm font-semibold">Confirm New Password</Label>
-                        <Input
-                          id="confirm_password"
-                          type="password"
-                          value={passwordData.confirmPassword}
-                          onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                          placeholder="••••••••"
-                          className="h-12"
-                        />
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm_password" className="text-sm font-semibold">Confirm New Password</Label>
+                          <Input
+                            id="confirm_password"
+                            type="password"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            placeholder="••••••••"
+                            className="h-12"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <Button
                       onClick={handlePasswordChange}
-                      disabled={changingPassword || !passwordData.newPassword || !passwordData.confirmPassword}
+                      disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
                       variant="outline"
                       className="h-12 px-8"
                     >
@@ -381,6 +413,7 @@ const Profile = () => {
 
               </div>
             </div>
+          </div>
           </div>
         </main>
       </div>
