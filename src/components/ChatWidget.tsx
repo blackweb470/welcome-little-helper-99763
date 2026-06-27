@@ -279,7 +279,7 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
 
     const fetchQaPairs = async () => {
       const { data } = await supabase
-        .from("bot_qa_pairs_public" as any)
+        .from("bot_qa_pairs" as any)
         .select("*")
         .eq("business_id", businessId)
         .eq("enabled", true)
@@ -1757,32 +1757,8 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
           </div>
         </CardHeader>
 
-        <div className="border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
-          <div className="flex">
-            {[
-              { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
-              { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 transition-colors text-[13px] font-medium ${
-                  activeTab === tab.id
-                    ? "border-b-2 text-zinc-900 dark:text-white"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b-2 border-transparent"
-                }`}
-                style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
-              >
-                <tab.icon className="w-4 h-4 mb-1" />
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
-          {activeTab === "faq" && renderFaqContent()}
-          {activeTab === "chat" && renderChatContent()}
+          {renderChatContent()}
           
           {/* Branding for Embedded */}
           <div className="py-1.5 flex justify-center border-t bg-muted/20 shrink-0">
@@ -1848,32 +1824,8 @@ export const ChatWidget = ({ businessId, parentPageUrl, isEmbedded = false }: Ch
             </div>
           </CardHeader>
 
-          <div className="border-b border-black/[0.06] dark:border-white/[0.06] shrink-0">
-            <div className="flex">
-              {[
-                { id: "faq" as WidgetTab, icon: HelpCircle, label: "FAQ" },
-                { id: "chat" as WidgetTab, icon: MessageSquare, label: "Chat" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex flex-col items-center justify-center py-2.5 px-1 transition-colors text-[13px] font-medium ${
-                    activeTab === tab.id
-                      ? "border-b-2 text-zinc-900 dark:text-white"
-                      : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-b-2 border-transparent"
-                  }`}
-                  style={activeTab === tab.id ? { borderColor: primaryColor } : {}}
-                >
-                  <tab.icon className="w-4 h-4 mb-1" />
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden min-h-0">
-            {activeTab === "faq" && renderFaqContent()}
-            {activeTab === "chat" && renderChatContent()}
+            {renderChatContent()}
 
             {/* Branding */}
             <div className="py-1.5 flex justify-center border-t bg-muted/20 shrink-0">

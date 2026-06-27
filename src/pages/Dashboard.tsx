@@ -24,6 +24,7 @@ import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { NotificationSettings } from "@/components/dashboard/NotificationSettings";
 import { TeamManagement } from "@/components/dashboard/TeamManagement";
 import { BotCustomization } from "@/components/dashboard/BotCustomization";
+import { AIMemoryManager } from "@/components/dashboard/AIMemoryManager";
 import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
 import { WhatsAppAdminSettings } from "@/components/dashboard/WhatsAppAdminSettings";
 import { PendingInvitations } from "@/components/dashboard/PendingInvitations";
@@ -204,9 +205,7 @@ const Dashboard = () => {
                  currentTab === 'notification-settings' ? 'Notification Settings' :
                   
                   currentTab === 'documents' ? 'Business Documents' :
-                  
-                  
-                  
+                  currentTab === 'customize-bot' ? 'Customize Bot / FAQs' :
                   currentTab === 'settings' ? 'Widget Settings' :
                   currentTab === 'whatsapp' ? 'WhatsApp Integration' : 'Dashboard'}
               </h1>
@@ -318,7 +317,6 @@ const Dashboard = () => {
                   </div>
                 )}
 
-
                 {currentTab === 'settings' && (
                   <Card className="p-8 shadow-elegant">
                     <WidgetSettings businessId={selectedBusinessId} />
@@ -326,9 +324,12 @@ const Dashboard = () => {
                 )}
 
                 {currentTab === 'customize-bot' && (
-                  <Card className="p-8 shadow-elegant">
-                    <BotCustomization businessId={selectedBusinessId} />
-                  </Card>
+                  <div className="space-y-6">
+                    <AIMemoryManager businessId={selectedBusinessId} />
+                    <Card className="p-8 shadow-elegant">
+                      <BotCustomization businessId={selectedBusinessId} />
+                    </Card>
+                  </div>
                 )}
 
                 {currentTab === 'whatsapp' && (

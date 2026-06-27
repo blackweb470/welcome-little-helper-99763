@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Trash2, Loader2, CheckCircle2, AlertCircle, Eye, Brain } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface BusinessDocumentsProps {
   businessId: string;
@@ -14,8 +16,26 @@ interface BusinessDocumentsProps {
 
 export const BusinessDocuments = ({ businessId }: BusinessDocumentsProps) => {
   const [uploading, setUploading] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: docChunks, isLoading: loadingChunks } = useQuery({
+    queryKey: ["document-chunks", selectedDoc?.id],
+    queryFn: async () => {
+      if (!selectedDoc) return [];
+      const { data, error } = await supabase
+        .from("knowledge_chunks")
+        .select("content")
+        .eq("source_id", selectedDoc.id)
+        .eq("source_type", "document")
+        .order("chunk_index", { ascending: true });
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedDoc,
+  });
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["business-documents", businessId],
@@ -247,8 +267,17 @@ export const BusinessDocuments = ({ businessId }: BusinessDocumentsProps) => {
                   <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => setSelectedDoc(doc)}
+                    title="View Extracted Knowledge"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => deleteMutation.mutate(doc.id)}
                     disabled={deleteMutation.isPending}
+                    title="Delete Document"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
@@ -264,6 +293,59 @@ export const BusinessDocuments = ({ businessId }: BusinessDocumentsProps) => {
           </div>
         )}
       </CardContent>
+
+      <Dialog open={!!selectedDoc} onOpenChange={(open) => !open && setSelectedDoc(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              AI Knowledge Verification
+            </DialogTitle>
+            <DialogDescription>
+              This is exactly how the AI understands "{selectedDoc?.file_name}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="flex-1 pr-4 -mr-4 mt-2">
+            <div className="space-y-6">
+              {selectedDoc?.summary && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-primary">Master Summary</h3>
+                  <div className="p-4 bg-muted/50 rounded-lg border text-sm leading-relaxed whitespace-pre-wrap">
+                    {selectedDoc.summary}
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold">Extracted Text Chunks</h3>
+                <p className="text-xs text-muted-foreground mb-2">
+                  The document was broken down into these exact chunks for the AI to retrieve during conversations.
+                </p>
+                {loadingChunks ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : docChunks && docChunks.length > 0 ? (
+                  <div className="grid gap-3">
+                    {docChunks.map((chunk: any, i: number) => (
+                      <div key={i} className="p-3 bg-card border rounded-md text-sm whitespace-pre-wrap">
+                        <Badge variant="outline" className="mb-2">Chunk {i + 1}</Badge>
+                        <div className="text-card-foreground/90">{chunk.content}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/20">
+                    <p>No extracted text found.</p>
+                    <p className="text-xs mt-1">If the document is still processing, please check back later.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

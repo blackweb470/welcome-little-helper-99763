@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply, ImagePlus, Loader2 } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply, ImagePlus, Loader2, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { WhatsAppInteractiveButtons, type InteractiveMessage } from "./WhatsAppInteractiveButtons";
 import { AttachmentDisplay } from "./MessageAttachments";
 
@@ -69,6 +71,44 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const agentImageInputRef = useRef<HTMLInputElement>(null);
   const [uploadingAgentImage, setUploadingAgentImage] = useState(false);
+  const [teachingAI, setTeachingAI] = useState<string | null>(null);
+  const [teachAiDialogOpen, setTeachAiDialogOpen] = useState(false);
+  const [teachAiContent, setTeachAiContent] = useState("");
+
+  const handleOpenTeachAI = (content: string) => {
+    setTeachAiContent(content);
+    setTeachAiDialogOpen(true);
+  };
+
+  const handleSaveTeachAI = async () => {
+    if (!teachAiContent.trim()) return;
+    try {
+      setTeachingAI('saving');
+      const { error } = await supabase.from('business_learnings').insert({
+        business_id: businessId,
+        content: teachAiContent.trim(),
+        source_conversation_id: selectedSession?.conversation_id,
+        learning_type: 'conversation_insight'
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "AI Taught",
+        description: "The AI has memorized this response for future conversations."
+      });
+      setTeachAiDialogOpen(false);
+    } catch (err) {
+      console.error('Error teaching AI:', err);
+      toast({
+        title: "Error",
+        description: "Could not save learning to AI.",
+        variant: "destructive"
+      });
+    } finally {
+      setTeachingAI(null);
+    }
+  };
 
   // Fetch canned responses
   const { data: cannedResponses } = useQuery({
@@ -906,13 +946,29 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
                     <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
                       <span>{new Date(msg.created_at).toLocaleTimeString()}</span>
                       {msg.role === 'assistant' && (
-                        <span className="flex items-center gap-1">
-                          {msg.read_at ? (
-                            <CheckCheck className="w-3 h-3" />
-                          ) : (
-                            <Check className="w-3 h-3" />
-                          )}
-                        </span>
+                        <>
+                          <span className="flex items-center gap-1">
+                            {msg.read_at ? (
+                              <CheckCheck className="w-3 h-3" />
+                            ) : (
+                              <Check className="w-3 h-3" />
+                            )}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-5 p-0 px-1.5 ml-2 text-[10px] uppercase opacity-60 hover:opacity-100 hover:bg-primary-foreground/10 text-primary-foreground"
+                            onClick={() => handleOpenTeachAI(msg.content)}
+                            disabled={teachingAI === msg.id}
+                          >
+                            {teachingAI === msg.id ? (
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                              <Brain className="w-3 h-3 mr-1" />
+                            )}
+                            Teach AI
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -1119,6 +1175,31 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
             </div>
           </div>
         </CardContent>
+        {/* Teach AI Dialog */}
+        <Dialog open={teachAiDialogOpen} onOpenChange={setTeachAiDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Teach AI</DialogTitle>
+              <DialogDescription>
+                Edit this message into a general rule or fact before saving it to the AI's memory.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Textarea 
+                value={teachAiContent}
+                onChange={(e) => setTeachAiContent(e.target.value)}
+                className="min-h-[150px] resize-none"
+                placeholder="e.g. We are closed on Sundays."
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setTeachAiDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveTeachAI} disabled={teachingAI === 'saving' || !teachAiContent.trim()}>
+                {teachingAI === 'saving' ? "Saving..." : "Save to AI Memory"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </Card>
     );
   }
@@ -1306,6 +1387,31 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
           </div>
         </div>
       </CardContent>
+      {/* Teach AI Dialog */}
+      <Dialog open={teachAiDialogOpen} onOpenChange={setTeachAiDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Teach AI</DialogTitle>
+            <DialogDescription>
+              Edit this message into a general rule or fact before saving it to the AI's memory.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Textarea 
+              value={teachAiContent}
+              onChange={(e) => setTeachAiContent(e.target.value)}
+              className="min-h-[150px] resize-none"
+              placeholder="e.g. We are closed on Sundays."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeachAiDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveTeachAI} disabled={teachingAI === 'saving' || !teachAiContent.trim()}>
+              {teachingAI === 'saving' ? "Saving..." : "Save to AI Memory"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

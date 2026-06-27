@@ -338,8 +338,8 @@ Deno.serve(async (req: Request) => {
         .from('business_learnings')
         .select('content')
         .eq('business_id', businessId)
-        .order('confidence_score', { ascending: false })
-        .limit(5),
+        .order('created_at', { ascending: false })
+        .limit(20),
 
       // B. RAG knowledge search — context-augmented query for better short/follow-up question handling
       message.trim().length >= 1

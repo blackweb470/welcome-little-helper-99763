@@ -443,7 +443,6 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
                     <SelectContent>
                       <SelectItem value="agent">Agent - Handle chats</SelectItem>
                       <SelectItem value="admin">Admin - Full access</SelectItem>
-                      <SelectItem value="viewer">Viewer - Read only</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -687,7 +686,7 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
 
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Role Descriptions</h3>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Shield className="w-5 h-5 text-primary" />
@@ -704,15 +703,6 @@ export function TeamManagement({ businessId }: TeamManagementProps) {
             </div>
             <p className="text-sm text-muted-foreground">
               Can handle live chats and view assigned conversations
-            </p>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-primary" />
-              <h4 className="font-medium">Viewer</h4>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Read-only access to conversations and basic analytics
             </p>
           </div>
         </div>
