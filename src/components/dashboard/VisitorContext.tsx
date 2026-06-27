@@ -17,7 +17,7 @@ export const VisitorContext = ({ conversationId }: VisitorContextProps) => {
         .from('visitor_sessions')
         .select('*')
         .eq('conversation_id', conversationId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

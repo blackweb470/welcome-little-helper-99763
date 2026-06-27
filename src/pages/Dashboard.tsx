@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/AppSidebar";
 import BusinessList from "@/components/dashboard/BusinessList";
 import ConversationsList from "@/components/dashboard/ConversationsList";
+import { CustomersList } from "@/components/dashboard/CustomersList";
 import { BusinessConversationAnalysis } from "@/components/dashboard/BusinessConversationAnalysis";
 import WidgetSettings from "@/components/dashboard/WidgetSettings";
 import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
@@ -192,6 +193,7 @@ const Dashboard = () => {
                  currentTab === 'profile' ? 'Profile Settings' :
                  currentTab === 'billing' ? 'Billing & Subscription' :
                  currentTab === 'analytics' ? 'Analytics' :
+                 currentTab === 'customers' ? 'Customers' :
                  currentTab === 'conversations' ? 'Conversations' :
                  
                  currentTab === 'team' ? 'Team Management' :
@@ -267,6 +269,12 @@ const Dashboard = () => {
                     <Card className="p-8 shadow-elegant">
                       <ConversationsList businessId={selectedBusinessId} />
                     </Card>
+                  </div>
+                )}
+
+                {currentTab === 'customers' && (
+                  <div className="space-y-6">
+                    <CustomersList businessId={selectedBusinessId} />
                   </div>
                 )}
 

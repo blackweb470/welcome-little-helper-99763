@@ -63,6 +63,7 @@ const businessGroups = [
     label: "OVERVIEW & CHAT",
     items: [
       { title: "Analytics", path: "analytics", icon: BarChart3, feature: "basic_analytics", permission: "can_view_analytics" },
+      { title: "Customers", path: "customers", icon: Users, permission: "can_view_analytics" },
       { title: "Conversations", path: "conversations", icon: MessageSquare, permission: "can_chat" },
       { title: "Live Chat", path: "livechat", icon: Users, feature: "live_agent", permission: "can_chat" },
       { title: "Notifications", path: "notifications", icon: Bell, permission: "can_chat" },

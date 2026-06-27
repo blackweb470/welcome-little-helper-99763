@@ -369,9 +369,9 @@ Deno.serve(async (req: Request) => {
               const queryEmbedding = embedData.data[0].embedding;
               const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
                 query_embedding: queryEmbedding,
-                match_count: 10,
+                match_count: 35, // Drastically increased to ensure no small details are missed
                 p_business_id: businessId,
-                similarity_threshold: 0.15
+                similarity_threshold: 0.05 // Drastically lowered to catch even loosely related small details
               });
               if (matchData && matchData.length > 0) {
                 console.log(`RAG: ${matchData.length} chunks matched (top similarity: ${matchData[0]?.similarity?.toFixed(3)})`);
@@ -404,7 +404,7 @@ Deno.serve(async (req: Request) => {
     
     if (relevantChunks) {
       systemPrompt += '\n\nRelevant Business Knowledge (use this information to answer accurately — each block shows its source):\n\n' + relevantChunks;
-      systemPrompt += '\n\nIMPORTANT: When answering, use the information above. If you reference specific details, you may mention the source (e.g., "According to our website..."). Do NOT make up information not present in the knowledge above.';
+      systemPrompt += '\n\nCRITICAL INSTRUCTION: You are strictly limited to the information provided in the "Relevant Business Knowledge", "Learned Insights", and "Frequently Asked Questions" sections. You MUST NOT hallucinate, guess, or make up ANY information that is not explicitly stated in the knowledge base. If the visitor asks a question and the exact answer is NOT in the provided knowledge base, you must politely state that you do not have that information and offer to connect them to a human agent. Do not attempt to guess or provide general outside knowledge.';
     }
 
     if (qaPairs && qaPairs.length > 0) {
@@ -427,7 +427,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Add fallback instruction for when AI can't find answers
-    systemPrompt += '\n\nIMPORTANT: If you cannot find the answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, politely let them know and offer to connect them with a human agent who can assist further.';
+    systemPrompt += '\n\nIMPORTANT: If you cannot find the exact answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, YOU MUST NOT GUESS. Politely let them know you do not have that specific information and offer to connect them with a human agent who can assist further.';
 
     // Call AI
     const aiMessages = [
@@ -449,7 +449,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model: OPENAI_MODEL,
         messages: aiMessages,
-        temperature: 0.4,
+        temperature: 0.1, // Lower temperature drastically reduces hallucination
       }),
     });
 

@@ -194,6 +194,8 @@ Deno.serve(async (req) => {
         url: formattedUrl,
         limit: Math.max(500, maxPages * 10), // Scan up to 500 or more pages for discovery
         includeSubdomains: true,
+        ignoreSitemap: true,
+        ignoreCache: true,
       }),
     });
 
@@ -210,48 +212,10 @@ Deno.serve(async (req) => {
     const rawUrls: string[] = mapData.links || [];
     console.log(`Discovered ${rawUrls.length} total URLs from site map`);
 
-    // Generate common potential paths to ensure they are crawled even if map doesn't return them
-    if (targetDomain) {
-      const commonPaths = [
-        '/principal-officers-2/',
-        '/principal-officers/',
-        '/governance/bursary/',
-        '/bursary/',
-        '/fees-structure/',
-        '/fee-structure/',
-        '/bursar/',
-        '/leadership/',
-        '/administration/',
-        '/governance/',
-        '/admission/',
-        '/admissions/',
-        '/fees/',
-        '/tuition/',
-        '/school-fees/',
-        '/post-graduate-fees/',
-        '/pg-fees/',
-      ];
-      const protocols = ['https://', 'http://'];
-      const prefixes = ['www.', ''];
-      
-      const generatedUrls: string[] = [];
-      for (const proto of protocols) {
-        for (const pref of prefixes) {
-          const base = `${proto}${pref}${targetDomain}`;
-          for (const path of commonPaths) {
-            generatedUrls.push(`${base}${path}`);
-          }
-        }
-      }
-      
-      // Also add the base URLs themselves just in case
-      for (const proto of protocols) {
-        for (const pref of prefixes) {
-          generatedUrls.push(`${proto}${pref}${targetDomain}/`);
-        }
-      }
-      
-      rawUrls.push(...generatedUrls);
+    // Map data is the absolute source of truth for URLs that exist on the website.
+    // If we need the base url specifically, we can just ensure it's in the rawUrls array.
+    if (!rawUrls.includes(formattedUrl)) {
+      rawUrls.push(formattedUrl);
     }
     
     // Remove duplicates and filter

@@ -327,7 +327,7 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
                 </Card>
               </div>
 
-              <AIAssist conversationId={selectedConversation} />
+              <AIAssist conversationId={selectedConversation} readOnly={true} />
             </div>
           )}
         </DialogContent>
