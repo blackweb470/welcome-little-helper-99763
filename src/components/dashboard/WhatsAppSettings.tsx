@@ -204,7 +204,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     });
   };
 
-  const [isManualMode, setIsManualMode] = useState(false);
+  const [isManualMode, setIsManualMode] = useState(true);
   const [testLoading, setTestLoading] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [manualSettings, setManualSettings] = useState({

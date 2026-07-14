@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply, ImagePlus, Loader2, Brain } from "lucide-react";
+import { MessageSquare, User, Clock, CheckCircle, Send, ArrowLeft, Check, CheckCheck, Sparkles, MessageCircle, Phone, Reply, ImagePlus, Loader2, Brain, AlertTriangle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { requestNotificationPermission, notifyNewMessage } from "@/utils/notifications";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -74,29 +74,95 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
   const [teachingAI, setTeachingAI] = useState<string | null>(null);
   const [teachAiDialogOpen, setTeachAiDialogOpen] = useState(false);
   const [teachAiContent, setTeachAiContent] = useState("");
+  const [originalMessageContent, setOriginalMessageContent] = useState("");
+  const [extractingRule, setExtractingRule] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+  const [duplicateId, setDuplicateId] = useState<string | null>(null);
+  const [suggestedCategory, setSuggestedCategory] = useState<string>("general");
 
-  const handleOpenTeachAI = (content: string) => {
-    setTeachAiContent(content);
-    setTeachAiDialogOpen(true);
+  const extractRuleFromMessage = async (rawContent: string) => {
+    try {
+      setExtractingRule(true);
+      setDuplicateWarning(null);
+      setDuplicateId(null);
+
+      // Get recent conversation context
+      const recentContext = messages.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n');
+
+      const { data, error } = await supabase.functions.invoke('ai-assist', {
+        body: {
+          action: 'extract_learning_rule',
+          message: rawContent,
+          businessId: businessId,
+          context: recentContext
+        }
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        if (data.extractedRule && typeof data.extractedRule === 'string') {
+          setTeachAiContent(data.extractedRule);
+        }
+        if (data.duplicateWarning && data.duplicateId) {
+          setDuplicateWarning(data.duplicateWarning);
+          setDuplicateId(data.duplicateId);
+        }
+        if (data.suggestedCategory) {
+          setSuggestedCategory(data.suggestedCategory);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to extract rule with AI:', err);
+      // Fallback: keep existing content if AI extraction fails
+    } finally {
+      setExtractingRule(false);
+    }
   };
 
-  const handleSaveTeachAI = async () => {
+  const handleOpenTeachAI = (content: string) => {
+    setOriginalMessageContent(content);
+    setTeachAiContent(content); // Show initial/fallback text while extracting
+    setTeachAiDialogOpen(true);
+    extractRuleFromMessage(content);
+  };
+
+  const handleSaveTeachAI = async (updateExisting = false) => {
     if (!teachAiContent.trim()) return;
     try {
       setTeachingAI('saving');
-      const { error } = await supabase.from('business_learnings').insert({
-        business_id: businessId,
-        content: teachAiContent.trim(),
-        source_conversation_id: selectedSession?.conversation_id,
-        learning_type: 'conversation_insight'
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "AI Taught",
-        description: "The AI has memorized this response for future conversations."
-      });
+
+      if (updateExisting && duplicateId) {
+        const { error } = await supabase
+          .from('business_learnings')
+          .update({
+            content: teachAiContent.trim(),
+            learning_type: suggestedCategory || 'conversation_insight'
+          })
+          .eq('id', duplicateId);
+
+        if (error) throw error;
+
+        toast({
+          title: "AI Memory Updated",
+          description: "The existing rule in the AI's memory has been updated."
+        });
+      } else {
+        const { error } = await supabase.from('business_learnings').insert({
+          business_id: businessId,
+          content: teachAiContent.trim(),
+          source_conversation_id: selectedSession?.conversation_id,
+          learning_type: suggestedCategory || 'conversation_insight'
+        });
+        
+        if (error) throw error;
+        
+        toast({
+          title: "AI Taught",
+          description: "The AI has memorized this general rule for future conversations."
+        });
+      }
+
       setTeachAiDialogOpen(false);
     } catch (err) {
       console.error('Error teaching AI:', err);
@@ -1389,25 +1455,104 @@ export const LiveChatQueue = ({ businessId }: LiveChatQueueProps) => {
       </CardContent>
       {/* Teach AI Dialog */}
       <Dialog open={teachAiDialogOpen} onOpenChange={setTeachAiDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Teach AI</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
+              Teach AI General Rule
+            </DialogTitle>
             <DialogDescription>
-              Edit this message into a general rule or fact before saving it to the AI's memory.
+              We automatically convert agent replies into clean third-person facts so the AI won't repeat customer names or one-off details.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Textarea 
-              value={teachAiContent}
-              onChange={(e) => setTeachAiContent(e.target.value)}
-              className="min-h-[150px] resize-none"
-              placeholder="e.g. We are closed on Sundays."
-            />
+
+          <div className="grid gap-4 py-3">
+            {extractingRule ? (
+              <div className="flex flex-col items-center justify-center py-8 border rounded-lg bg-muted/40 gap-3">
+                <div className="flex items-center gap-2 text-primary font-medium">
+                  <Sparkles className="w-5 h-5 animate-pulse text-amber-500" />
+                  Extracting clean factual rule...
+                </div>
+                <p className="text-xs text-muted-foreground text-center px-6">
+                  Checking existing rules for duplicates and converting from conversation tone to third-person fact.
+                </p>
+              </div>
+            ) : (
+              <>
+                {duplicateWarning && (
+                  <div className="p-3 border border-amber-500/40 bg-amber-500/10 rounded-lg flex items-start gap-3 text-sm">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-semibold text-amber-800 dark:text-amber-300">Similar Rule Detected</p>
+                      <p className="text-amber-700 dark:text-amber-400 text-xs">{duplicateWarning}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      Extracted Rule (Editable)
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => extractRuleFromMessage(originalMessageContent)}
+                        title="Re-run AI extraction"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Re-extract
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setTeachAiContent(originalMessageContent)}
+                        title="Revert to original raw message"
+                      >
+                        Use Original Text
+                      </Button>
+                    </div>
+                  </div>
+                  <Textarea 
+                    value={teachAiContent}
+                    onChange={(e) => setTeachAiContent(e.target.value)}
+                    className="min-h-[120px] resize-none text-sm leading-relaxed"
+                    placeholder="e.g. The business is closed on Sundays and national holidays."
+                  />
+                </div>
+
+                {originalMessageContent && teachAiContent !== originalMessageContent && (
+                  <div className="text-[11px] text-muted-foreground bg-muted/40 p-2.5 rounded border border-border/50">
+                    <span className="font-semibold text-foreground/80">Original reply: </span>
+                    "{originalMessageContent}"
+                  </div>
+                )}
+              </>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTeachAiDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveTeachAI} disabled={teachingAI === 'saving' || !teachAiContent.trim()}>
-              {teachingAI === 'saving' ? "Saving..." : "Save to AI Memory"}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setTeachAiDialogOpen(false)} className="sm:mr-auto">
+              Cancel
+            </Button>
+            {duplicateId && (
+              <Button 
+                variant="secondary" 
+                onClick={() => handleSaveTeachAI(true)} 
+                disabled={teachingAI === 'saving' || extractingRule || !teachAiContent.trim()}
+              >
+                Update Existing Rule
+              </Button>
+            )}
+            <Button 
+              onClick={() => handleSaveTeachAI(false)} 
+              disabled={teachingAI === 'saving' || extractingRule || !teachAiContent.trim()}
+            >
+              {teachingAI === 'saving' ? "Saving..." : duplicateId ? "Save as New Rule" : "Save to AI Memory"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -336,10 +336,10 @@ Deno.serve(async (req: Request) => {
       // A. Business learnings
       supabase
         .from('business_learnings')
-        .select('content')
+        .select('content, expires_at, metadata')
         .eq('business_id', businessId)
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(40),
 
       // B. RAG knowledge search — context-augmented query for better short/follow-up question handling
       message.trim().length >= 1
@@ -393,7 +393,12 @@ Deno.serve(async (req: Request) => {
         : Promise.resolve('')
     ]);
 
-    const learnings = learningsResult.data;
+    const nowMs = Date.now();
+    const learnings = (learningsResult.data || []).filter((l: any) => {
+      const expStr = l.expires_at || l.metadata?.expires_at;
+      if (!expStr) return true;
+      return new Date(expStr).getTime() > nowMs;
+    });
     // Fetched DESC for limit efficiency — reverse to restore chronological order
     const history = (historyResult.data || []).reverse();
 
