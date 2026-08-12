@@ -40,7 +40,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   // SDK States for Meta
   const [sdkStatus, setSdkStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [metaAppId, setMetaAppId] = useState<string>('2143263399800980');
-  const [metaConfigId, setMetaConfigId] = useState<string>('970530725626776');
+  const [metaConfigId, setMetaConfigId] = useState<string>('991663860045736');
   
   // Connection validation inputs
   const [testLoading, setTestLoading] = useState(false);
@@ -62,7 +62,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
           .select('key, value') as any);
         
         let appId = import.meta.env.VITE_META_APP_ID || '2143263399800980';
-        let configId = import.meta.env.VITE_META_CONFIG_ID || '970530725626776';
+        let configId = import.meta.env.VITE_META_CONFIG_ID || '991663860045736';
 
         if (!error && data) {
           const dbAppId = data.find((s: any) => s.key === 'meta_app_id')?.value;
