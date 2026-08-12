@@ -131,13 +131,22 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // Select all columns from whatsapp_settings to prevent specific column mismatch errors
+      let { data, error } = await supabase
         .from('whatsapp_settings')
-        .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method, verify_token, provider')
+        .select('*')
         .eq('business_id', businessId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Error fetching whatsapp_settings with select(*), trying fallback:', error.message);
+        const fallback = await supabase
+          .from('whatsapp_settings')
+          .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method, verify_token')
+          .eq('business_id', businessId)
+          .maybeSingle();
+        data = fallback.data;
+      }
       
       setSettings(data);
       setIsEnabled(data?.enabled || false);
