@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
-import { ArrowLeft, Calendar, User } from "lucide-react";
+import { ArrowLeft, Calendar, User, Clock, Share2, CheckCircle2, Zap, ArrowRight, Sparkles, BookOpen, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { blogPosts } from "./Blog";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const useReveal = () => {
   useEffect(() => {
@@ -24,7 +25,46 @@ const useReveal = () => {
   }, []);
 };
 
-// This is where you write your actual markdown content
+// Summary highlights for each blog post
+const quickSummaries: Record<string, { takeaways: string[]; stats: { label: string; value: string }[] }> = {
+  "cheap-ai-chatbot-startup-founders-smb": {
+    takeaways: [
+      "Legacy support software ($300-$500/mo) is a cost trap for bootstrap startups and SMBs.",
+      "LYQN starts at just $5/mo with self-learning RAG AI (GPT-4) trained on your website & docs.",
+      "Omnichannel support connects web chat directly to WhatsApp so visitors never leave hanging."
+    ],
+    stats: [
+      { label: "Starting Price", value: "$5/mo" },
+      { label: "Support Automated", value: "80%+" },
+      { label: "Setup Time", value: "2 Mins" }
+    ]
+  },
+  "global-smb-ai-agent": {
+    takeaways: [
+      "Hiring dedicated 24/7 multi-language support staff across timezones drains startup budgets.",
+      "Self-learning AI bots capture global leads and answer customer questions in local contexts.",
+      "Seamless live agent handoff ensures complex inquiries reach human staff without cold drops."
+    ],
+    stats: [
+      { label: "Global Coverage", value: "24/7" },
+      { label: "Cost Deflection", value: "85%" },
+      { label: "Languages", value: "Multi-Lang" }
+    ]
+  },
+  "whatsapp-marketing-global": {
+    takeaways: [
+      "WhatsApp outperforms traditional email & SMS with 90%+ open rates in global markets.",
+      "Connecting web chat to WhatsApp lets you capture lead phone numbers instantly.",
+      "Maintains full international privacy compliance (GDPR in Europe, LGPD in Brazil)."
+    ],
+    stats: [
+      { label: "Open Rates", value: "90%+" },
+      { label: "Lead Retention", value: "3x Higher" },
+      { label: "Setup", value: "1-Click" }
+    ]
+  }
+};
+
 const markdownContent: Record<string, string> = {
   "cheap-ai-chatbot-startup-founders-smb": `
 ## Why Startup Founders & SMBs Need an Affordable AI Chatbot in 2026
@@ -60,6 +100,7 @@ Save money, automate 80%+ of support inquiries, and boost your sales conversions
   `,
   "global-smb-ai-agent": `
 ## The Reality for Global Small Businesses
+
 Running a business means wearing a dozen hats, whether you're a retail shop in Texas, an e-commerce brand in London, a SaaS startup in Singapore, or a manufacturer in Brazil. Hiring a dedicated support team across multiple time zones is incredibly expensive, yet ignoring customer questions means losing revenue globally. 
 
 What small and medium businesses (SMBs) across North America, South America, Asia, Europe, and Africa need is an **affordable AI chatbot** that acts as a 24/7 automated team member.
@@ -77,6 +118,7 @@ Ready to see how AI can transform your business? Start a 14-day free trial of LY
   `,
   "whatsapp-marketing-global": `
 ## Why Global Businesses Run on WhatsApp
+
 For years, businesses in the US and Canada relied on email marketing or expensive SMS. But open rates for email are plummeting globally, and standard SMS is highly regulated and costly across borders.
 
 The highest performing brands across Latin America (like Brazil and Mexico), Asia (like India and Indonesia), Europe, and Africa know one thing: **The world runs on WhatsApp.** And now, the North American market is rapidly catching up.
@@ -94,146 +136,309 @@ You don't need a complex, expensive foreign marketing stack. By simply adding a 
 const BlogPost = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
   useReveal();
 
-  const post = blogPosts.find(p => p.id === id);
+  const post = blogPosts.find((p) => p.id === id);
   const content = id ? markdownContent[id] : null;
+  const summary = id ? quickSummaries[id] : null;
+
+  const otherPosts = blogPosts.filter((p) => p.id !== id).slice(0, 2);
 
   if (!post || !content) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcfcfc] font-sans">
-        <h1 className="text-2xl font-bold mb-4 text-[#111]">Article not found</h1>
-        <button 
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcfcfc] font-sans px-6">
+        <h1 className="text-3xl font-bold mb-4 text-[#111]">Article not found</h1>
+        <p className="text-gray-500 mb-6">The blog post you are looking for doesn't exist or has moved.</p>
+        <button
           onClick={() => navigate("/blog")}
-          className="bg-[#111] text-white px-6 py-3 rounded-full font-semibold hover:bg-black/80 transition-colors"
+          className="bg-[#111] text-white px-6 py-3 rounded-full font-semibold hover:bg-black/80 transition-all flex items-center gap-2"
         >
-          Back to Blog
+          <ArrowLeft className="w-4 h-4" /> Back to Blog
         </button>
       </div>
     );
   }
 
-  // Generate Article Schema for SEO
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    toast({
+      title: "Link Copied!",
+      description: "Article URL copied to clipboard.",
+    });
+    setTimeout(() => setCopied(false), 3000);
+  };
+
   const articleSchema = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    "headline": post.title,
-    "description": post.excerpt,
-    "mainEntityOfPage": {
+    headline: post.title,
+    description: post.excerpt,
+    mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `https://lyqn.app/blog/${post.id}`
     },
-    "author": {
+    author: {
       "@type": "Organization",
-      "name": post.author,
-      "url": "https://lyqn.app/"
+      name: post.author,
+      url: "https://lyqn.app/"
     },
-    "publisher": {
+    publisher: {
       "@type": "Organization",
-      "name": "LYQN",
-      "logo": {
+      name: "LYQN",
+      logo: {
         "@type": "ImageObject",
-        "url": "https://lyqn.app/lyqn-icon.png"
+        url: "https://lyqn.app/lyqn-icon.png"
       }
     },
-    "datePublished": post.date,
-    "about": {
+    datePublished: post.date,
+    about: {
       "@type": "SoftwareApplication",
-      "name": "LYQN",
-      "applicationCategory": "BusinessApplication",
-      "offers": {
+      name: "LYQN",
+      applicationCategory: "BusinessApplication",
+      offers: {
         "@type": "Offer",
-        "price": "5",
-        "priceCurrency": "USD"
+        price: "5",
+        priceCurrency: "USD"
       }
     }
   });
 
   return (
-    <div className="min-h-screen font-sans" style={{ background: "#fcfcfc" }}>
+    <div className="min-h-screen font-sans bg-[#fafafa] text-[#111]">
       <style dangerouslySetInnerHTML={{__html: `
-        .cio-reveal { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
+        .cio-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(0.16, 1, 0.3, 1), transform .7s cubic-bezier(0.16, 1, 0.3, 1); }
         .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }
       `}} />
-      <SEO 
+      <SEO
         title={`${post.title} | LYQN Blog`}
         description={post.excerpt}
         url={`https://lyqn.app/blog/${post.id}`}
         schema={articleSchema}
         type="article"
       />
-      
-      {/* Header */}
-      <header className="sticky top-0 z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <button 
-            onClick={() => navigate("/blog")} 
-            className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#111] transition-colors"
+
+      {/* Sticky Header & Breadcrumbs */}
+      <header className="sticky top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/blog")}
+              className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#111] transition-colors bg-gray-100 hover:bg-gray-200/70 px-3 py-1.5 rounded-full"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Blog
+            </button>
+            <span className="hidden sm:inline text-gray-300">/</span>
+            <span className="hidden sm:inline text-xs text-gray-400 font-medium truncate max-w-[280px]">
+              {post.title}
+            </span>
+          </div>
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200/80 px-3.5 py-1.5 rounded-full transition-all"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Blog
+            <Share2 className="w-3.5 h-3.5" />
+            {copied ? "Copied!" : "Share"}
           </button>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-16 md:py-24 max-w-4xl cio-reveal">
-        <div className="mb-12 md:mb-16">
-          <div className="flex gap-2 mb-8">
-            {post.tags.map(tag => (
-              <span key={tag} className="bg-gray-100 text-gray-800 text-[11px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full">
+      <main className="container mx-auto px-6 py-12 md:py-20 max-w-3xl">
+        {/* Article Meta Header */}
+        <div className="cio-reveal mb-10">
+          <div className="flex flex-wrap gap-2 mb-6">
+            {post.tags.map((tag) => (
+              <span
+                key={tag}
+                className="bg-orange-500/10 text-orange-700 border border-orange-500/20 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
+              >
                 {tag}
               </span>
             ))}
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-8 text-[#111] leading-[1.1]" style={{ letterSpacing: "-0.04em" }}>
+
+          <h1
+            className="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-[#111] leading-[1.15]"
+            style={{ letterSpacing: "-0.035em" }}
+          >
             {post.title}
           </h1>
-          <div className="flex items-center gap-6 text-gray-500 border-y border-gray-200 py-6 font-medium text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              {new Date(post.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+
+          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-gray-200/80 py-4 font-medium text-sm text-gray-500">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-gray-800 font-semibold">
+                <div className="w-7 h-7 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                  L
+                </div>
+                {post.author}
+              </div>
+              <span className="text-gray-300">•</span>
+              <div className="flex items-center gap-1.5 text-gray-500">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                {new Date(post.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              {post.author}
+            <div className="flex items-center gap-1.5 text-gray-500 bg-gray-100/80 px-3 py-1 rounded-full text-xs font-semibold">
+              <Clock className="w-3.5 h-3.5 text-gray-400" />
+              3 min read
             </div>
           </div>
         </div>
 
-        {/* Markdown Content */}
-        <article className="prose lg:prose-lg max-w-none prose-headings:text-[#111] prose-headings:font-bold prose-headings:tracking-tight prose-p:text-gray-600 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-li:text-gray-600">
+        {/* Executive Summary Box */}
+        {summary && (
+          <div className="cio-reveal mb-12 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 transform translate-x-6 -translate-y-6 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2 text-orange-400 text-xs font-bold uppercase tracking-widest mb-3">
+              <Sparkles className="w-4 h-4" /> Quick Founder's Summary
+            </div>
+            <ul className="space-y-2.5 mb-6 text-gray-200 text-sm md:text-base leading-relaxed">
+              {summary.takeaways.map((takeaway, idx) => (
+                <li key={idx} className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <span>{takeaway}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Quick Stat Badges */}
+            <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-5 text-center">
+              {summary.stats.map((stat, idx) => (
+                <div key={idx} className="bg-white/5 rounded-xl p-3 backdrop-blur-sm border border-white/5">
+                  <div className="text-lg md:text-xl font-bold text-white font-mono">{stat.value}</div>
+                  <div className="text-[11px] text-gray-400 font-medium">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Main Article Markdown Content */}
+        <article className="cio-reveal bg-white rounded-3xl p-6 md:p-12 border border-gray-200/70 shadow-sm mb-12">
           <ReactMarkdown
             components={{
-              h2: ({node, ...props}) => <h2 className="text-3xl md:text-4xl font-bold mt-12 mb-6" style={{ letterSpacing: "-0.03em" }} {...props} />,
-              h3: ({node, ...props}) => <h3 className="text-2xl font-bold mt-10 mb-4" style={{ letterSpacing: "-0.02em" }} {...props} />,
-              p: ({node, ...props}) => <p className="text-[18px] md:text-[20px] text-gray-600 leading-[1.7] mb-8" {...props} />,
-              ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-8 text-[18px] md:text-[20px] text-gray-600 space-y-3 marker:text-gray-400" {...props} />,
-              a: ({node, ...props}) => <a className="text-blue-600 hover:underline font-medium" {...props} />,
-              strong: ({node, ...props}) => <strong className="font-bold text-[#111]" {...props} />
+              h2: ({ node, ...props }) => (
+                <div className="mt-12 mb-6 pt-6 border-t border-gray-100 first:mt-0 first:pt-0 first:border-0">
+                  <h2
+                    className="text-2xl md:text-3xl font-bold text-[#111] flex items-center gap-3"
+                    style={{ letterSpacing: "-0.03em" }}
+                    {...props}
+                  />
+                </div>
+              ),
+              h3: ({ node, ...props }) => (
+                <h3
+                  className="text-xl md:text-2xl font-bold mt-8 mb-4 text-gray-900 border-l-4 border-orange-500 pl-3"
+                  style={{ letterSpacing: "-0.02em" }}
+                  {...props}
+                />
+              ),
+              p: ({ node, ...props }) => (
+                <p className="text-[17px] md:text-[19px] text-gray-700 leading-[1.75] mb-6 font-normal" {...props} />
+              ),
+              ul: ({ node, ...props }) => (
+                <ul className="space-y-3 mb-8 text-[17px] md:text-[19px] text-gray-700" {...props} />
+              ),
+              li: ({ node, ...props }) => (
+                <li className="flex items-start gap-3 text-[17px] md:text-[18px] text-gray-700 leading-relaxed">
+                  <span className="w-2 h-2 rounded-full bg-orange-500 mt-2.5 flex-shrink-0" />
+                  <span>{props.children}</span>
+                </li>
+              ),
+              ol: ({ node, ...props }) => (
+                <ol className="space-y-4 mb-8 text-[17px] md:text-[19px] text-gray-700" {...props} />
+              ),
+              a: ({ node, ...props }) => (
+                <a
+                  className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700 underline underline-offset-4 transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  {...props}
+                />
+              ),
+              strong: ({ node, ...props }) => <strong className="font-bold text-gray-950" {...props} />,
+              blockquote: ({ node, ...props }) => (
+                <blockquote className="my-8 p-6 rounded-2xl bg-orange-500/5 border-l-4 border-orange-500 text-gray-800 italic text-lg leading-relaxed">
+                  {props.children}
+                </blockquote>
+              )
             }}
           >
             {content}
           </ReactMarkdown>
         </article>
 
-        {/* Call to action at bottom of every post */}
-        <div className="mt-20 bg-white rounded-[32px] p-10 md:p-14 text-center border border-gray-100 shadow-sm cio-reveal">
-          <h3 className="text-3xl font-bold mb-4 text-[#111]" style={{ letterSpacing: "-0.03em" }}>Ready to upgrade your support?</h3>
-          <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">Join forward-thinking businesses using LYQN to deliver instant, autonomous customer service around the clock.</p>
-          <button 
-            onClick={() => navigate("/auth")}
-            className="bg-[#111] text-white px-8 py-4 rounded-full font-semibold hover:bg-black/80 transition-colors shadow-lg shadow-black/10"
-          >
-            Start Free Trial
-          </button>
+        {/* High Conversion CTA Box */}
+        <div className="cio-reveal rounded-3xl bg-[#111] text-white p-8 md:p-12 text-center relative overflow-hidden shadow-2xl mb-16">
+          <div className="inline-flex items-center gap-2 bg-white/10 text-orange-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-white/10">
+            <Zap className="w-4 h-4 fill-orange-400" /> Start Automating Support in 2 Mins
+          </div>
+
+          <h3 className="text-3xl md:text-4xl font-bold mb-4" style={{ letterSpacing: "-0.03em" }}>
+            Build Your 24/7 AI Chatbot for $5/mo
+          </h3>
+          <p className="text-gray-400 text-base md:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+            Join hundreds of startup founders & SMBs deflecting 80%+ of inquiries with zero coding. 14-day free trial included.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => navigate("/auth")}
+              className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-8 py-4 rounded-full transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2"
+            >
+              Start 14-Day Free Trial <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate("/pricing")}
+              className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white text-base font-semibold px-6 py-4 rounded-full transition-all border border-white/10"
+            >
+              View All $5-$20 Plans
+            </button>
+          </div>
         </div>
+
+        {/* Related Blog Posts Navigation */}
+        {otherPosts.length > 0 && (
+          <div className="cio-reveal border-t border-gray-200/80 pt-12">
+            <h4 className="text-xl font-bold text-[#111] mb-6 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-orange-500" /> Recommended for Founders
+            </h4>
+            <div className="grid md:grid-cols-2 gap-6">
+              {otherPosts.map((other) => (
+                <div
+                  key={other.id}
+                  onClick={() => {
+                    navigate(`/blog/${other.id}`);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  className="bg-white rounded-2xl p-6 border border-gray-200/70 hover:border-orange-500/40 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+                      {other.tags[0]}
+                    </div>
+                    <h5 className="text-lg font-bold text-[#111] group-hover:text-orange-600 transition-colors mb-2 line-clamp-2">
+                      {other.title}
+                    </h5>
+                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">{other.excerpt}</p>
+                  </div>
+                  <div className="flex items-center justify-between text-xs font-semibold text-gray-900 group-hover:text-orange-600 pt-2 border-t border-gray-100">
+                    <span>Read Article</span>
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
-      <footer className="border-t border-gray-100 py-8 bg-white mt-12">
-        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <footer className="border-t border-gray-200/80 py-8 bg-white mt-16 text-center text-sm text-gray-500">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 max-w-4xl">
           <div className="font-bold tracking-tighter text-xl text-gray-900">LYQN</div>
-          <div className="text-sm font-medium text-gray-500">
-            © 2026 LYQN AI. All rights reserved.
-          </div>
+          <div>© 2026 LYQN AI. The affordable AI chatbot for founders & SMBs.</div>
         </div>
       </footer>
     </div>

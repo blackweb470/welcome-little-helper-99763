@@ -187,9 +187,9 @@ const Launch = () => {
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { name: "Basic", price: "$5", feats: ["3 businesses", "Pre-chat forms", "Canned responses", "2-week free trial"] },
-            { name: "Pro", price: "$10", feats: ["10 businesses", "Live agent transfer", "Sentiment analysis", "Proactive rules"], highlight: true },
-            { name: "Business", price: "$20", feats: ["Unlimited businesses", "AI learning + docs", "Priority support", "Dedicated manager"] },
+            { name: "Basic", price: "$5", feats: ["1 business", "Pre-chat forms", "Canned responses", "2-week free trial"] },
+            { name: "Pro", price: "$10", feats: ["2 businesses", "Live agent transfer", "Sentiment analysis", "Proactive rules"], highlight: true },
+            { name: "Business", price: "$20", feats: ["5 businesses", "AI learning + docs", "Priority support", "Dedicated manager"] },
           ].map((p) => (
             <div
               key={p.name}

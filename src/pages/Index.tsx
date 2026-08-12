@@ -363,9 +363,9 @@ const Index = () => {
               <h1
                 className="font-bold mb-6"
                 style={{
-                  fontSize: "clamp(36px, 4.8vw, 64px)",
-                  lineHeight: 1.1,
-                  letterSpacing: "-0.03em",
+                  fontSize: "clamp(42px, 6vw, 78px)",
+                  lineHeight: 1.08,
+                  letterSpacing: "-0.035em",
                   color: "#111",
                   animation: "cio-fade-up .7s ease .05s both",
                 }}

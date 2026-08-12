@@ -12,9 +12,9 @@ LYQN is a next-generation AI customer support platform built specifically for sm
 4. **Instant Embedding**: Single JavaScript tag deployment compatible with Next.js, Vite, React, WordPress, Webflow, Squarespace, and custom HTML.
 
 ## Pricing Plans (14-Day Free Trial Available)
-- **Basic ($5/month)**: 3 businesses, pre-chat lead forms, canned responses, standard RAG AI answers.
-- **Pro ($10/month)**: 10 businesses, live agent queue handoff, sentiment analysis, proactive greeting rules, WhatsApp bridge.
-- **Business ($20/month)**: Unlimited businesses, priority RAG sync, dedicated account manager, custom API integrations.
+- **Basic ($5/month)**: 1 business, pre-chat lead forms, canned responses, standard RAG AI answers.
+- **Pro ($10/month)**: 2 businesses, live agent queue handoff, sentiment analysis, proactive greeting rules, WhatsApp bridge.
+- **Business ($20/month)**: 5 businesses, priority RAG sync, dedicated account manager, custom API integrations.
 
 ## Blog Articles Index
 

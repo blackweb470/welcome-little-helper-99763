@@ -20,7 +20,7 @@ const planPrices: { [key: string]: string } = {
 
 const planFeatures: { [key: string]: string[] } = {
   basic: [
-    '3 Businesses',
+    '1 Business',
     'Pre-Chat Forms',
     'Canned Responses',
     'Basic Analytics',
