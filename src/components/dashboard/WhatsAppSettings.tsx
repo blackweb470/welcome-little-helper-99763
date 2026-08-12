@@ -157,20 +157,49 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     }
   };
 
+  // Listen for Meta OAuth redirect code or window postMessage callback
+  useEffect(() => {
+    // 1. Check URL query params for ?code=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code && businessId) {
+      handleMetaSignupResponse(code);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 2. Listen for window postMessage from Meta Embedded Signup popup
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin.includes('facebook.com') || event.origin.includes('meta.com')) {
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (data && (data.type === 'WA_EMBEDDED_SIGNUP' || data.event === 'finish')) {
+            if (data.code) {
+              handleMetaSignupResponse(data.code);
+            }
+          }
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [businessId]);
+
   // Launch Meta Embedded Signup popup (Meta OAuth Flow)
   const launchMetaSignup = () => {
     setConnecting(true);
     
-    // Direct Meta Onboarding URI fallback helper
+    // Direct Meta Onboarding OAuth URI fallback helper
     const openDirectMetaOnboarding = () => {
-      const onboardUrl = `https://business.facebook.com/messaging/whatsapp/onboard/?app_id=${metaAppId}&config_id=${metaConfigId}`;
+      const redirectUri = encodeURIComponent(window.location.origin + '/dashboard');
+      const onboardUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${redirectUri}&config_id=${metaConfigId}&response_type=code`;
       const width = 600;
       const height = 700;
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
       window.open(onboardUrl, 'MetaWhatsAppSignup', `width=${width},height=${height},top=${top},left=${left}`);
       toast({
-        title: "Meta Signup Opened",
+        title: "Meta WhatsApp Signup Opened",
         description: "Complete your WhatsApp setup in the Meta popup window."
       });
       setConnecting(false);
