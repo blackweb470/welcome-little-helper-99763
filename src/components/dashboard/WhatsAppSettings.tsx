@@ -189,10 +189,9 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const launchMetaSignup = () => {
     setConnecting(true);
     
-    // Direct Meta Onboarding OAuth URI fallback helper
+    // Direct Meta Onboarding URI fallback helper
     const openDirectMetaOnboarding = () => {
-      const redirectUri = encodeURIComponent(window.location.origin + '/dashboard');
-      const onboardUrl = `https://www.facebook.com/v21.0/dialog/oauth?client_id=${metaAppId}&redirect_uri=${redirectUri}&config_id=${metaConfigId}&response_type=code`;
+      const onboardUrl = `https://business.facebook.com/messaging/whatsapp/onboard/?app_id=${metaAppId}&config_id=${metaConfigId}`;
       const width = 600;
       const height = 700;
       const left = window.screen.width / 2 - width / 2;
