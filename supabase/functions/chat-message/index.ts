@@ -136,19 +136,6 @@ Deno.serve(async (req: Request) => {
         if (convError) throw convError;
         conversationId = newConv.id;
         console.log('Created new conversation for persistent user:', conversationId);
-
-        if (finalPreChatData.email) {
-          supabase.functions.invoke('send-notification', {
-            body: {
-              type: 'visitor_welcome',
-              businessId: businessId,
-              data: {
-                visitorEmail: finalPreChatData.email,
-                conversationId: conversationId
-              }
-            }
-          }).catch((err: any) => console.error('Error triggering visitor_welcome email:', err));
-        }
       }
 
       if (!message) {

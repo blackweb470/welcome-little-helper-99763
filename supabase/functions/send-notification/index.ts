@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'visitor_welcome']),
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed']),
   businessId: z.string().uuid("Invalid business ID format"),
   data: z.object({
     conversationId: z.string().uuid("Invalid conversation ID format").optional(),
@@ -365,28 +365,6 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #a35d5d; margin: 0;">If you believe this was done in error, please contact the business owner directly.</p>
           </div>
           <p>Thank you for your contributions to the team.</p>
-        `);
-        break;
-
-      case 'visitor_welcome':
-        recipientEmail = data.visitorEmail || '';
-        if (!recipientEmail) {
-          return new Response(
-            JSON.stringify({ error: 'No visitor email provided' }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        subject = `👋 Thank you for messaging ${sanitizedBusinessName} — How can we help you?`;
-        html = createNotificationEmail(`Welcome to ${sanitizedBusinessName}!`, `
-          <p style="margin-bottom: 16px;">Hi there,</p>
-          <p style="margin-bottom: 16px;">Thank you for getting in touch with <strong style="color: #f0f0f0;">${sanitizedBusinessName}</strong>!</p>
-          <p style="margin-bottom: 16px;">We noticed you recently started a conversation with our 24/7 AI assistant (powered by <strong>LYQN</strong>). We wanted to follow up and see if there is anything specific you would like to know about our products, pricing, features, or support options.</p>
-          <div class="data-box">
-            <span class="data-label">LYQN AI Support Inquiry</span>
-            <span class="data-value">Is there anything specific you would like to ask or explore about our business?</span>
-          </div>
-          <p style="margin-bottom: 16px;">Feel free to reply directly to this email or visit our website anytime to continue your conversation.</p>
-          <p>Best regards,<br><strong style="color: #f0f0f0;">${sanitizedBusinessName} Support Team</strong></p>
         `);
         break;
 
