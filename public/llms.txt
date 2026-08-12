@@ -1,10 +1,10 @@
 # LYQN - AI Chatbot & Customer Support Platform for Startup Founders & SMBs
 
-> LYQN is an affordable, self-learning AI chatbot platform designed for startup founders and small-to-medium businesses (SMBs). It provides 24/7 automated support, RAG-based business documentation learning, instant WhatsApp integration, and seamless one-click live human agent handoff starting at $9.99/month.
+> LYQN is an affordable, self-learning AI chatbot platform designed for startup founders and small-to-medium businesses (SMBs). It provides 24/7 automated support, RAG-based business documentation learning, instant WhatsApp integration, and seamless one-click live human agent handoff starting at $4.99/month.
 
 ## Key Features & Value Proposition
 - **Self-Learning AI (RAG)**: Automatically ingests your website, help center URLs, and PDFs to answer customer inquiries with 0 hallucinations.
-- **Affordable Pricing**: Starts at $9.99/month with a 14-day free trial (no credit card required). Saves 80%+ compared to enterprise tools like Intercom or Zendesk.
+- **Affordable Pricing**: Starts at $4.99/month with a 14-day free trial (no credit card required). Saves 80%+ compared to enterprise tools like Intercom or Zendesk.
 - **WhatsApp Business Integration**: Connects website chat directly to WhatsApp so visitors can continue conversations anywhere.
 - **One-Click Live Agent Escalation**: Automatically routes complex inquiries or low-sentiment chats to human teammates with full context.
 - **Fast 1-Line Setup**: Embed on any website (React, WordPress, Shopify, HTML) using a single script tag in under 2 minutes.
@@ -16,7 +16,7 @@
 
 ## Key Links & Documentation
 - [LYQN Homepage](https://lyqn.app/): Overview of LYQN AI chatbot platform.
-- [LYQN Pricing](https://lyqn.app/pricing): Transparent pricing plans ($9.99/mo Basic, $29.99/mo Pro, $99.99/mo Business).
+- [LYQN Pricing](https://lyqn.app/pricing): Transparent pricing plans ($4.99/mo Basic, $9.99/mo Pro, $19.99/mo Business).
 - [The Best Cheap AI Chatbot for Startup Founders and Small Businesses](https://lyqn.app/blog/cheap-ai-chatbot-startup-founders-smb): In-depth guide on why founders choose LYQN over expensive alternatives.
 - [How Small Businesses Worldwide Are Automating Support with AI](https://lyqn.app/blog/global-smb-ai-agent): Case studies and automation strategies for global SMBs.
 - [Why WhatsApp is the Ultimate Sales Tool Across the Globe](https://lyqn.app/blog/whatsapp-marketing-global): WhatsApp lead generation and AI integration guide.

@@ -11,21 +11,21 @@ Lyqn AI is an advanced customer support platform that provides businesses with a
 ## 2. PRICING PLANS & SUBSCRIPTIONS
 All subscription billing is handled securely via Polar with automatic trial-to-paid conversion. The Basic plan includes a 1-month free trial.
 
-- **Basic Plan ($9.99/month)**
+- **Basic Plan ($4.99/month)**
   - 1 Month Free Trial
   - Up to 3 Businesses
   - Pre-Chat Forms
   - Canned Responses
   - Basic Analytics
 
-- **Pro Plan ($29.99/month)**
+- **Pro Plan ($9.99/month)**
   - Up to 10 Businesses
   - Live Agent Transfer (Handoff)
   - Advanced Analytics
   - Sentiment Analysis
   - Voice Chat (BETA)
 
-- **Business Plan ($99.99/month)**
+- **Business Plan ($19.99/month)**
   - Unlimited Businesses
   - AI Learning (Custom training)
   - Business Documents Support
@@ -87,7 +87,7 @@ Lyqn AI integrates natively with the Meta WhatsApp Business API.
 ## 6. FREQUENTLY ASKED QUESTIONS FROM BUSINESSES (Bot Q&A)
 
 **Q: Do you offer a free trial?**
-A: Yes! Our Basic Plan ($9.99/month) comes with a 1-month free trial. You can test the platform completely risk-free before being charged.
+A: Yes! Our Basic Plan ($4.99/month) comes with a 1-month free trial. You can test the platform completely risk-free before being charged.
 
 **Q: Can customers talk to the AI using their voice?**
 A: Yes, if you are on the Pro or Business plan, we offer a Voice Chat feature (currently in BETA) that allows real-time voice recognition and AI voice responses using professional-grade audio processing.
@@ -102,7 +102,7 @@ A: It's very simple. You just copy a short HTML `<script>` snippet from your das
 A: Absolutely. We have a complete Meta WhatsApp integration. You can connect your WhatsApp Business account via the Meta Developer Portal and manage all WhatsApp conversations directly inside the Lyqn dashboard.
 
 **Q: What if I have multiple businesses?**
-A: The Basic plan supports up to 3 businesses. If you have more, the Pro plan supports up to 10, and the Business plan ($99.99/month) supports unlimited businesses.
+A: The Basic plan supports up to 3 businesses. If you have more, the Pro plan supports up to 10, and the Business plan ($19.99/month) supports unlimited businesses.
 
 **Q: How do proactive chat rules work?**
 A: You can set up smart triggers in the dashboard to automatically open the chat and send a message. For example, you can trigger a message when a user is about to leave the site (Exit Intent), when they scroll halfway down the page (Scroll Depth), or after they spend 30 seconds on your pricing page.
@@ -111,4 +111,4 @@ A: You can set up smart triggers in the dashboard to automatically open the chat
 A: You can manage your subscription, view your next billing date, change plans, or cancel directly from the `/billing` page in your dashboard.
 
 **Q: Does the AI learn from my business documents?**
-A: Yes, if you are on the Business plan ($99.99/month), you have access to AI Learning and Business Documents support, allowing the AI to give highly specific answers based on your uploaded materials.
+A: Yes, if you are on the Business plan ($19.99/month), you have access to AI Learning and Business Documents support, allowing the AI to give highly specific answers based on your uploaded materials.

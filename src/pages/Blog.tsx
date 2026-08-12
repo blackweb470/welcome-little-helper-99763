@@ -27,7 +27,7 @@ export const blogPosts = [
   {
     id: "cheap-ai-chatbot-startup-founders-smb",
     title: "The Best Cheap AI Chatbot for Startup Founders and Small Businesses (2026)",
-    excerpt: "Why boot-strapped founders and SMB owners are switching to LYQN: an affordable, self-learning 24/7 AI chatbot with WhatsApp integration at $9.99/mo.",
+    excerpt: "Why boot-strapped founders and SMB owners are switching to LYQN: an affordable, self-learning 24/7 AI chatbot with WhatsApp integration at $4.99/mo.",
     date: "2026-08-12",
     author: "LYQN Team",
     tags: ["Startup Founders", "SMBs", "Cheap AI Chatbot", "Productivity"]

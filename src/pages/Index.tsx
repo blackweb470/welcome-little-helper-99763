@@ -339,7 +339,7 @@ const Index = () => {
 
       <main>
         {/* ============== Hero ============== */}
-        <section className="relative overflow-hidden pt-12 md:pt-20 pb-24" style={{ background: "var(--canvas)" }}>
+        <section className="relative overflow-hidden pt-8 md:pt-12 pb-24" style={{ background: "var(--canvas)" }}>
           {/* Botpress-style Colorful Grainy Gradient Shape */}
           <div className="absolute top-1/2 left-[50%] w-[600px] h-[600px] md:w-[800px] md:h-[800px] pointer-events-none" style={{
             background: 'linear-gradient(135deg, #f6e05e 0%, #ed64a6 40%, #805ad5 70%, #68d391 100%)',
@@ -363,9 +363,9 @@ const Index = () => {
               <h1
                 className="font-bold mb-6"
                 style={{
-                  fontSize: "clamp(48px, 8vw, 92px)",
-                  lineHeight: 1.05,
-                  letterSpacing: "-0.04em",
+                  fontSize: "clamp(36px, 4.8vw, 64px)",
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.03em",
                   color: "#111",
                   animation: "cio-fade-up .7s ease .05s both",
                 }}

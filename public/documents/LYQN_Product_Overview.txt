@@ -118,27 +118,15 @@ WHY LYQN IS BETTER THAN COMPETITORS
    • Remembers past interactions with visitors
    • Builds visitor profiles over time
    • Personalizes responses based on history
-   • Never asks the same question twice
-   
-   COMPETITORS: Each conversation starts from scratch
-   LYQN: Long-term memory for personalized experiences
+   - Cross-session memory per customer
+   - Context retained when user switches device
+   - History sync across web and WhatsApp
 
 ================================================================================
-COMPLETE FEATURE LIST
+PLANS & PRICING BREAKDOWN
 ================================================================================
 
-CORE FEATURES (All Plans)
---------------------------------------------------------------------------------
-✓ Self-Learning AI Chatbot
-✓ Conversation Memory
-✓ 24/7 Availability
-✓ Multi-Language Support
-✓ Mobile Responsive Widget
-✓ Real-Time Notifications
-✓ Secure Data Storage (GDPR Compliant)
-✓ Regular Feature Updates
-
-BASIC PLAN ($9.99/month)
+BASIC PLAN ($4.99/month)
 --------------------------------------------------------------------------------
 ✓ 3 Businesses
 ✓ Pre-Chat Forms
@@ -148,7 +136,7 @@ BASIC PLAN ($9.99/month)
 ✓ Chat History
 ✓ 1 Month Free Trial
 
-PRO PLAN ($29.99/month)
+PRO PLAN ($9.99/month)
 --------------------------------------------------------------------------------
 ✓ 10 Businesses
 ✓ Live Agent Transfer
@@ -159,7 +147,7 @@ PRO PLAN ($29.99/month)
 ✓ Product Catalog
 ✓ Priority Support
 
-BUSINESS PLAN ($99.99/month)
+BUSINESS PLAN ($19.99/month)
 --------------------------------------------------------------------------------
 ✓ Unlimited Businesses
 ✓ AI Learning & Documents

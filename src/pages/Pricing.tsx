@@ -47,7 +47,7 @@ const Pricing = () => {
   const plans = [
     {
       name: "Basic",
-      price: 9.99,
+      price: 4.99,
       productId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
       description: "Perfect for getting started",
       icon: Star,
@@ -70,7 +70,7 @@ const Pricing = () => {
     },
     {
       name: "Pro",
-      price: 29.99,
+      price: 9.99,
       productId: "65495367-3163-49af-9ae4-0c3e740d332a",
       description: "For professional teams",
       icon: Zap,
@@ -92,7 +92,7 @@ const Pricing = () => {
     },
     {
       name: "Business",
-      price: 99.99,
+      price: 19.99,
       productId: "495da580-72e9-4fb9-a706-b098921df542",
       description: "For growing organizations",
       icon: Building2,
