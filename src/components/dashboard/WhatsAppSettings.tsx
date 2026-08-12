@@ -502,9 +502,9 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
                     <Zap className="h-8 w-8 text-primary animate-pulse" />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-lg font-semibold">Option A: Meta OAuth Embedded Signup</h4>
+                    <h4 className="text-lg font-semibold">1-Click WhatsApp Onboarding</h4>
                     <p className="text-xs text-muted-foreground max-w-xs">
-                      Automatically connect your WABA ID and Phone number via official Meta Facebook SDK login.
+                      Connect your WhatsApp Business Account in 1 click via official Meta login.
                     </p>
                   </div>
                   
@@ -512,30 +512,16 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
                     <Button 
                       size="lg" 
                       onClick={launchMetaSignup} 
-                      disabled={connecting || sdkStatus === 'loading'}
+                      disabled={connecting}
                       className="w-full shadow-lg shadow-primary/20 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 transition-all hover:scale-105"
                     >
-                      {connecting || sdkStatus === 'loading' ? (
+                      {connecting ? (
                         <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
                         <Zap className="h-5 w-5 fill-current" />
                       )}
-                      {connecting ? "Connecting..." : sdkStatus === 'loading' ? "Initializing SDK..." : "Connect Meta WhatsApp"}
+                      {connecting ? "Connecting..." : "Connect Meta WhatsApp"}
                     </Button>
-                    {sdkStatus === 'loading' && (
-                      <p className="text-[10px] text-muted-foreground animate-pulse">
-                        Loading Meta developer tools...
-                      </p>
-                    )}
-                    {sdkStatus === 'error' && (
-                      <p className="text-[10px] text-destructive flex items-center gap-1 justify-center">
-                        <AlertCircle className="h-3 w-3" />
-                        SDK failed to load. Disable ad-blockers and refresh.
-                      </p>
-                    )}
-                    <p className="text-[11px] text-muted-foreground pt-2">
-                      💡 <em>Testing on a new domain/localhost? Ensure your domain is listed in Meta App Dashboard &gt; WhatsApp &gt; Configuration &gt; Allowed Domains for JS SDK.</em>
-                    </p>
                   </div>
                 </div>
 
