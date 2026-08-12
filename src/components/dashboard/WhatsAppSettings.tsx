@@ -488,6 +488,9 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
                         SDK failed to load. Disable ad-blockers and refresh.
                       </p>
                     )}
+                    <p className="text-[11px] text-muted-foreground pt-2">
+                      💡 <em>Testing on a new domain/localhost? Ensure your domain is listed in Meta App Dashboard &gt; WhatsApp &gt; Configuration &gt; Allowed Domains for JS SDK.</em>
+                    </p>
                   </div>
                 </div>
 
