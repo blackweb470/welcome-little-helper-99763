@@ -431,7 +431,8 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Add fallback instruction for when AI can't find answers
+    // Add strict business scope guardrails & fallback instructions
+    systemPrompt += '\n\nSTRICT BUSINESS SCOPE & GUARDRAILS: You are an AI assistant representing THIS specific business ONLY. You MUST NOT answer off-topic, general knowledge, trivia, existential, or non-business questions (such as "when will the world end?", "who won the game?", "write a poem", "solve my math problem"). If the visitor asks any question that is not directly related to this business, its products, services, pricing, or support, YOU MUST POLITELY DECLINE by stating: "I am an AI assistant for this business and can only answer questions related to our business, products, services, and support. How can I help you with our offerings today?"';
     systemPrompt += '\n\nIMPORTANT: If you cannot find the exact answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, YOU MUST NOT GUESS. Politely let them know you do not have that specific information and offer to connect them with a human agent who can assist further.';
 
     // Call AI

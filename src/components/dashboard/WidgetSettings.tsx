@@ -19,7 +19,7 @@ const WidgetSettings = ({ businessId }: WidgetSettingsProps) => {
     widget_position: 'bottom-right',
     welcome_message: 'Hi! How can I help you today?',
     agent_name: 'AI Assistant',
-    system_prompt: 'You are a helpful AI assistant for a business. Be professional, friendly, and concise.',
+    system_prompt: 'You are a professional AI customer support assistant for this business. You strictly answer questions related to our business, products, services, pricing, and support. Do NOT answer off-topic, general knowledge, or existential questions (e.g., "when will the world end?"). If asked an off-topic question, politely explain that you can only assist with business-related inquiries.',
     pre_chat_enabled: true,
     pre_chat_required_fields: ['name', 'email'],
     pre_chat_welcome_message: 'Please tell us a bit about yourself before we start the conversation.',

@@ -840,7 +840,8 @@ Deno.serve(async (req) => {
       systemPrompt += '- Output strictly PLAIN TEXT only.\n';
       systemPrompt += '- Use standard emojis strategically, but keep spacing clean.\n';
       systemPrompt += '- Keep responses concise and mobile-friendly.\n';
-      systemPrompt += '\nIf you cannot answer the user question or they ask for human help, suggest that they speak to an agent. In your response, if you determine you cannot help, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
+      systemPrompt += '\n\nSTRICT BUSINESS SCOPE & GUARDRAILS: You are an AI assistant representing THIS specific business ONLY. You MUST NOT answer off-topic, general knowledge, trivia, existential, or non-business questions (such as "when will the world end?", "who won the game?", "write a poem", "solve my math problem"). If the visitor asks any question that is not directly related to this business, its products, services, pricing, or support, YOU MUST POLITELY DECLINE by stating plain text without markdown: "I am an AI assistant for this business and can only answer questions related to our business, products, services, and support. How can I help you today?"';
+      systemPrompt += '\n\nIf you cannot answer the user question or they ask for human help, suggest that they speak to an agent. In your response, if you determine you cannot help, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
 
       if (relevantChunks) {
         systemPrompt += '\n\nRelevant Business Knowledge:\n\n' + relevantChunks;
