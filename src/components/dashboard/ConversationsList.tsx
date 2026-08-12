@@ -11,21 +11,54 @@ import { AIAssist } from "./AIAssist";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, X, MessageSquare, MessageCircle } from "lucide-react";
+import { Search, Filter, X, MessageSquare, MessageCircle, Mail, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface ConversationsListProps {
   businessId: string;
 }
 
 export const ConversationsList = ({ businessId }: ConversationsListProps) => {
+  const { toast } = useToast();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sentimentFilter, setSentimentFilter] = useState<string>("all");
   const [channelFilter, setChannelFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const handleSendFollowUpEmail = async (visitorEmail: string) => {
+    try {
+      setSendingEmail(true);
+      const { data, error } = await supabase.functions.invoke('send-notification', {
+        body: {
+          type: 'visitor_welcome',
+          businessId: businessId,
+          data: {
+            visitorEmail: visitorEmail,
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Follow-up Email Sent!",
+        description: `Introductory email sent to ${visitorEmail} asking what they'd like to know about LYQN.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Could not send email",
+        description: err.message || "Failed to trigger notification service.",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
   
   const { data: conversations, isLoading } = useQuery({
     queryKey: ['conversations', businessId, searchQuery, statusFilter, sentimentFilter, channelFilter],
@@ -293,6 +326,32 @@ export const ConversationsList = ({ businessId }: ConversationsListProps) => {
           {selectedConversation && (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-4">
+                {(() => {
+                  const currentConv = conversations?.find(c => c.id === selectedConversation);
+                  const email = currentConv?.visitor_email;
+                  return (
+                    <div className="p-4 border rounded-xl bg-primary/5 flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-1">Visitor Email</div>
+                        <div className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-primary" /> {email || "No email provided by visitor"}
+                        </div>
+                      </div>
+                      {email && (
+                        <Button
+                          size="sm"
+                          disabled={sendingEmail}
+                          onClick={() => handleSendFollowUpEmail(email)}
+                          className="bg-primary text-primary-foreground hover:opacity-90 flex items-center gap-2"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          {sendingEmail ? "Sending..." : "Send LYQN Follow-up Email"}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <VisitorContext conversationId={selectedConversation} />
                 
                 <Card>
