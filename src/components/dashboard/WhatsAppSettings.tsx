@@ -145,7 +145,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
           .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method, verify_token')
           .eq('business_id', businessId)
           .maybeSingle();
-        data = fallback.data;
+        data = fallback.data as any;
       }
       
       setSettings(data);
