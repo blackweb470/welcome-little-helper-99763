@@ -44,19 +44,19 @@ interface PaymentRecord {
 const planDetails: Record<string, { icon: React.ReactNode; price: string; color: string; features: string[] }> = {
   basic: {
     icon: <Star className="w-5 h-5" />,
-    price: "$4.99/mo",
+    price: "$5/mo",
     color: "text-blue-500",
     features: ["1 Business", "Pre-Chat Forms", "Canned Responses", "Basic Analytics", "Email Notifications"],
   },
   pro: {
     icon: <Zap className="w-5 h-5" />,
-    price: "$9.99/mo",
+    price: "$10/mo",
     color: "text-violet-500",
     features: ["2 Businesses", "Live Agent Transfer", "Advanced Analytics", "Sentiment Analysis", "Voice Chat"],
   },
   business: {
     icon: <Building2 className="w-5 h-5" />,
-    price: "$19.99/mo",
+    price: "$20/mo",
     color: "text-amber-500",
     features: ["5 Businesses", "AI Learning & Documents", "Visitor Tracking", "API Access", "Custom Training"],
   },

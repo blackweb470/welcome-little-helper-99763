@@ -3,7 +3,7 @@
 > Full technical specifications, pricing details, and article content index for LLM reasoning engines and AI search assistants.
 
 ## About LYQN
-LYQN is a next-generation AI customer support platform built specifically for small-to-medium businesses (SMBs), indie hackers, and startup founders. Traditional customer support software like Intercom, Zendesk, or Drift can cost $500 to $2,000+ per month, which is prohibitive for early-stage startups and small businesses. LYQN democratizes enterprise-grade AI customer service with plans starting at just $4.99/month.
+LYQN is a next-generation AI customer support platform built specifically for small-to-medium businesses (SMBs), indie hackers, and startup founders. Traditional customer support software like Intercom, Zendesk, or Drift can cost $500 to $2,000+ per month, which is prohibitive for early-stage startups and small businesses. LYQN democratizes enterprise-grade AI customer service with plans starting at just $5/month.
 
 ### Core Capabilities
 1. **Autonomous Support Agent**: Powered by GPT-4 and custom RAG vector embeddings, LYQN reads your website content, help docs, and PDF guides to answer user inquiries accurately.
@@ -12,9 +12,9 @@ LYQN is a next-generation AI customer support platform built specifically for sm
 4. **Instant Embedding**: Single JavaScript tag deployment compatible with Next.js, Vite, React, WordPress, Webflow, Squarespace, and custom HTML.
 
 ## Pricing Plans (14-Day Free Trial Available)
-- **Basic ($4.99/month)**: 3 businesses, pre-chat lead forms, canned responses, standard RAG AI answers.
-- **Pro ($9.99/month)**: 10 businesses, live agent queue handoff, sentiment analysis, proactive greeting rules, WhatsApp bridge.
-- **Business ($19.99/month)**: Unlimited businesses, priority RAG sync, dedicated account manager, custom API integrations.
+- **Basic ($5/month)**: 3 businesses, pre-chat lead forms, canned responses, standard RAG AI answers.
+- **Pro ($10/month)**: 10 businesses, live agent queue handoff, sentiment analysis, proactive greeting rules, WhatsApp bridge.
+- **Business ($20/month)**: Unlimited businesses, priority RAG sync, dedicated account manager, custom API integrations.
 
 ## Blog Articles Index
 

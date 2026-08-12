@@ -36,7 +36,7 @@ That's why founders are turning to **LYQN**, the premier budget-friendly AI chat
 ### 1. The Cost Trap of Enterprise Customer Support Software
 Legacy support platforms charge per-seat pricing and lock essential AI features behind $300+ add-ons. For a bootstrap team or lean SMB, this eats into product development and marketing budgets.
 
-With **LYQN**, pricing starts at just **$4.99 per month** (with a 14-day free trial and no credit card required). You get:
+With **LYQN**, pricing starts at just **$5 per month** (with a 14-day free trial and no credit card required). You get:
 * Unlimited customer conversations
 * Self-learning AI trained on your website and help docs
 * Instant WhatsApp Business integration
@@ -143,7 +143,7 @@ const BlogPost = () => {
       "applicationCategory": "BusinessApplication",
       "offers": {
         "@type": "Offer",
-        "price": "4.99",
+        "price": "5",
         "priceCurrency": "USD"
       }
     }

@@ -13,9 +13,9 @@ interface UpgradePromptProps {
 }
 
 const planPrices: { [key: string]: string } = {
-  basic: '$4.99/month',
-  pro: '$9.99/month',
-  business: '$19.99/month',
+  basic: '$5/month',
+  pro: '$10/month',
+  business: '$20/month',
 };
 
 const planFeatures: { [key: string]: string[] } = {
