@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
 import { SEO } from "@/components/SEO";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Search, 
   Home, 
@@ -20,23 +21,79 @@ import {
   Settings,
   Code,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  Globe,
+  Layers,
+  Terminal,
+  ArrowRight,
+  ArrowLeft
 } from "lucide-react";
 
-const docSections = [
+interface DocItem {
+  label: string;
+  id: string;
+  badge?: string;
+}
+
+interface DocSection {
+  title: string;
+  icon: any;
+  items: DocItem[];
+}
+
+const docSections: DocSection[] = [
   {
     title: "Getting Started",
     icon: Home,
     items: [
       { label: "Introduction", id: "introduction" },
-      { label: "Quick Start", id: "quickstart" },
+      { label: "Quick Start (2 Mins)", id: "quickstart", badge: "Fast" },
     ]
   },
   {
-    title: "Advanced Features",
-    icon: Settings,
+    title: "Widget & Integration",
+    icon: Code,
     items: [
-      { label: "Business Documents", id: "business-documents" },
+      { label: "1-Line Embed Script", id: "embed-script" },
+      { label: "Widget Customisation", id: "widget-customisation" },
+      { label: "Pre-Chat Forms & Leads", id: "pre-chat-forms" },
+    ]
+  },
+  {
+    title: "AI Knowledge Base (RAG)",
+    icon: Bot,
+    items: [
+      { label: "Website Scraping", id: "website-scraping" },
+      { label: "Business Documents (PDF/Docs)", id: "business-documents" },
+      { label: "System Prompts & Memory", id: "ai-memory" },
+    ]
+  },
+  {
+    title: "Omnichannel & WhatsApp",
+    icon: MessageSquare,
+    items: [
+      { label: "WhatsApp Business Bridge", id: "whatsapp-bridge", badge: "Popular" },
+      { label: "Unified Inbox Setup", id: "unified-inbox" },
+    ]
+  },
+  {
+    title: "Live Agent Handoff",
+    icon: Users,
+    items: [
+      { label: "Routing & Escalation Rules", id: "escalation-rules" },
+      { label: "Sentiment Triggers", id: "sentiment-triggers" },
+    ]
+  },
+  {
+    title: "Developer API & Webhooks",
+    icon: Terminal,
+    items: [
+      { label: "REST API Reference", id: "api-reference" },
+      { label: "Webhook Events", id: "webhooks" },
     ]
   }
 ];
@@ -44,6 +101,12 @@ const docSections = [
 export default function NewDocumentation() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSection, setActiveSection] = useState("introduction");
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"html" | "react" | "next">("html");
+  const [feedbackGiven, setFeedbackGiven] = useState<"yes" | "no" | null>(null);
+
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const els = document.querySelectorAll(".cio-reveal");
@@ -62,86 +125,134 @@ export default function NewDocumentation() {
     return () => io.disconnect();
   }, []);
 
+  const handleCopy = (code: string, id: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(id);
+    toast({
+      title: "Code Copied!",
+      description: "Snippet copied to clipboard.",
+    });
+    setTimeout(() => setCopiedCode(null), 3000);
+  };
+
+  const handleFeedback = (type: "yes" | "no") => {
+    setFeedbackGiven(type);
+    toast({
+      title: "Thank you!",
+      description: type === "yes" ? "Glad this documentation helped." : "We'll work on improving this guide.",
+    });
+  };
+
+  // Flattened items for Next/Prev pagination
+  const allDocItems = docSections.flatMap(s => s.items);
+  const currentIndex = allDocItems.findIndex(item => item.id === activeSection);
+  const prevItem = currentIndex > 0 ? allDocItems[currentIndex - 1] : null;
+  const nextItem = currentIndex < allDocItems.length - 1 ? allDocItems[currentIndex + 1] : null;
+
+  const filteredSections = docSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => 
+      item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      section.title.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(section => section.items.length > 0);
+
   return (
-    <div className="min-h-screen font-sans" style={{ background: "#fcfcfc" }}>
+    <div className="min-h-screen font-sans text-[#111]" style={{ background: "var(--canvas)" }}>
       <style dangerouslySetInnerHTML={{__html: `
-        .cio-reveal { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
+        .cio-reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
         .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }
-        .prose-custom p { font-size: 1.125rem; line-height: 1.7; color: #6b7280; margin-bottom: 1.5rem; }
-        .prose-custom h1 { font-size: 2.5rem; font-weight: 700; color: #111; letter-spacing: -0.03em; margin-bottom: 1rem; line-height: 1.1; }
-        .prose-custom h2 { font-size: 1.875rem; font-weight: 700; color: #111; letter-spacing: -0.02em; margin-top: 3rem; margin-bottom: 1rem; }
-        .prose-custom h3 { font-size: 1.25rem; font-weight: 600; color: #111; margin-top: 2rem; margin-bottom: 0.75rem; }
-        .prose-custom ul { padding-left: 1.5rem; list-style-type: disc; margin-bottom: 1.5rem; color: #6b7280; }
-        .prose-custom li { margin-bottom: 0.5rem; font-size: 1.125rem; }
-        .prose-custom strong { font-weight: 600; color: #111; }
       `}} />
       <SEO 
-        title="LYQN Documentation: Guides, API & Setup" 
-        description="Learn how to install, configure, and maximize the LYQN AI chatbot. Comprehensive developer guides, API references, and quick start tutorials."
+        title="LYQN Documentation: Developer Guides, Setup & API Reference" 
+        description="Official documentation for LYQN AI chatbot platform. Learn 1-line script embedding, RAG document indexing, WhatsApp setup, and REST API."
         url="https://lyqn.app/docs"
       />
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl border-b border-gray-100">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-10">
-            <Link to="/" className="text-2xl font-bold tracking-tighter text-[#111] hover:opacity-80 transition-opacity">
-              LYQN
+
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-gray-200/80 shadow-xs">
+        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-xl font-bold tracking-tight text-[#111] flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <span className="bg-[#111] text-white w-7 h-7 rounded-lg font-mono text-sm font-bold flex items-center justify-center">L</span>
+              LYQN <span className="text-xs font-mono font-medium bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full text-gray-600">Docs v2.4</span>
             </Link>
           </div>
+
           <div className="flex items-center gap-4">
+            <div className="relative hidden md:block w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search docs... (⌘K)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-1.5 text-xs bg-gray-100/80 border border-gray-200/80 rounded-full focus:outline-none focus:ring-2 focus:ring-[#111]/20 transition-all text-gray-800"
+              />
+            </div>
+
             <Link 
               to="/dashboard"
-              className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors hidden sm:block mr-4"
+              className="text-xs font-semibold text-gray-700 hover:text-black transition-colors hidden sm:block"
             >
               Dashboard
             </Link>
             <Link 
-              to="/dashboard"
-              className="bg-[#111] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-black/80 transition-colors shadow-sm"
+              to="/auth"
+              className="bg-[#111] text-white px-4 py-2 rounded-full text-xs font-semibold hover:bg-black/80 transition-colors shadow-sm flex items-center gap-1.5"
             >
-              <span className="flex items-center gap-2">
-                <Home className="w-4 h-4" /> Go to App
-              </span>
+              Start Free Trial <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </header>
 
+      {/* Docs Body Container */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-[280px_1fr] xl:grid-cols-[300px_1fr_250px] gap-8 xl:gap-16">
+        <div className="grid lg:grid-cols-[260px_1fr] xl:grid-cols-[260px_1fr_220px] gap-8 lg:gap-12">
+          
           {/* Left Sidebar - Navigation */}
           <aside className="hidden lg:block">
-            <div className="sticky top-28 space-y-6">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search documentation..."
+            <div className="sticky top-24 space-y-6">
+              <div className="relative md:hidden mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search docs..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-white border-gray-200 rounded-2xl h-12 focus-visible:ring-1 focus-visible:ring-gray-300"
+                  className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-gray-200 rounded-full"
                 />
               </div>
-              
-              <ScrollArea className="h-[calc(100vh-220px)] pr-4">
-                <nav className="space-y-8 pb-10">
-                  {docSections.map((section) => (
-                    <div key={section.title} className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-[#111] uppercase tracking-wider">
-                        <section.icon className="h-4 w-4" />
+
+              <ScrollArea className="h-[calc(100vh-140px)] pr-3">
+                <nav className="space-y-6 pb-12">
+                  {filteredSections.map((section) => (
+                    <div key={section.title} className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-gray-900 uppercase tracking-wider px-2">
+                        <section.icon className="h-3.5 w-3.5 text-gray-500" />
                         {section.title}
                       </div>
-                      <ul className="space-y-1.5 ml-6 border-l border-gray-100 pl-4">
+                      <ul className="space-y-1 border-l-2 border-gray-100 ml-3.5 pl-3">
                         {section.items.map((item) => (
                           <li key={item.id}>
                             <button
-                              onClick={() => setActiveSection(item.id)}
-                              className={`text-[15px] w-full text-left py-1.5 transition-colors ${
+                              onClick={() => {
+                                setActiveSection(item.id);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                              className={`text-xs w-full text-left py-1.5 px-2 rounded-lg transition-all flex items-center justify-between ${
                                 activeSection === item.id
-                                  ? "text-blue-600 font-semibold"
-                                  : "text-gray-500 hover:text-[#111]"
+                                  ? "text-[#111] font-bold bg-gray-200/60 border-l-2 border-[#111] -ml-[15px] pl-[13px]"
+                                  : "text-gray-600 hover:text-[#111] hover:bg-gray-100/50"
                               }`}
                             >
-                              {item.label}
+                              <span>{item.label}</span>
+                              {item.badge && (
+                                <span className="text-[10px] font-mono uppercase bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-semibold">
+                                  {item.badge}
+                                </span>
+                              )}
                             </button>
                           </li>
                         ))}
@@ -153,253 +264,380 @@ export default function NewDocumentation() {
             </div>
           </aside>
 
-          {/* Main Content */}
-          <main className="min-w-0 pb-20 pt-4">
-            <div className="prose-custom max-w-none cio-reveal">
-              {/* Introduction */}
+          {/* Main Content Area */}
+          <main className="min-w-0 pb-20 pt-2">
+            <div className="cio-reveal max-w-3xl">
+              
+              {/* SECTION 1: INTRODUCTION */}
               {activeSection === "introduction" && (
-                <section id="introduction">
-                  <div className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-widest">
+                <section>
+                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     <span>Getting Started</span>
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-[#111]">Introduction</span>
-                  </div>
-                  <h1>Introduction to LYQN</h1>
-                  <p className="text-xl">
-                    LYQN is a comprehensive AI-powered customer engagement platform designed to help businesses provide exceptional support through intelligent chatbots and seamless human handoff.
-                  </p>
-                  
-                  <div className="grid sm:grid-cols-2 gap-6 mt-12 mb-12">
-                    <div className="p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
-                        <Bot className="h-6 w-6" />
-                      </div>
-                      <h3 className="font-bold text-xl mb-3 text-[#111] tracking-tight">AI-Powered</h3>
-                      <p className="text-gray-500 text-[15px] leading-relaxed">
-                        Intelligent chatbot that learns from your business documents and past conversations.
-                      </p>
-                    </div>
-                    <div className="p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-6">
-                        <Users className="h-6 w-6" />
-                      </div>
-                      <h3 className="font-bold text-xl mb-3 text-[#111] tracking-tight">Live Agent Ready</h3>
-                      <p className="text-gray-500 text-[15px] leading-relaxed">
-                        Seamless handoff to human agents when AI can't handle complex queries.
-                      </p>
-                    </div>
-                    <div className="p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-6">
-                        <BarChart3 className="h-6 w-6" />
-                      </div>
-                      <h3 className="font-bold text-xl mb-3 text-[#111] tracking-tight">Real-Time Analytics</h3>
-                      <p className="text-gray-500 text-[15px] leading-relaxed">
-                        Track conversations, sentiment, and behavioral patterns in real-time.
-                      </p>
-                    </div>
-                    <div className="p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all">
-                      <div className="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-6">
-                        <Bell className="h-6 w-6" />
-                      </div>
-                      <h3 className="font-bold text-xl mb-3 text-[#111] tracking-tight">Proactive Engagement</h3>
-                      <p className="text-gray-500 text-[15px] leading-relaxed">
-                        Trigger automated messages based on visitor behavior and engagement.
-                      </p>
-                    </div>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-[#111] font-bold">Introduction</span>
                   </div>
 
-                  <div className="mt-12 p-8 bg-white border border-gray-100 rounded-3xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                      <h3 className="font-bold text-xl mb-2 text-[#111] tracking-tight">🚀 Quick Start</h3>
-                      <p className="text-gray-500 mb-0 text-[15px]">
-                        Get started with LYQN in less than 5 minutes by following our quick start guide.
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111] mb-4">
+                    LYQN AI Platform Overview
+                  </h1>
+                  <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-8">
+                    LYQN is an autonomous AI customer support platform built for startup founders and SMBs. It operates 24/7, ingests your business documentation with Retrieval-Augmented Generation (RAG), and bridges directly into WhatsApp.
+                  </p>
+
+                  <div className="grid sm:grid-cols-2 gap-4 mb-10">
+                    <div className="p-6 bg-white border border-gray-200/80 rounded-2xl shadow-xs hover:border-gray-300 transition-all">
+                      <Bot className="h-6 w-6 text-blue-600 mb-3" />
+                      <h3 className="font-bold text-base text-[#111] mb-1">0-Hallucination RAG</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Learns strictly from your uploaded PDFs, FAQs, and URLs to give factual replies.
                       </p>
                     </div>
-                    <button 
-                      onClick={() => setActiveSection("quickstart")} 
-                      className="bg-[#111] text-white px-6 py-3 rounded-full font-semibold hover:bg-black/80 transition-colors whitespace-nowrap flex items-center gap-2"
-                    >
-                      Start Tutorial <ChevronRight className="h-4 w-4" />
-                    </button>
+                    <div className="p-6 bg-white border border-gray-200/80 rounded-2xl shadow-xs hover:border-gray-300 transition-all">
+                      <MessageSquare className="h-6 w-6 text-green-600 mb-3" />
+                      <h3 className="font-bold text-base text-[#111] mb-1">WhatsApp Bridge</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Transition visitors from website chat to WhatsApp Business seamlessly.
+                      </p>
+                    </div>
+                    <div className="p-6 bg-white border border-gray-200/80 rounded-2xl shadow-xs hover:border-gray-300 transition-all">
+                      <Users className="h-6 w-6 text-purple-600 mb-3" />
+                      <h3 className="font-bold text-base text-[#111] mb-1">Live Queue Handoff</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Smart human escalation passes full transcript summaries to live agents.
+                      </p>
+                    </div>
+                    <div className="p-6 bg-white border border-gray-200/80 rounded-2xl shadow-xs hover:border-gray-300 transition-all">
+                      <Code className="h-6 w-6 text-orange-600 mb-3" />
+                      <h3 className="font-bold text-base text-[#111] mb-1">2-Min 1-Line Embed</h3>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Paste a single JavaScript snippet on React, Next.js, WordPress, or HTML.
+                      </p>
+                    </div>
                   </div>
                 </section>
               )}
 
-              {/* Quick Start */}
+              {/* SECTION 2: QUICK START */}
               {activeSection === "quickstart" && (
-                <section id="quickstart">
-                  <div className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-widest">
+                <section>
+                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     <span>Getting Started</span>
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-[#111]">Quick Start</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-[#111] font-bold">Quick Start</span>
                   </div>
-                  <h1>Quick Start Guide</h1>
-                  <p>
-                    Follow these steps to get LYQN up and running on your website.
+
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111] mb-4">
+                    Quick Start Guide
+                  </h1>
+                  <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-8">
+                    Get your AI chatbot live on your site in under 2 minutes. Follow these 3 simple steps:
                   </p>
 
-                  <div className="w-full h-px bg-gray-200 my-10"></div>
+                  <div className="space-y-8 mb-10">
+                    <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="w-7 h-7 rounded-full bg-[#111] text-white font-bold text-xs flex items-center justify-center">1</span>
+                        <h3 className="font-bold text-lg text-[#111]">Create Your Workspace</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Sign up at <Link to="/auth" className="text-blue-600 font-semibold underline">lyqn.app/auth</Link> and enter your business name and primary domain.
+                      </p>
+                    </div>
 
-                  <h2>Step 1: Create Your Business</h2>
-                  <p>Navigate to the Dashboard and create your first business profile. This will be your main workspace.</p>
-                  <div className="p-5 bg-white border border-gray-200 rounded-2xl mt-4 font-mono text-[14px] text-gray-800 shadow-sm">
-                    Dashboard → Businesses → Create New Business
+                    <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="w-7 h-7 rounded-full bg-[#111] text-white font-bold text-xs flex items-center justify-center">2</span>
+                        <h3 className="font-bold text-lg text-[#111]">Train Your AI Agent</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Paste your website URL or upload your product FAQ PDF. LYQN's vector crawler will index your knowledge in seconds.
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="w-7 h-7 rounded-full bg-[#111] text-white font-bold text-xs flex items-center justify-center">3</span>
+                        <h3 className="font-bold text-lg text-[#111]">Paste the Script Tag</h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Copy your script tag from Dashboard → Embed and paste it before the closing <code className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">&lt;/body&gt;</code> tag.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* SECTION 3: 1-LINE EMBED SCRIPT */}
+              {activeSection === "embed-script" && (
+                <section>
+                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <span>Widget & Integration</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-[#111] font-bold">1-Line Embed Script</span>
                   </div>
 
-                  <h2>Step 2: Configure Widget Settings</h2>
-                  <p>Customize your chat widget's appearance and behavior:</p>
-                  <ul>
-                    <li><strong>Primary Color:</strong> Match your brand colors</li>
-                    <li><strong>Welcome Message:</strong> First message visitors see</li>
-                    <li><strong>System Prompt:</strong> Define your AI's personality</li>
-                    <li><strong>Voice Features:</strong> Enable voice input/output</li>
-                  </ul>
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111] mb-4">
+                    Script Integration Code
+                  </h1>
+                  <p className="text-base text-gray-600 mb-6">
+                    Embed the LYQN chat widget into any website framework. Select your framework snippet below:
+                  </p>
 
-                  <h2>Step 3: Upload Business Documents</h2>
-                  <p>Upload your business documents so the AI can learn about your products and services. The AI will automatically extract knowledge from:</p>
-                  <ul>
-                    <li>Product catalogs and specifications</li>
-                    <li>FAQs and knowledge base articles</li>
-                    <li>Company policies and procedures</li>
-                    <li>Training materials and guides</li>
-                  </ul>
-                  <div className="p-6 border border-blue-100 bg-blue-50/50 rounded-2xl mt-6">
-                    <p className="text-[15px] text-blue-800 mb-0 font-medium"><strong>💡 Pro Tip:</strong> Your uploaded documents are automatically learned by the AI and used to provide accurate, contextual responses to customer queries.</p>
-                  </div>
+                  {/* Code Snippet Tabs */}
+                  <div className="bg-[#111] rounded-2xl overflow-hidden shadow-lg border border-gray-800 mb-8">
+                    <div className="flex items-center justify-between bg-black/50 px-4 py-3 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setActiveTab("html")}
+                          className={`text-xs font-mono px-3 py-1 rounded-md transition-all ${
+                            activeTab === "html" ? "bg-white/20 text-white font-bold" : "text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          HTML / Script
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("react")}
+                          className={`text-xs font-mono px-3 py-1 rounded-md transition-all ${
+                            activeTab === "react" ? "bg-white/20 text-white font-bold" : "text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          React / Vite
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("next")}
+                          className={`text-xs font-mono px-3 py-1 rounded-md transition-all ${
+                            activeTab === "next" ? "bg-white/20 text-white font-bold" : "text-gray-400 hover:text-white"
+                          }`}
+                        >
+                          Next.js App Router
+                        </button>
+                      </div>
 
-                  <h2>Step 4: Install Widget</h2>
-                  <p>Add the widget to your website by copying the embed code from Settings:</p>
-                  <pre className="p-6 bg-[#111] text-gray-200 rounded-2xl mt-6 overflow-x-auto text-[14px] font-mono leading-relaxed shadow-lg">
-{`<script>
-  (function() {
-    // LYQN Chat Widget
-    var script = document.createElement('script');
+                      <button
+                        onClick={() => {
+                          const codeToCopy =
+                            activeTab === "html"
+                              ? `<script src="https://lyqn.app/widget.js" data-business-id="YOUR_BUSINESS_ID" async></script>`
+                              : activeTab === "react"
+                              ? `useEffect(() => {\n  const s = document.createElement('script');\n  s.src = 'https://lyqn.app/widget.js';\n  s.setAttribute('data-business-id', 'YOUR_BUSINESS_ID');\n  document.body.appendChild(s);\n}, []);`
+                              : `import Script from 'next/script';\n\n<Script src="https://lyqn.app/widget.js" data-business-id="YOUR_BUSINESS_ID" strategy="lazyOnload" />`;
+                          handleCopy(codeToCopy, activeTab);
+                        }}
+                        className="flex items-center gap-1.5 text-xs text-gray-300 hover:text-white bg-white/10 px-3 py-1 rounded-full transition-all"
+                      >
+                        {copiedCode === activeTab ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedCode === activeTab ? "Copied" : "Copy Code"}
+                      </button>
+                    </div>
+
+                    <pre className="p-6 text-gray-200 font-mono text-xs sm:text-sm overflow-x-auto leading-relaxed">
+                      {activeTab === "html" && (
+                        <code>{`<!-- LYQN AI Chatbot Embed -->
+<script 
+  src="https://lyqn.app/widget.js" 
+  data-business-id="YOUR_BUSINESS_ID" 
+  async
+></script>`}</code>
+                      )}
+                      {activeTab === "react" && (
+                        <code>{`import { useEffect } from 'react';
+
+export default function App() {
+  useEffect(() => {
+    const script = document.createElement('script');
     script.src = 'https://lyqn.app/widget.js';
+    script.setAttribute('data-business-id', 'YOUR_BUSINESS_ID');
+    script.async = true;
     document.body.appendChild(script);
-  })();
-</script>`}
-                  </pre>
+  }, []);
 
-                  <h2>Step 5: Test & Launch</h2>
-                  <p>Visit your website to test the widget. Make sure to:</p>
-                  <ul>
-                    <li>Test AI responses with common questions</li>
-                    <li>Verify the widget appearance matches your brand</li>
-                    <li>Try the live agent handoff feature</li>
-                    <li>Check mobile responsiveness</li>
-                  </ul>
+  return <div>Your App Content</div>;
+}`}</code>
+                      )}
+                      {activeTab === "next" && (
+                        <code>{`import Script from 'next/script';
 
-                  <div className="mt-12 flex flex-wrap gap-4 pt-8 border-t border-gray-100">
-                    <button 
-                      onClick={() => setActiveSection("business-documents")}
-                      className="bg-[#111] text-white px-6 py-3 rounded-full font-semibold hover:bg-black/80 transition-colors"
-                    >
-                      Next: Business Documents
-                    </button>
-                    <Link 
-                      to="/dashboard"
-                      className="bg-white text-[#111] border border-gray-200 px-6 py-3 rounded-full font-semibold hover:bg-gray-50 transition-colors"
-                    >
-                      Go to Dashboard
-                    </Link>
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Script 
+          src="https://lyqn.app/widget.js" 
+          data-business-id="YOUR_BUSINESS_ID" 
+          strategy="lazyOnload" 
+        />
+      </body>
+    </html>
+  );
+}`}</code>
+                      )}
+                    </pre>
                   </div>
                 </section>
               )}
 
-              {/* Business Documents */}
+              {/* SECTION 4: BUSINESS DOCUMENTS */}
               {activeSection === "business-documents" && (
-                <section id="business-documents">
-                  <div className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-400 uppercase tracking-widest">
-                    <span>Advanced Features</span>
-                    <ChevronRight className="w-3 h-3" />
-                    <span className="text-[#111]">Business Documents</span>
+                <section>
+                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <span>AI Knowledge Base (RAG)</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-[#111] font-bold">Business Documents</span>
                   </div>
-                  <h1>Business Documents</h1>
-                  <p>
-                    Upload and manage business documents that power your AI assistant's knowledge base.
+
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111] mb-4">
+                    Document RAG Knowledge Base
+                  </h1>
+                  <p className="text-base text-gray-600 mb-6">
+                    Upload your company PDFs, product catalogs, and help guides. LYQN extracts text, generates vector embeddings, and uses RAG for hallucination-free replies.
                   </p>
 
-                  <div className="w-full h-px bg-gray-200 my-10"></div>
-
-                  <h2>How It Works</h2>
-                  <p>When you upload documents to LYQN, our system:</p>
-                  <ol className="list-decimal pl-6 space-y-3 mt-4 mb-8 text-lg text-gray-600 marker:text-gray-400 font-medium">
-                    <li><strong>Extracts content</strong> from your documents (PDFs, Word, Text files)</li>
-                    <li><strong>Generates summaries</strong> using AI to understand key information</li>
-                    <li><strong>Indexes the content</strong> for quick retrieval during conversations</li>
-                    <li><strong>Injects knowledge</strong> into the AI's context when responding to customers</li>
-                  </ol>
-
-                  <div className="p-6 border border-green-100 bg-green-50 rounded-2xl mt-8">
-                    <h3 className="font-bold text-green-800 mt-0 mb-2">✅ Documents Are Learned Automatically</h3>
-                    <p className="text-[15px] text-green-700 mb-0">Your uploaded documents are automatically processed and learned by the AI. The AI will use this knowledge to provide accurate responses about your business, products, and services.</p>
-                  </div>
-
-                  <h2>Supported Formats</h2>
-                  <div className="grid sm:grid-cols-2 gap-4 mt-6">
-                    <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                      <FileText className="h-8 w-8 text-blue-500 mb-4" />
-                      <h3 className="font-bold mt-0 mb-1">Documents</h3>
-                      <p className="text-sm text-gray-500 mb-0">PDF, DOCX, TXT, MD</p>
+                  <div className="grid sm:grid-cols-2 gap-4 mb-8">
+                    <div className="p-5 bg-white border border-gray-200/80 rounded-2xl">
+                      <FileText className="w-6 h-6 text-blue-600 mb-2" />
+                      <h4 className="font-bold text-sm text-[#111]">Document Formats</h4>
+                      <p className="text-xs text-gray-500 mt-1">PDF, DOCX, TXT, MD (Max 20MB per file)</p>
                     </div>
-                    <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                      <Code className="h-8 w-8 text-purple-500 mb-4" />
-                      <h3 className="font-bold mt-0 mb-1">Data Files</h3>
-                      <p className="text-sm text-gray-500 mb-0">JSON, CSV, YAML</p>
+                    <div className="p-5 bg-white border border-gray-200/80 rounded-2xl">
+                      <Globe className="w-6 h-6 text-green-600 mb-2" />
+                      <h4 className="font-bold text-sm text-[#111]">URL Web Scraper</h4>
+                      <p className="text-xs text-gray-500 mt-1">Crawls website pages and documentation links</p>
                     </div>
-                  </div>
-
-                  <h2>Best Practices</h2>
-                  <ul>
-                    <li><strong>Organize by topic:</strong> Upload separate documents for different product lines or services</li>
-                    <li><strong>Keep it updated:</strong> Re-upload documents when information changes</li>
-                    <li><strong>Use clear naming:</strong> Name files descriptively (e.g., "Product-Catalog-2024.pdf")</li>
-                    <li><strong>Size limits:</strong> Maximum 20MB per file</li>
-                  </ul>
-
-                  <div className="mt-12 pt-8 border-t border-gray-100">
-                    <Link 
-                      to="/dashboard?tab=documents"
-                      className="inline-flex items-center gap-2 bg-[#111] text-white px-6 py-3 rounded-full font-semibold hover:bg-black/80 transition-colors"
-                    >
-                      Manage Documents <ExternalLink className="w-4 h-4" />
-                    </Link>
                   </div>
                 </section>
               )}
 
-              {/* No default fallback needed since there are no placeholder sections */}
+              {/* SECTION 5: WHATSAPP BRIDGE */}
+              {activeSection === "whatsapp-bridge" && (
+                <section>
+                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <span>Omnichannel & WhatsApp</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-[#111] font-bold">WhatsApp Business Bridge</span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111] mb-4">
+                    WhatsApp Business Bridge
+                  </h1>
+                  <p className="text-base text-gray-600 mb-6">
+                    Connect your Meta WhatsApp Business API account to automatically receive web leads directly in WhatsApp and reply from a single dashboard.
+                  </p>
+
+                  <div className="bg-white border border-gray-200/80 rounded-2xl p-6 shadow-xs mb-6">
+                    <h3 className="font-bold text-base text-[#111] mb-2">Setup Steps:</h3>
+                    <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-700">
+                      <li>Go to Dashboard → Settings → Integrations.</li>
+                      <li>Enter your Meta Business Phone Number ID and System User Access Token.</li>
+                      <li>Copy the Webhook URL into Meta Developer Console.</li>
+                    </ol>
+                  </div>
+                </section>
+              )}
+
+              {/* FALLBACK FOR OTHER SECTIONS */}
+              {!["introduction", "quickstart", "embed-script", "business-documents", "whatsapp-bridge"].includes(activeSection) && (
+                <section>
+                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <span>Documentation</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span className="text-[#111] font-bold">{activeSection}</span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111] mb-4">
+                    {allDocItems.find(i => i.id === activeSection)?.label || "Guide"}
+                  </h1>
+                  <p className="text-base text-gray-600 mb-8">
+                    Detailed technical reference guide for configuring {activeSection} on the LYQN platform.
+                  </p>
+                  <div className="p-6 bg-white border border-gray-200/80 rounded-2xl text-sm text-gray-600">
+                    Visit your <Link to="/dashboard" className="text-blue-600 font-semibold underline">LYQN Dashboard</Link> to adjust your business settings and live test your widget configurations.
+                  </div>
+                </section>
+              )}
+
+              {/* Navigation Pagination Buttons */}
+              <div className="mt-12 pt-8 border-t border-gray-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                {prevItem ? (
+                  <button
+                    onClick={() => {
+                      setActiveSection(prevItem.id);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="w-full sm:w-auto flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white border border-gray-200 px-4 py-2.5 rounded-full hover:bg-gray-50 transition-all shadow-xs"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-gray-500" /> Previous: {prevItem.label}
+                  </button>
+                ) : <div />}
+
+                {nextItem && (
+                  <button
+                    onClick={() => {
+                      setActiveSection(nextItem.id);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="w-full sm:w-auto flex items-center gap-2 text-xs font-semibold text-white bg-[#111] px-5 py-2.5 rounded-full hover:bg-black/80 transition-all shadow-sm"
+                  >
+                    Next: {nextItem.label} <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Documentation Feedback Widget */}
+              <div className="mt-10 p-6 bg-white border border-gray-200/80 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+                <div className="text-xs font-semibold text-gray-700">Was this documentation page helpful?</div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleFeedback("yes")}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-1.5 rounded-full transition-all border ${
+                      feedbackGiven === "yes" ? "bg-green-100 text-green-800 border-green-300" : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200/60"
+                    }`}
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5" /> Yes
+                  </button>
+                  <button
+                    onClick={() => handleFeedback("no")}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-1.5 rounded-full transition-all border ${
+                      feedbackGiven === "no" ? "bg-red-100 text-red-800 border-red-300" : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200/60"
+                    }`}
+                  >
+                    <ThumbsDown className="w-3.5 h-3.5" /> No
+                  </button>
+                </div>
+              </div>
+
             </div>
           </main>
 
-          {/* Right Sidebar - On This Page (desktop only) */}
+          {/* Right Sidebar - On This Page */}
           <aside className="hidden xl:block">
-            <div className="sticky top-28 space-y-8">
+            <div className="sticky top-24 space-y-6 text-xs">
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">On This Page</h3>
-                <nav className="space-y-3 text-[15px] font-medium text-gray-500">
-                  <a href="#top" className="block hover:text-[#111] transition-colors">Overview</a>
-                  <a href="#installation" className="block hover:text-[#111] transition-colors">Installation</a>
-                  <a href="#configuration" className="block hover:text-[#111] transition-colors">Configuration</a>
-                  <a href="#examples" className="block hover:text-[#111] transition-colors">Examples</a>
-                </nav>
+                <h4 className="font-bold text-gray-900 uppercase tracking-wider mb-3">On This Page</h4>
+                <ul className="space-y-2 text-gray-500 font-medium">
+                  <li><a href="#" className="hover:text-[#111] transition-colors">Overview</a></li>
+                  <li><a href="#" className="hover:text-[#111] transition-colors">Setup & Config</a></li>
+                  <li><a href="#" className="hover:text-[#111] transition-colors">Code Examples</a></li>
+                  <li><a href="#" className="hover:text-[#111] transition-colors">Troubleshooting</a></li>
+                </ul>
               </div>
 
-              <div className="w-12 h-px bg-gray-200"></div>
+              <div className="w-full h-px bg-gray-200/80"></div>
 
               <div>
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-4">Resources</h3>
-                <div className="space-y-3">
-                  <a href="#" className="flex items-center gap-2 text-[14px] font-medium text-gray-500 hover:text-[#111] transition-colors">
-                    <ExternalLink className="h-4 w-4" /> GitHub
+                <h4 className="font-bold text-gray-900 uppercase tracking-wider mb-3">Community & API</h4>
+                <div className="space-y-2.5">
+                  <a href="https://github.com" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-gray-600 hover:text-[#111] transition-colors">
+                    <ExternalLink className="w-3.5 h-3.5" /> GitHub SDK
                   </a>
-                  <a href="#" className="flex items-center gap-2 text-[14px] font-medium text-gray-500 hover:text-[#111] transition-colors">
-                    <ExternalLink className="h-4 w-4" /> API Reference
+                  <a href="#" className="flex items-center gap-2 text-gray-600 hover:text-[#111] transition-colors">
+                    <ExternalLink className="w-3.5 h-3.5" /> REST Spec
                   </a>
                 </div>
               </div>
             </div>
           </aside>
+
         </div>
       </div>
       <LyqnWidgetEmbed />

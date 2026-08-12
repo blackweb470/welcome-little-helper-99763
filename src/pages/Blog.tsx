@@ -79,7 +79,7 @@ const Blog = () => {
   });
 
   return (
-    <div className="min-h-screen font-sans" style={{ background: "#fcfcfc" }}>
+    <div className="min-h-screen font-sans" style={{ background: "var(--canvas)" }}>
       <style dangerouslySetInnerHTML={{__html: `
         .cio-reveal { opacity: 0; transform: translateY(20px); transition: opacity .8s ease, transform .8s ease; }
         .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }

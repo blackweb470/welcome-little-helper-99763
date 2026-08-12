@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
-import { ArrowLeft, Calendar, User, Clock, Share2, CheckCircle2, Zap, ArrowRight, Sparkles, BookOpen, ExternalLink } from "lucide-react";
+import { ArrowLeft, Calendar, User, Clock, Share2, CheckCircle2, Zap, ArrowRight, BookOpen, ExternalLink, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { blogPosts } from "./Blog";
 import { useEffect, useState } from "react";
@@ -25,13 +25,13 @@ const useReveal = () => {
   }, []);
 };
 
-// Summary highlights for each blog post
+// Executive summary takeaways for each post
 const quickSummaries: Record<string, { takeaways: string[]; stats: { label: string; value: string }[] }> = {
   "cheap-ai-chatbot-startup-founders-smb": {
     takeaways: [
       "Legacy support software ($300-$500/mo) is a cost trap for bootstrap startups and SMBs.",
       "LYQN starts at just $5/mo with self-learning RAG AI (GPT-4) trained on your website & docs.",
-      "Omnichannel support connects web chat directly to WhatsApp so visitors never leave hanging."
+      "Omnichannel support connects web chat directly to WhatsApp so visitors are never left hanging."
     ],
     stats: [
       { label: "Starting Price", value: "$5/mo" },
@@ -148,7 +148,7 @@ const BlogPost = () => {
 
   if (!post || !content) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#fcfcfc] font-sans px-6">
+      <div className="min-h-screen flex flex-col items-center justify-center font-sans px-6" style={{ background: "var(--canvas)" }}>
         <h1 className="text-3xl font-bold mb-4 text-[#111]">Article not found</h1>
         <p className="text-gray-500 mb-6">The blog post you are looking for doesn't exist or has moved.</p>
         <button
@@ -207,7 +207,7 @@ const BlogPost = () => {
   });
 
   return (
-    <div className="min-h-screen font-sans bg-[#fafafa] text-[#111]">
+    <div className="min-h-screen font-sans text-[#111]" style={{ background: "var(--canvas)" }}>
       <style dangerouslySetInnerHTML={{__html: `
         .cio-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s cubic-bezier(0.16, 1, 0.3, 1), transform .7s cubic-bezier(0.16, 1, 0.3, 1); }
         .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }
@@ -220,39 +220,39 @@ const BlogPost = () => {
         type="article"
       />
 
-      {/* Sticky Header & Breadcrumbs */}
-      <header className="sticky top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      {/* Sticky Top Header */}
+      <header className="sticky top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-gray-200/60 shadow-sm">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/blog")}
-              className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#111] transition-colors bg-gray-100 hover:bg-gray-200/70 px-3 py-1.5 rounded-full"
+              className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#111] transition-colors bg-gray-100/80 hover:bg-gray-200/80 px-3.5 py-1.5 rounded-full"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Blog
             </button>
             <span className="hidden sm:inline text-gray-300">/</span>
-            <span className="hidden sm:inline text-xs text-gray-400 font-medium truncate max-w-[280px]">
+            <span className="hidden sm:inline text-xs text-gray-500 font-medium truncate max-w-[280px]">
               {post.title}
             </span>
           </div>
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-200/80 px-3.5 py-1.5 rounded-full transition-all"
+            className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 px-3.5 py-1.5 rounded-full transition-all shadow-sm"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Share2 className="w-3.5 h-3.5 text-gray-500" />
             {copied ? "Copied!" : "Share"}
           </button>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-12 md:py-20 max-w-3xl">
+      <main className="container mx-auto px-6 py-10 md:py-16 max-w-3xl">
         {/* Article Meta Header */}
         <div className="cio-reveal mb-10">
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-5">
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="bg-orange-500/10 text-orange-700 border border-orange-500/20 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
+                className="bg-blue-50 text-blue-700 border border-blue-200/60 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full"
               >
                 {tag}
               </span>
@@ -260,16 +260,16 @@ const BlogPost = () => {
           </div>
 
           <h1
-            className="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-[#111] leading-[1.15]"
+            className="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-[#111] leading-[1.12]"
             style={{ letterSpacing: "-0.035em" }}
           >
             {post.title}
           </h1>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-gray-200/80 py-4 font-medium text-sm text-gray-500">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-y border-gray-200/80 py-4 font-medium text-sm text-gray-600">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-gray-800 font-semibold">
-                <div className="w-7 h-7 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+              <div className="flex items-center gap-2.5 text-gray-900 font-semibold">
+                <div className="w-7 h-7 rounded-full bg-[#111] text-white font-bold flex items-center justify-center text-xs shadow-sm">
                   L
                 </div>
                 {post.author}
@@ -280,7 +280,7 @@ const BlogPost = () => {
                 {new Date(post.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-gray-500 bg-gray-100/80 px-3 py-1 rounded-full text-xs font-semibold">
+            <div className="flex items-center gap-1.5 text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-full text-xs font-semibold shadow-xs">
               <Clock className="w-3.5 h-3.5 text-gray-400" />
               3 min read
             </div>
@@ -289,15 +289,14 @@ const BlogPost = () => {
 
         {/* Executive Summary Box */}
         {summary && (
-          <div className="cio-reveal mb-12 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 text-white p-6 md:p-8 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 transform translate-x-6 -translate-y-6 w-32 h-32 bg-orange-500/20 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-2 text-orange-400 text-xs font-bold uppercase tracking-widest mb-3">
-              <Sparkles className="w-4 h-4" /> Quick Founder's Summary
+          <div className="cio-reveal mb-12 rounded-2xl bg-[#111] text-white p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-widest mb-3">
+              <FileText className="w-4 h-4 text-blue-400" /> Quick Founder's Summary
             </div>
             <ul className="space-y-2.5 mb-6 text-gray-200 text-sm md:text-base leading-relaxed">
               {summary.takeaways.map((takeaway, idx) => (
                 <li key={idx} className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                   <span>{takeaway}</span>
                 </li>
               ))}
@@ -315,8 +314,8 @@ const BlogPost = () => {
           </div>
         )}
 
-        {/* Main Article Markdown Content */}
-        <article className="cio-reveal bg-white rounded-3xl p-6 md:p-12 border border-gray-200/70 shadow-sm mb-12">
+        {/* Main Article Content Card */}
+        <article className="cio-reveal bg-white rounded-3xl p-6 md:p-12 border border-gray-200/80 shadow-sm mb-12">
           <ReactMarkdown
             components={{
               h2: ({ node, ...props }) => (
@@ -330,7 +329,7 @@ const BlogPost = () => {
               ),
               h3: ({ node, ...props }) => (
                 <h3
-                  className="text-xl md:text-2xl font-bold mt-8 mb-4 text-gray-900 border-l-4 border-orange-500 pl-3"
+                  className="text-xl md:text-2xl font-bold mt-8 mb-4 text-gray-900 border-l-4 border-[#111] pl-3"
                   style={{ letterSpacing: "-0.02em" }}
                   {...props}
                 />
@@ -343,7 +342,7 @@ const BlogPost = () => {
               ),
               li: ({ node, ...props }) => (
                 <li className="flex items-start gap-3 text-[17px] md:text-[18px] text-gray-700 leading-relaxed">
-                  <span className="w-2 h-2 rounded-full bg-orange-500 mt-2.5 flex-shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-[#111] mt-2.5 flex-shrink-0" />
                   <span>{props.children}</span>
                 </li>
               ),
@@ -352,7 +351,7 @@ const BlogPost = () => {
               ),
               a: ({ node, ...props }) => (
                 <a
-                  className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700 underline underline-offset-4 transition-colors"
+                  className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-700 underline underline-offset-4 transition-colors"
                   target="_blank"
                   rel="noopener noreferrer"
                   {...props}
@@ -360,7 +359,7 @@ const BlogPost = () => {
               ),
               strong: ({ node, ...props }) => <strong className="font-bold text-gray-950" {...props} />,
               blockquote: ({ node, ...props }) => (
-                <blockquote className="my-8 p-6 rounded-2xl bg-orange-500/5 border-l-4 border-orange-500 text-gray-800 italic text-lg leading-relaxed">
+                <blockquote className="my-8 p-6 rounded-2xl bg-gray-50 border-l-4 border-[#111] text-gray-800 italic text-lg leading-relaxed">
                   {props.children}
                 </blockquote>
               )
@@ -372,8 +371,8 @@ const BlogPost = () => {
 
         {/* High Conversion CTA Box */}
         <div className="cio-reveal rounded-3xl bg-[#111] text-white p-8 md:p-12 text-center relative overflow-hidden shadow-2xl mb-16">
-          <div className="inline-flex items-center gap-2 bg-white/10 text-orange-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-white/10">
-            <Zap className="w-4 h-4 fill-orange-400" /> Start Automating Support in 2 Mins
+          <div className="inline-flex items-center gap-2 bg-white/10 text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-6 border border-white/10">
+            <Zap className="w-4 h-4 text-blue-400" /> Start Automating Support in 2 Mins
           </div>
 
           <h3 className="text-3xl md:text-4xl font-bold mb-4" style={{ letterSpacing: "-0.03em" }}>
@@ -386,7 +385,7 @@ const BlogPost = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => navigate("/auth")}
-              className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white text-base font-semibold px-8 py-4 rounded-full transition-all shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto bg-white hover:bg-gray-100 text-[#111] text-base font-semibold px-8 py-4 rounded-full transition-all shadow-lg flex items-center justify-center gap-2"
             >
               Start 14-Day Free Trial <ArrowRight className="w-4 h-4" />
             </button>
@@ -399,11 +398,11 @@ const BlogPost = () => {
           </div>
         </div>
 
-        {/* Related Blog Posts Navigation */}
+        {/* Recommended Articles Navigation */}
         {otherPosts.length > 0 && (
           <div className="cio-reveal border-t border-gray-200/80 pt-12">
             <h4 className="text-xl font-bold text-[#111] mb-6 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-orange-500" /> Recommended for Founders
+              <BookOpen className="w-5 h-5 text-gray-700" /> Recommended for Founders
             </h4>
             <div className="grid md:grid-cols-2 gap-6">
               {otherPosts.map((other) => (
@@ -413,18 +412,18 @@ const BlogPost = () => {
                     navigate(`/blog/${other.id}`);
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  className="bg-white rounded-2xl p-6 border border-gray-200/70 hover:border-orange-500/40 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+                  className="bg-white rounded-2xl p-6 border border-gray-200/80 hover:border-gray-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
                 >
                   <div>
-                    <div className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+                    <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
                       {other.tags[0]}
                     </div>
-                    <h5 className="text-lg font-bold text-[#111] group-hover:text-orange-600 transition-colors mb-2 line-clamp-2">
+                    <h5 className="text-lg font-bold text-[#111] group-hover:text-blue-600 transition-colors mb-2 line-clamp-2">
                       {other.title}
                     </h5>
                     <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">{other.excerpt}</p>
                   </div>
-                  <div className="flex items-center justify-between text-xs font-semibold text-gray-900 group-hover:text-orange-600 pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between text-xs font-semibold text-gray-900 group-hover:text-blue-600 pt-2 border-t border-gray-100">
                     <span>Read Article</span>
                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                   </div>
