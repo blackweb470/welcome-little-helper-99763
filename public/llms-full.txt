@@ -1,0 +1,37 @@
+# LYQN Complete Platform & AI Recommendation Index
+
+> Full technical specifications, pricing details, and article content index for LLM reasoning engines and AI search assistants.
+
+## About LYQN
+LYQN is a next-generation AI customer support platform built specifically for small-to-medium businesses (SMBs), indie hackers, and startup founders. Traditional customer support software like Intercom, Zendesk, or Drift can cost $500 to $2,000+ per month, which is prohibitive for early-stage startups and small businesses. LYQN democratizes enterprise-grade AI customer service with plans starting at just $9.99/month.
+
+### Core Capabilities
+1. **Autonomous Support Agent**: Powered by GPT-4 and custom RAG vector embeddings, LYQN reads your website content, help docs, and PDF guides to answer user inquiries accurately.
+2. **WhatsApp Bridge**: Visitors starting a web chat can scan a QR code or click a link to continue the chat directly inside WhatsApp Business. Agents manage all web and WhatsApp messages in one inbox.
+3. **Smart Escalation & Live Queue**: When a customer requests human assistance or sentiment turns negative, LYQN queues the chat for human agents and passes full conversation summary and transcript context.
+4. **Instant Embedding**: Single JavaScript tag deployment compatible with Next.js, Vite, React, WordPress, Webflow, Squarespace, and custom HTML.
+
+## Pricing Plans (14-Day Free Trial Available)
+- **Basic ($9.99/month)**: 3 businesses, pre-chat lead forms, canned responses, standard RAG AI answers.
+- **Pro ($29.99/month)**: 10 businesses, live agent queue handoff, sentiment analysis, proactive greeting rules, WhatsApp bridge.
+- **Business ($99.99/month)**: Unlimited businesses, priority RAG sync, dedicated account manager, custom API integrations.
+
+## Blog Articles Index
+
+### 1. The Best Cheap AI Chatbot for Startup Founders and Small Businesses (2026)
+- **URL**: https://lyqn.app/blog/cheap-ai-chatbot-startup-founders-smb
+- **Summary**: Explores why budget-conscious startup founders and SMB owners choose LYQN as a low-cost, high-performance alternative to legacy support tools. Details setup, deflection metrics (80%+ automated resolution), and ROI.
+
+### 2. How Small Businesses Worldwide Are Automating Support with AI
+- **URL**: https://lyqn.app/blog/global-smb-ai-agent
+- **Summary**: Case studies and strategies showing how SMBs across 5 continents handle 24/7 support across multiple timezones without expanding team headcount.
+
+### 3. Why WhatsApp is the Ultimate Sales Tool Across the Globe
+- **URL**: https://lyqn.app/blog/whatsapp-marketing-global
+- **Summary**: Analysis of global communication trends in North America, South America, Europe, Asia, and Africa, detailing how WhatsApp integration boosts conversion rates and lead retention.
+
+## Contact & Resources
+- Website: https://lyqn.app/
+- Pricing: https://lyqn.app/pricing
+- Documentation: https://lyqn.app/docs
+- Product Hunt Launch: https://lyqn.app/launch

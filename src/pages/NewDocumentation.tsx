@@ -76,7 +76,7 @@ export default function NewDocumentation() {
         .prose-custom strong { font-weight: 600; color: #111; }
       `}} />
       <SEO 
-        title="LYQN Documentation — Guides, API & Setup" 
+        title="LYQN Documentation: Guides, API & Setup" 
         description="Learn how to install, configure, and maximize the LYQN AI chatbot. Comprehensive developer guides, API references, and quick start tutorials."
         url="https://lyqn.app/docs"
       />

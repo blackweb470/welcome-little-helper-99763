@@ -25,6 +25,14 @@ const useReveal = () => {
 // Mock data: In the future this can be pulled from Supabase or a CMS
 export const blogPosts = [
   {
+    id: "cheap-ai-chatbot-startup-founders-smb",
+    title: "The Best Cheap AI Chatbot for Startup Founders and Small Businesses (2026)",
+    excerpt: "Why boot-strapped founders and SMB owners are switching to LYQN: an affordable, self-learning 24/7 AI chatbot with WhatsApp integration at $9.99/mo.",
+    date: "2026-08-12",
+    author: "LYQN Team",
+    tags: ["Startup Founders", "SMBs", "Cheap AI Chatbot", "Productivity"]
+  },
+  {
     id: "global-smb-ai-agent",
     title: "How Small Businesses Worldwide Are Automating Support with AI",
     excerpt: "From tech startups in Singapore to retail shops in Brazil, discover how SMBs across 5 continents are using AI chatbots to handle 80% of customer questions.",
@@ -46,6 +54,30 @@ const Blog = () => {
   const navigate = useNavigate();
   useReveal();
 
+  const blogSchema = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "LYQN Blog",
+    "description": "Actionable AI support insights, affordable chatbot guides, and growth strategies for startup founders and SMBs.",
+    "url": "https://lyqn.app/blog",
+    "publisher": {
+      "@type": "Organization",
+      "name": "LYQN",
+      "logo": "https://lyqn.app/lyqn-icon.png"
+    },
+    "blogPost": blogPosts.map(p => ({
+      "@type": "BlogPosting",
+      "headline": p.title,
+      "description": p.excerpt,
+      "url": `https://lyqn.app/blog/${p.id}`,
+      "datePublished": p.date,
+      "author": {
+        "@type": "Organization",
+        "name": p.author
+      }
+    }))
+  });
+
   return (
     <div className="min-h-screen font-sans" style={{ background: "#fcfcfc" }}>
       <style dangerouslySetInnerHTML={{__html: `
@@ -53,9 +85,10 @@ const Blog = () => {
         .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }
       `}} />
       <SEO 
-        title="LYQN Blog — AI Customer Support for Global Businesses" 
-        description="Read the latest insights on how small and medium businesses (SMBs) in North America, South America, Asia, Europe, and Africa scale with AI."
+        title="LYQN Blog: Cheap AI Chatbot Guides & Strategies for Startup Founders and SMBs" 
+        description="Discover how startup founders and small business owners (SMBs) automate 24/7 customer support, capture leads on WhatsApp, and save thousands with affordable AI chatbots."
         url="https://lyqn.app/blog"
+        schema={blogSchema}
       />
       
       {/* Header */}

@@ -17,11 +17,13 @@ import {
   ShieldCheck,
   Zap,
   RefreshCw,
-  Trash2
+  Trash2,
+  Lock,
+  Globe
 } from 'lucide-react';
-import WhatsAppQR from '@/components/dashboard/WhatsAppQR'; // QR Code generator component
+import WhatsAppQR from '@/components/dashboard/WhatsAppQR';
 
-// Declare FB global for TypeScript
+// Declare FB global for Meta Embedded Signup SDK
 declare global {
   interface Window {
     fbAsyncInit: () => void;
@@ -35,178 +37,20 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const [connecting, setConnecting] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [isEnabled, setIsEnabled] = useState(false);
-
-  const [metaConfig, setMetaConfig] = useState<{appId: string, configId: string} | null>(null);
+  
+  // Provider Selection: 'meta' or 'twilio'
+  const [activeProvider, setActiveProvider] = useState<'meta' | 'twilio'>('meta');
+  
+  // SDK States for Meta
   const [sdkStatus, setSdkStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  
+  // Twilio OAuth configurations loaded from platform settings
+  const [twilioConfig, setTwilioConfig] = useState<{clientId: string} | null>(null);
 
-  useEffect(() => {
-    const fetchPlatformSettings = async () => {
-      try {
-        // We cast to any here to avoid TS errors as this is a dynamic config table
-        const { data, error } = await (supabase
-          .from('platform_settings' as any)
-          .select('key, value') as any);
-        
-        if (!error && data) {
-          const config = {
-            appId: data.find((s: any) => s.key === 'meta_app_id')?.value || import.meta.env.VITE_META_APP_ID,
-            configId: data.find((s: any) => s.key === 'whatsapp_config_id')?.value || import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
-          };
-          setMetaConfig(config);
-          console.log('Platform settings loaded from database');
-        } else {
-          // Fallback if no data or error
-          setMetaConfig({
-            appId: import.meta.env.VITE_META_APP_ID,
-            configId: import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching platform settings:', err);
-        // Ensure we still have a config even on catch
-        setMetaConfig({
-          appId: import.meta.env.VITE_META_APP_ID,
-          configId: import.meta.env.VITE_WHATSAPP_CONFIG_ID || "970530725626776"
-        });
-      }
-    };
-
-    fetchPlatformSettings();
-  }, []);
-
-  useEffect(() => {
-    fetchSettings();
-    if (metaConfig?.appId) {
-      loadFacebookSDK();
-    }
-  }, [businessId, metaConfig]);
-
-  const loadFacebookSDK = () => {
-    // If already ready, just return
-    if (window.FB && sdkStatus === 'ready') return;
-    
-    const appId = metaConfig?.appId;
-    if (!appId) {
-      console.warn('Meta App ID still loading or missing.');
-      return;
-    }
-
-    setSdkStatus('loading');
-
-    // Timeout to prevent infinite loading state if blocked by ad-blocker
-    const timeoutId = setTimeout(() => {
-      if (!window.FB) {
-        console.error('Meta SDK load timed out. Likely blocked by an ad-blocker.');
-        setSdkStatus('error');
-      }
-    }, 10000);
-
-    window.fbAsyncInit = function() {
-      try {
-        window.FB.init({
-          appId: appId,
-          autoLogAppEvents: true,
-          xfbml: true,
-          version: 'v21.0'
-        });
-        console.log('Meta SDK Initialized');
-        setSdkStatus('ready');
-        clearTimeout(timeoutId);
-      } catch (e) {
-        console.error('Error initializing Meta SDK:', e);
-        setSdkStatus('error');
-      }
-    };
-
-    // Load script
-    (function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) {
-        // If script already exists, check if FB is available or wait for it
-        if (window.FB) {
-          window.fbAsyncInit();
-        }
-        return;
-      }
-      js = d.createElement(s) as HTMLScriptElement; js.id = id;
-      js.src = "https://connect.facebook.net/en_US/sdk.js";
-      if (fjs && fjs.parentNode) {
-        fjs.parentNode.insertBefore(js, fjs);
-      }
-    }(document, 'script', 'facebook-jssdk'));
-  };
-
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('whatsapp_settings')
-        .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method')
-        .eq('business_id', businessId)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      setSettings(data);
-      setIsEnabled(data?.enabled || false);
-    } catch (error: any) {
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const launchWhatsAppSignup = () => {
-    if (sdkStatus === 'error') {
-      toast({
-        variant: "destructive",
-        title: "SDK Error",
-        description: "Failed to load Meta SDK. This is usually caused by an ad-blocker. Please disable it and refresh."
-      });
-      return;
-    }
-
-    if (!window.FB || sdkStatus !== 'ready') {
-      toast({
-        variant: "default",
-        title: "Initializing...",
-        description: "Meta SDK is still setting up. Please wait a moment."
-      });
-      // Try to re-init just in case
-      loadFacebookSDK();
-      return;
-    }
-
-    setConnecting(true);
-
-    window.FB.login((response: any) => {
-      if (response.authResponse) {
-        const code = response.authResponse.code;
-        handleSignupResponse(code);
-      } else {
-        setConnecting(false);
-        toast({
-          variant: "destructive",
-          title: "Connection Cancelled",
-          description: "The WhatsApp connection process was cancelled."
-        });
-      }
-    }, {
-      config_id: metaConfig?.configId || "970530725626776",
-      response_type: 'code',
-      override_default_response_type: true,
-      scope: 'whatsapp_business_management,whatsapp_business_messaging',
-      extras: {
-        setup: {},
-        featureType: '',
-        sessionInfoVersion: '3',
-      }
-    });
-  };
-
-  const [isManualMode, setIsManualMode] = useState(true);
+  // Connection validation inputs
   const [testLoading, setTestLoading] = useState(false);
   const [testPhone, setTestPhone] = useState('');
+  
   const [manualSettings, setManualSettings] = useState({
     phone_number_id: '',
     waba_id: '',
@@ -214,59 +58,168 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     phone_number: ''
   });
 
-  const handleTestConnection = async () => {
-    if (!manualSettings.phone_number_id || !manualSettings.access_token || !testPhone) {
-      toast({
-        variant: "destructive",
-        title: "Missing Information",
-        description: "Please fill in the Phone Number ID, Access Token, and a Test Recipient Phone Number."
-      });
-      return;
-    }
+  // Load Meta Facebook SDK on mount
+  useEffect(() => {
+    const initMetaSDK = () => {
+      try {
+        const appId = import.meta.env.VITE_META_APP_ID || '242161592913036';
+        
+        window.fbAsyncInit = function() {
+          window.FB.init({
+            appId: appId,
+            cookie: true,
+            xfbml: true,
+            version: 'v21.0'
+          });
+          setSdkStatus('ready');
+          console.log('Meta SDK initialized successfully');
+        };
 
-    setTestLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('whatsapp-test-connection', {
-        body: {
-          phoneNumberId: manualSettings.phone_number_id,
-          accessToken: manualSettings.access_token,
-          recipientPhone: testPhone.replace(/\D/g, '') // Strip non-digits
+        const d = document;
+        const s = 'script';
+        const id = 'facebook-jssdk';
+        if (d.getElementById(id)) {
+          setSdkStatus('ready');
+          return;
         }
-      });
-
-      if (error) {
-        let errorMessage = error.message;
-        try {
-          // If it's a non-2xx status, Supabase client provides a context we can parse
-          if (error.context && typeof error.context.json === 'function') {
-            const errorData = await error.context.json();
-            errorMessage = errorData.error || errorMessage;
-          }
-        } catch (e) {}
-        throw new Error(errorMessage);
+        const js = d.createElement(s) as HTMLScriptElement; 
+        js.id = id;
+        js.src = "https://connect.facebook.net/en_US/sdk.js";
+        const fjs = d.getElementsByTagName(s)[0];
+        fjs.parentNode?.insertBefore(js, fjs);
+      } catch (err) {
+        console.error('Error loading Meta SDK:', err);
+        setSdkStatus('error');
       }
+    };
 
-      if (!data?.success) {
-        throw new Error(data?.error || "Test failed");
+    initMetaSDK();
+  }, []);
+
+  // Fetch Twilio platform client credentials
+  useEffect(() => {
+    const fetchPlatformSettings = async () => {
+      try {
+        const { data, error } = await (supabase
+          .from('platform_settings' as any)
+          .select('key, value') as any);
+        
+        if (!error && data) {
+          const config = {
+            clientId: data.find((s: any) => s.key === 'twilio_client_id')?.value || import.meta.env.VITE_TWILIO_CLIENT_ID || "OQcd310049d7ab871c7a76621fb68ac48c"
+          };
+          setTwilioConfig(config);
+        } else {
+          setTwilioConfig({
+            clientId: import.meta.env.VITE_TWILIO_CLIENT_ID || "OQcd310049d7ab871c7a76621fb68ac48c"
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching platform settings:', err);
+        setTwilioConfig({
+          clientId: import.meta.env.VITE_TWILIO_CLIENT_ID || "OQcd310049d7ab871c7a76621fb68ac48c"
+        });
       }
+    };
 
+    fetchPlatformSettings();
+  }, []);
+
+  // Fetch active settings for the business
+  useEffect(() => {
+    fetchSettings();
+  }, [businessId]);
+
+  // Handle OAuth callbacks from URL query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get('connected');
+    const phone = params.get('phone');
+    const errorMsg = params.get('error');
+
+    if (connected === 'whatsapp') {
       toast({
-        title: "Test Message Sent!",
-        description: "Check your WhatsApp. If you received the message, your configuration is correct.",
+        title: "WhatsApp Connected!",
+        description: `Successfully connected ${phone || 'your number'} via Twilio. Your bot is now ready.`,
       });
-    } catch (error: any) {
-      console.error('Test connection error:', error);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      fetchSettings();
+    } else if (errorMsg) {
       toast({
         variant: "destructive",
-        title: "Test Failed",
-        description: error.message || "Failed to send test message. Check your credentials and try again."
+        title: "Connection Failed",
+        description: errorMsg || "Failed to finalize WhatsApp connection.",
       });
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('whatsapp_settings')
+        .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method, verify_token, provider')
+        .eq('business_id', businessId)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      setSettings(data);
+      setIsEnabled(data?.enabled || false);
+      if (data?.provider) {
+        setActiveProvider(data.provider);
+      }
+    } catch (error: any) {
+      console.error('Error fetching settings:', error);
     } finally {
-      setTestLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleSignupResponse = async (code: string) => {
+  // Launch Meta Embedded Signup popup
+  const launchMetaSignup = () => {
+    setConnecting(true);
+    
+    if (!window.FB) {
+      toast({
+        variant: "destructive",
+        title: "SDK Error",
+        description: "Facebook SDK is not initialized. Please try disabling ad-blockers and refreshing."
+      });
+      setConnecting(false);
+      return;
+    }
+
+    window.FB.login((response: any) => {
+      if (response.authResponse) {
+        const code = response.authResponse.code;
+        if (code) {
+          handleMetaSignupResponse(code);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Signup Failed",
+            description: "No authorization code returned from Meta."
+          });
+          setConnecting(false);
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Cancelled",
+          description: "WhatsApp registration was cancelled."
+        });
+        setConnecting(false);
+      }
+    }, {
+      config_id: '1592913036', // LYQN Config ID
+      response_type: 'code',
+      override_default_response_type: true
+    });
+  };
+
+  const handleMetaSignupResponse = async (code: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-embedded-signup', {
         body: { 
@@ -287,13 +240,13 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
       }
 
       toast({
-        title: "WhatsApp Connected!",
+        title: "WhatsApp Connected via Meta!",
         description: `Successfully connected ${data.phoneNumber || 'your number'}. Your bot is now ready.`,
       });
       
       fetchSettings();
     } catch (error: any) {
-      console.error('Error in signup callback:', error);
+      console.error('Error in Meta signup callback:', error);
       toast({
         variant: "destructive",
         title: "Connection Failed",
@@ -304,36 +257,131 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     }
   };
 
+  // Launch Twilio OAuth redirect
+  const launchTwilioSignup = () => {
+    setConnecting(true);
+    const clientId = twilioConfig?.clientId;
+    if (!clientId) {
+      toast({
+        variant: "destructive",
+        title: "Configuration Error",
+        description: "Twilio Client ID is missing. Please check your settings."
+      });
+      setConnecting(false);
+      return;
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl || 'https://rgczbabidcqvpyiiqjfv.supabase.co';
+    const redirectUri = `${supabaseUrl}/functions/v1/twilio-oauth-callback`;
+    const state = `${businessId}:${window.location.origin}${window.location.pathname}`;
+
+    const scopes = [
+      'messaging.read',
+      'messaging.write',
+      'services',
+      'services.channelsenders',
+      'messages',
+      'messages.media',
+      'messages.feedback',
+      'content-templates'
+    ].join(' ');
+
+    const authUrl = `https://oauth.twilio.com/v2/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent(scopes)}`;
+    
+    window.location.href = authUrl;
+  };
+
+  // Connection validation
+  const handleTestConnection = async () => {
+    if (!manualSettings.phone_number_id || !manualSettings.access_token || !testPhone) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in the Phone/Sender ID, Token/Auth Token, and a Test Recipient Phone Number."
+      });
+      return;
+    }
+
+    setTestLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-test-connection', {
+        body: {
+          phoneNumberId: manualSettings.phone_number_id,
+          accessToken: manualSettings.access_token,
+          wabaId: manualSettings.waba_id || undefined,
+          phoneNumber: manualSettings.phone_number || undefined,
+          recipientPhone: testPhone.replace(/\D/g, ''),
+          provider: activeProvider
+        }
+      });
+
+      if (error) {
+        let errorMessage = error.message;
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            const errorData = await error.context.json();
+            errorMessage = errorData.error || errorMessage;
+          }
+        } catch (e) {}
+        throw new Error(errorMessage);
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Test failed");
+      }
+
+      toast({
+        title: "Test Message Sent!",
+        description: `Check your WhatsApp. If you received the message, your ${activeProvider === 'meta' ? 'Meta' : 'Twilio'} configuration is correct.`,
+      });
+    } catch (error: any) {
+      console.error('Test connection error:', error);
+      toast({
+        variant: "destructive",
+        title: "Test Failed",
+        description: error.message || "Failed to send test message. Check your credentials and try again."
+      });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
+  // Manual save settings
   const handleManualSave = async () => {
     if (!manualSettings.phone_number_id || !manualSettings.access_token || !manualSettings.phone_number) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill in the Phone Number ID, Access Token, and Phone Number."
+        description: "Please fill in all required fields."
       });
       return;
     }
 
     setConnecting(true);
     try {
+      const verifyToken = Math.random().toString(36).substring(2, 15);
+      
       const { error } = await supabase
         .from('whatsapp_settings')
         .upsert({
           business_id: businessId,
           phone_number_id: manualSettings.phone_number_id,
-          waba_id: manualSettings.waba_id,
+          waba_id: manualSettings.waba_id || null,
           access_token: manualSettings.access_token,
           phone_number: manualSettings.phone_number,
           enabled: true,
-          display_name: 'Manual Connection',
-          connection_method: 'manual'
+          display_name: activeProvider === 'meta' ? 'Meta Manual Connection' : 'Twilio Manual Connection',
+          connection_method: 'manual',
+          provider: activeProvider, // Save selected provider
+          verify_token: verifyToken,
+          updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
       toast({
         title: "WhatsApp Connected Manually!",
-        description: "Your settings have been saved successfully.",
+        description: `Your ${activeProvider === 'meta' ? 'Meta' : 'Twilio'} configurations have been saved successfully.`,
       });
       
       fetchSettings();
@@ -349,6 +397,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     }
   };
 
+  // Toggle Bot replies
   const toggleEnabled = async (checked: boolean) => {
     try {
       const { error } = await supabase
@@ -371,6 +420,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     }
   };
 
+  // Disconnect settings
   const disconnectWhatsApp = async () => {
     if (!confirm("Are you sure you want to disconnect WhatsApp? Your bot will stop responding to customers.")) return;
 
@@ -404,6 +454,10 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     );
   }
 
+  // Webhook URL display
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || (supabase as any).supabaseUrl || 'https://rgczbabidcqvpyiiqjfv.supabase.co';
+  const webhookUrl = `${supabaseUrl}/functions/v1/whatsapp-webhook`;
+
   return (
     <div className="space-y-6">
       <Card className="border-primary/20 bg-gradient-to-br from-background to-primary/5 overflow-hidden">
@@ -418,14 +472,14 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
                 WhatsApp Integration
                 {settings ? (
                   <Badge variant="default" className="bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> Connected ({settings.provider === 'twilio' ? 'Twilio' : 'Meta'})
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-muted-foreground">Not Connected</Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                Connect your business WhatsApp number to provide AI-powered customer service 24/7.
+                Connect your business WhatsApp number via Meta Cloud API or Twilio to provide AI-powered customer service 24/7.
               </CardDescription>
             </div>
           </div>
@@ -434,133 +488,239 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         <CardContent>
           {!settings ? (
             <div className="flex flex-col items-center justify-center p-8 space-y-6 text-center">
-              <div className="bg-primary/10 p-4 rounded-full">
-                <Smartphone className="h-12 w-12 text-primary" />
+              
+              {/* Provider Selection Tabs */}
+              <div className="flex p-1 bg-muted rounded-xl w-fit">
+                <Button 
+                  variant={activeProvider === 'meta' ? 'default' : 'ghost'} 
+                  onClick={() => setActiveProvider('meta')}
+                  className="rounded-lg px-6 font-semibold"
+                >
+                  Meta Cloud API
+                </Button>
+                <Button 
+                  variant={activeProvider === 'twilio' ? 'default' : 'ghost'} 
+                  onClick={() => setActiveProvider('twilio')}
+                  className="rounded-lg px-6 font-semibold"
+                >
+                  Twilio WhatsApp
+                </Button>
               </div>
+
               <div className="max-w-md space-y-2">
-                <h3 className="text-xl font-semibold">Connect in Seconds</h3>
+                <h3 className="text-xl font-semibold">
+                  Connect via {activeProvider === 'meta' ? 'Meta (Facebook) Cloud API' : 'Twilio WhatsApp API'}
+                </h3>
                 <p className="text-muted-foreground text-sm">
-                  Choose your preferred connection method. The official popup is fastest, but manual setup is available for developers.
+                  {activeProvider === 'meta' 
+                    ? "Link your Meta Business Account for direct WhatsApp integration. The official popup signup is fastest." 
+                    : "Connect via Twilio WhatsApp Gateway using standard Twilio API and OAuth flow."}
                 </p>
               </div>
 
-              {!isManualMode ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Button 
-                    size="lg" 
-                    onClick={launchWhatsAppSignup} 
-                    disabled={connecting || sdkStatus === 'loading'}
-                    className={`px-8 shadow-lg shadow-primary/20 gap-2 font-semibold text-lg h-14 bg-gradient-to-r from-primary to-primary/80 transition-all ${sdkStatus === 'ready' ? 'hover:scale-105' : 'opacity-80 cursor-wait'}`}
-                  >
-                    {connecting || sdkStatus === 'loading' ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Zap className="h-5 w-5 fill-current" />
-                    )}
-                    {connecting ? "Connecting..." : sdkStatus === 'loading' ? "Initializing SDK..." : "Connect WhatsApp Now"}
-                  </Button>
+              {/* Automatic and Manual side-by-side configurations */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl text-left mt-4">
+                
+                {/* Column A: Automatic setup */}
+                <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-border bg-muted/20 text-center space-y-4">
+                  <div className="bg-primary/10 p-4 rounded-full">
+                    <Zap className="h-8 w-8 text-primary animate-pulse" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-lg font-semibold">Option A: Quick Setup (Recommended)</h4>
+                    <p className="text-xs text-muted-foreground max-w-xs">
+                      {activeProvider === 'meta' 
+                        ? "Automatically connect your WABA ID and Phone number via secure Meta SDK Login." 
+                        : "Grant API scope permissions directly via official Twilio OAuth login page."}
+                    </p>
+                  </div>
                   
-                  {sdkStatus === 'loading' && (
-                    <p className="text-xs text-muted-foreground animate-pulse">
-                      Loading Meta developer tools...
-                    </p>
-                  ) || sdkStatus === 'error' && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      SDK failed to load. Please disable ad-blockers and <button onClick={() => window.location.reload()} className="underline font-bold">refresh</button>.
-                    </p>
+                  {activeProvider === 'meta' ? (
+                    <div className="space-y-2 w-full max-w-xs">
+                      <Button 
+                        size="lg" 
+                        onClick={launchMetaSignup} 
+                        disabled={connecting || sdkStatus === 'loading'}
+                        className="w-full shadow-lg shadow-primary/20 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 transition-all hover:scale-105"
+                      >
+                        {connecting || sdkStatus === 'loading' ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Zap className="h-5 w-5 fill-current" />
+                        )}
+                        {connecting ? "Connecting..." : sdkStatus === 'loading' ? "Initializing SDK..." : "Connect WhatsApp Now"}
+                      </Button>
+                      {sdkStatus === 'loading' && (
+                        <p className="text-[10px] text-muted-foreground animate-pulse">
+                          Loading Meta developer tools...
+                        </p>
+                      )}
+                      {sdkStatus === 'error' && (
+                        <p className="text-[10px] text-destructive flex items-center gap-1 justify-center">
+                          <AlertCircle className="h-3 w-3" />
+                          SDK failed to load. Disable ad-blockers and refresh.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <Button 
+                      size="lg" 
+                      onClick={launchTwilioSignup} 
+                      disabled={connecting}
+                      className="w-full max-w-xs shadow-lg shadow-primary/20 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 transition-all hover:scale-105"
+                    >
+                      {connecting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Zap className="h-5 w-5 fill-current" />
+                      )}
+                      {connecting ? "Connecting..." : "Connect WhatsApp via Twilio"}
+                    </Button>
                   )}
                 </div>
-              ) : (
-                <div className="w-full max-w-lg space-y-4 bg-muted/30 p-6 rounded-2xl border border-border animate-in fade-in slide-in-from-bottom-4">
-                  <div className="grid grid-cols-1 gap-4 text-left">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone_number_id">Phone Number ID</Label>
-                      <Input 
-                        id="phone_number_id" 
-                        placeholder="e.g. 123456789012345" 
-                        value={manualSettings.phone_number_id}
-                        onChange={(e) => setManualSettings({...manualSettings, phone_number_id: e.target.value})}
-                      />
+
+                {/* Column B: Manual Developer setup */}
+                <div className="p-6 rounded-2xl border border-border bg-muted/20 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-2 rounded-lg">
+                      <Lock className="h-5 w-5 text-primary" />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="waba_id">WhatsApp Business Account ID</Label>
-                      <Input 
-                        id="waba_id" 
-                        placeholder="e.g. 987654321098765" 
-                        value={manualSettings.waba_id}
-                        onChange={(e) => setManualSettings({...manualSettings, waba_id: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="access_token">Permanent Access Token</Label>
-                      <Input 
-                        id="access_token" 
-                        type="password"
-                        placeholder="EAAB..." 
-                        value={manualSettings.access_token}
-                        onChange={(e) => setManualSettings({...manualSettings, access_token: e.target.value})}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone_number">Display Phone Number</Label>
-                      <Input 
-                        id="phone_number" 
-                        placeholder="e.g. +1 234 567 890" 
-                        value={manualSettings.phone_number}
-                        onChange={(e) => setManualSettings({...manualSettings, phone_number: e.target.value})}
-                      />
+                    <div>
+                      <h4 className="text-base font-semibold">Option B: Manual Setup</h4>
+                      <p className="text-xs text-muted-foreground">For developers with manual API credentials</p>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-border/50 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="test_phone" className="text-primary flex items-center gap-2">
-                        <Smartphone className="h-4 w-4" />
-                        Verify Configuration (Optional)
-                      </Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          id="test_phone" 
-                          placeholder="Your phone number (with country code)" 
-                          value={testPhone}
-                          onChange={(e) => setTestPhone(e.target.value)}
-                        />
-                        <Button 
-                          variant="outline" 
-                          onClick={handleTestConnection}
-                          disabled={testLoading || !manualSettings.access_token || !manualSettings.phone_number_id}
-                          className="whitespace-nowrap gap-2"
-                        >
-                          {testLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                          Test
-                        </Button>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground">
-                        Sends a test message to verify the Phone ID and Access Token are valid.
-                      </p>
-                    </div>
+                  <div className="space-y-3">
+                    {activeProvider === 'meta' ? (
+                      <>
+                        <div className="space-y-1">
+                          <Label htmlFor="meta_phone_number_id" className="text-xs">Meta Phone Number ID</Label>
+                          <Input 
+                            id="meta_phone_number_id" 
+                            placeholder="e.g. 123456789012345" 
+                            value={manualSettings.phone_number_id}
+                            onChange={(e) => setManualSettings({...manualSettings, phone_number_id: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="meta_waba_id" className="text-xs">Meta WABA ID (Optional)</Label>
+                          <Input 
+                            id="meta_waba_id" 
+                            placeholder="e.g. 987654321098765" 
+                            value={manualSettings.waba_id}
+                            onChange={(e) => setManualSettings({...manualSettings, waba_id: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="meta_access_token" className="text-xs">Meta Permanent Access Token</Label>
+                          <Input 
+                            id="meta_access_token" 
+                            type="password"
+                            placeholder="EAAB..." 
+                            value={manualSettings.access_token}
+                            onChange={(e) => setManualSettings({...manualSettings, access_token: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="meta_phone_number" className="text-xs">Display Phone Number</Label>
+                          <Input 
+                            id="meta_phone_number" 
+                            placeholder="e.g. +1 234 567 890" 
+                            value={manualSettings.phone_number}
+                            onChange={(e) => setManualSettings({...manualSettings, phone_number: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-1">
+                          <Label htmlFor="twilio_phone_number_id" className="text-xs">WhatsApp Phone Number / Sender SID</Label>
+                          <Input 
+                            id="twilio_phone_number_id" 
+                            placeholder="e.g. +14155238886 or MGxxxx" 
+                            value={manualSettings.phone_number_id}
+                            onChange={(e) => setManualSettings({...manualSettings, phone_number_id: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="twilio_waba_id" className="text-xs">Twilio Account SID</Label>
+                          <Input 
+                            id="twilio_waba_id" 
+                            placeholder="e.g. ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" 
+                            value={manualSettings.waba_id}
+                            onChange={(e) => setManualSettings({...manualSettings, waba_id: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="twilio_access_token" className="text-xs">Twilio Auth Token</Label>
+                          <Input 
+                            id="twilio_access_token" 
+                            type="password"
+                            placeholder="Twilio Auth Token" 
+                            value={manualSettings.access_token}
+                            onChange={(e) => setManualSettings({...manualSettings, access_token: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="twilio_phone_number" className="text-xs">Display Phone Number</Label>
+                          <Input 
+                            id="twilio_phone_number" 
+                            placeholder="e.g. +1 415 523 8886" 
+                            value={manualSettings.phone_number}
+                            onChange={(e) => setManualSettings({...manualSettings, phone_number: e.target.value})}
+                            className="h-9 text-sm"
+                          />
+                        </div>
+                      </>
+                    )}
 
-                    <Button 
-                      className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/10"
-                      onClick={handleManualSave}
-                      disabled={connecting}
-                    >
-                      {connecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Save Configuration"}
-                    </Button>
+                    <div className="pt-2 border-t border-border/50 space-y-2">
+                      <div className="space-y-1 text-left">
+                        <Label htmlFor="test_phone" className="text-xs text-primary flex items-center gap-1">
+                          <Smartphone className="h-3 w-3" />
+                          Verify Configuration
+                        </Label>
+                        <div className="flex gap-2">
+                          <Input 
+                            id="test_phone" 
+                            placeholder="Recipient phone number" 
+                            value={testPhone}
+                            onChange={(e) => setTestPhone(e.target.value)}
+                            className="h-9 text-sm"
+                          />
+                          <Button 
+                            variant="outline" 
+                            onClick={handleTestConnection}
+                            disabled={testLoading || !manualSettings.access_token || !manualSettings.phone_number_id}
+                            className="h-9 text-xs whitespace-nowrap gap-1"
+                          >
+                            {testLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
+                            Test
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button 
+                        className="w-full h-10 text-sm font-semibold"
+                        onClick={handleManualSave}
+                        disabled={connecting}
+                      >
+                        {connecting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : "Save Configuration"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              )}
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setIsManualMode(!isManualMode)}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isManualMode ? "← Back to Automatic Setup" : "Developer? Use Manual Configuration"}
-              </Button>
-              
+
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mt-8">
                 <div className="flex flex-col items-center gap-1 p-3 rounded-xl bg-background/50 border border-border">
                   <ShieldCheck className="h-5 w-5 text-green-500" />
@@ -581,18 +741,30 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
               <div className="flex flex-col md:flex-row gap-6 p-6 rounded-2xl bg-background/50 border border-border">
                 <div className="flex-1 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left">
                       <Label className="text-muted-foreground text-xs uppercase tracking-wider">Phone Number</Label>
                       <p className="text-lg font-mono font-bold">{settings.phone_number || "Verified Number"}</p>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left">
                       <Label className="text-muted-foreground text-xs uppercase tracking-wider">Display Name</Label>
                       <p className="text-lg font-bold">{settings.display_name || "Official Account"}</p>
                     </div>
+                    <div className="space-y-1 col-span-2 text-left">
+                      <Label className="text-muted-foreground text-xs uppercase tracking-wider">Webhook Endpoint</Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input readOnly value={webhookUrl} className="font-mono text-xs h-9 bg-muted/40" />
+                      </div>
+                    </div>
+                    {settings.provider === 'meta' && settings.verify_token && (
+                      <div className="space-y-1 col-span-2 text-left">
+                        <Label className="text-muted-foreground text-xs uppercase tracking-wider">Meta Verify Token</Label>
+                        <Input readOnly value={settings.verify_token} className="font-mono text-xs h-9 bg-muted/40" />
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="space-y-0.5">
+                    <div className="space-y-0.5 text-left">
                       <Label className="text-base font-semibold">Enable Bot Responses</Label>
                       <p className="text-sm text-muted-foreground">Turn this off to pause the AI from replying to messages.</p>
                     </div>
@@ -623,7 +795,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
                 
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <ShieldCheck className="h-3 w-3 text-green-500" />
-                  Connected via Meta Tech Provider (LYQN)
+                  Connected via {settings.provider === 'twilio' ? 'Twilio OAuth' : 'Meta Tech Provider'} (LYQN)
                 </div>
               </div>
             </div>
@@ -639,10 +811,10 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
               How it works
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground space-y-2">
-            <p>• Your bot uses the official WhatsApp Cloud API.</p>
-            <p>• Conversations are free if you reply within 24 hours.</p>
-            <p>• You can upload PDFs or FAQs in the "Knowledge Base" tab to train your AI.</p>
+          <CardContent className="text-sm text-muted-foreground space-y-2 text-left">
+            <p>• Your bot supports both Meta Cloud API and Twilio WhatsApp gateway.</p>
+            <p>• Emojis and plain-text spacing are adapted automatically for mobile screens.</p>
+            <p>• Upload PDFs or FAQs in the "Knowledge Base" tab to train your AI.</p>
             <p>• Complex questions are automatically routed to your live agent dashboard.</p>
           </CardContent>
         </Card>
@@ -654,15 +826,16 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
               Resources
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-2">
+          <CardContent className="grid grid-cols-1 gap-2 text-left">
             <Button variant="link" className="justify-start p-0 h-auto" asChild>
-              <a href="#" target="_blank">View WhatsApp Business Policy</a>
+              <a href="https://developers.facebook.com/docs/whatsapp" target="_blank" rel="noopener noreferrer">
+                Meta WhatsApp Cloud API Docs <ExternalLink className="h-3 w-3 ml-1 inline" />
+              </a>
             </Button>
             <Button variant="link" className="justify-start p-0 h-auto" asChild>
-              <a href="#" target="_blank">How to verify your business</a>
-            </Button>
-            <Button variant="link" className="justify-start p-0 h-auto" asChild>
-              <a href="#" target="_blank">Setting up Greeting Messages</a>
+              <a href="https://www.twilio.com/docs/whatsapp" target="_blank" rel="noopener noreferrer">
+                Twilio WhatsApp API Docs <ExternalLink className="h-3 w-3 ml-1 inline" />
+              </a>
             </Button>
           </CardContent>
         </Card>

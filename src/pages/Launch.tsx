@@ -16,13 +16,13 @@ const Launch = () => {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-[Inter,sans-serif]">
       <Helmet>
-        <title>LYQN is live on Product Hunt — 2 weeks free</title>
+        <title>LYQN is live on Product Hunt (2 weeks free)</title>
         <meta
           name="description"
           content="LYQN just launched on Product Hunt. Self-learning AI customer support with one-click human handoff and a WhatsApp bridge. Try it free for 2 weeks."
         />
         <link rel="canonical" href="https://lyqn.app/launch" />
-        <meta property="og:title" content="LYQN is live on Product Hunt — 2 weeks free" />
+        <meta property="og:title" content="LYQN is live on Product Hunt (2 weeks free)" />
         <meta
           property="og:description"
           content="Self-learning AI support that hands off to humans and bridges to WhatsApp. Live on Product Hunt today."
@@ -31,7 +31,7 @@ const Launch = () => {
         <meta property="og:type" content="website" />
         <meta property="og:image" content={ogImg} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="LYQN is live on Product Hunt — 2 weeks free" />
+        <meta name="twitter:title" content="LYQN is live on Product Hunt (2 weeks free)" />
         <meta name="twitter:image" content={ogImg} />
       </Helmet>
 
@@ -100,7 +100,7 @@ const Launch = () => {
             {
               icon: Brain,
               title: "Self-learning RAG",
-              body: "Crawl your site, upload docs. LYQN grounds every answer in your actual knowledge — no hallucinations.",
+              body: "Crawl your site, upload docs. LYQN grounds every answer in your actual knowledge with no hallucinations.",
             },
             {
               icon: Users,
@@ -152,7 +152,7 @@ const Launch = () => {
           Try it right now.
         </h2>
         <p className="text-white/60 mb-8">
-          Look bottom-right — that's the real LYQN widget. Ask it anything about LYQN.
+          Look bottom right: that is the real LYQN widget. Ask it anything about LYQN.
         </p>
         <LyqnWidgetEmbed />
       </section>
@@ -223,7 +223,7 @@ const Launch = () => {
           "We built LYQN because every chatbot we tried either hallucinated or buried us
           in setup. This is the one we wished existed."
         </blockquote>
-        <p className="text-white/50 text-sm">— The LYQN team</p>
+        <p className="text-white/50 text-sm">The LYQN team</p>
         <a
           href={PH_URL}
           target="_blank"

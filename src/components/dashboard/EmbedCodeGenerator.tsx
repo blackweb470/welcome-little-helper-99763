@@ -134,9 +134,9 @@ export const LYQNChatWidget = () => {
                 Optional attributes
               </summary>
               <ul className="mt-2 space-y-1 ml-4 list-disc">
-                <li><code className="bg-muted px-1 rounded">data-position</code> — <span className="italic">bottom-right</span> (default) or <span className="italic">bottom-left</span></li>
-                <li><code className="bg-muted px-1 rounded">data-proactive-message</code> — custom greeting text</li>
-                <li><code className="bg-muted px-1 rounded">data-proactive-delay</code> — delay in ms (default 3000)</li>
+                <li><code className="bg-muted px-1 rounded">data-position</code>: <span className="italic">bottom-right</span> (default) or <span className="italic">bottom-left</span></li>
+                <li><code className="bg-muted px-1 rounded">data-proactive-message</code>: custom greeting text</li>
+                <li><code className="bg-muted px-1 rounded">data-proactive-delay</code>: delay in ms (default 3000)</li>
               </ul>
             </details>
           </TabsContent>

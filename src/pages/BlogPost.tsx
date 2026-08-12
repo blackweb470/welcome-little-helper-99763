@@ -26,6 +26,38 @@ const useReveal = () => {
 
 // This is where you write your actual markdown content
 const markdownContent: Record<string, string> = {
+  "cheap-ai-chatbot-startup-founders-smb": `
+## Why Startup Founders & SMBs Need an Affordable AI Chatbot in 2026
+
+As a startup founder or small business owner, every dollar and every minute counts. You cannot afford to spend $500/month on legacy customer support suites like Intercom or Zendesk, yet you also cannot leave website visitors hanging when they ask questions after hours.
+
+That's why founders are turning to **LYQN**, the premier budget-friendly AI chatbot built specifically for startups and small-to-medium businesses (SMBs).
+
+### 1. The Cost Trap of Enterprise Customer Support Software
+Legacy support platforms charge per-seat pricing and lock essential AI features behind $300+ add-ons. For a bootstrap team or lean SMB, this eats into product development and marketing budgets.
+
+With **LYQN**, pricing starts at just **$9.99 per month** (with a 14-day free trial and no credit card required). You get:
+* Unlimited customer conversations
+* Self-learning AI trained on your website and help docs
+* Instant WhatsApp Business integration
+* One-click live agent handoff dashboard
+
+### 2. Zero-Setup Self-Learning RAG AI
+Unlike old rule-based chatbots that require tedious flowcharts, LYQN uses **retrieval-augmented generation (RAG)** powered by GPT-4. You simply paste your website URL or upload a PDF help guide. LYQN instantly absorbs your documentation and answers customer questions with 99%+ accuracy.
+
+### 3. Seamless Transition to WhatsApp
+Modern customers don't want to sit on a browser tab waiting for a reply. LYQN lets visitors transition from web chat directly to **WhatsApp** with a single click or QR code scan. Your team can reply to web visitors and WhatsApp leads from a unified inbox.
+
+### 4. Smart Human Escalation (No Cold Handoffs)
+When a high-value prospect asks for custom pricing or needs human escalation, LYQN intelligently flags the conversation and routes it to your live agent dashboard with full context summary—so you never lose a sale.
+
+### How to Get Started in 2 Minutes
+1. [Sign up for a free 14-day LYQN trial](https://lyqn.app/auth).
+2. Enter your website URL or upload your product FAQ.
+3. Paste our single-line code snippet onto your website.
+
+Save money, automate 80%+ of support inquiries, and boost your sales conversions today with LYQN.
+  `,
   "global-smb-ai-agent": `
 ## The Reality for Global Small Businesses
 Running a business means wearing a dozen hats, whether you're a retail shop in Texas, an e-commerce brand in London, a SaaS startup in Singapore, or a manufacturer in Brazil. Hiring a dedicated support team across multiple time zones is incredibly expensive, yet ignoring customer questions means losing revenue globally. 
@@ -33,7 +65,7 @@ Running a business means wearing a dozen hats, whether you're a retail shop in T
 What small and medium businesses (SMBs) across North America, South America, Asia, Europe, and Africa need is an **affordable AI chatbot** that acts as a 24/7 automated team member.
 
 ### Why Generic Bots Fail
-Most cheap chatbots just give customers a link to an FAQ page. That doesn't work in today's global market—customers want immediate, accurate answers in their local context. When you use an AI that actually learns your business, it can:
+Most cheap chatbots just give customers a link to an FAQ page. That doesn't work in today's global market; customers want immediate, accurate answers in their local context. When you use an AI that actually learns your business, it can:
 * Answer specific questions about your products in multiple languages instantly
 * Collect global leads automatically, day and night, regardless of time zones
 * Seamlessly hand off complex issues to your staff via a live chat dashboard
@@ -52,7 +84,7 @@ The highest performing brands across Latin America (like Brazil and Mexico), Asi
 ### Building Real Relationships Across Continents
 WhatsApp enables true **one on one conversations** at scale. When a customer in Germany, Singapore, or Nigeria messages your business on WhatsApp, they expect a fast, direct, and secure reply.
 
-By connecting your website directly to a WhatsApp bot like LYQN, you aren't just sending a generic blast—you are instantly replying to an international lead while they are still hot, maintaining full compliance with global regulations like GDPR in Europe and LGPD in Brazil.
+By connecting your website directly to a WhatsApp bot like LYQN, you aren't just sending a generic blast; you are instantly replying to an international lead while they are still hot, maintaining full compliance with global regulations like GDPR in Europe and LGPD in Brazil.
 
 ### Easy Lead Generation
 You don't need a complex, expensive foreign marketing stack. By simply adding a WhatsApp widget to your site, you capture the phone number of every global visitor who asks a question, allowing you to follow up and close the deal seamlessly.
@@ -84,14 +116,37 @@ const BlogPost = () => {
   // Generate Article Schema for SEO
   const articleSchema = JSON.stringify({
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     "headline": post.title,
     "description": post.excerpt,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://lyqn.app/blog/${post.id}`
+    },
     "author": {
       "@type": "Organization",
-      "name": post.author
+      "name": post.author,
+      "url": "https://lyqn.app/"
     },
-    "datePublished": post.date
+    "publisher": {
+      "@type": "Organization",
+      "name": "LYQN",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://lyqn.app/lyqn-icon.png"
+      }
+    },
+    "datePublished": post.date,
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "LYQN",
+      "applicationCategory": "BusinessApplication",
+      "offers": {
+        "@type": "Offer",
+        "price": "9.99",
+        "priceCurrency": "USD"
+      }
+    }
   });
 
   return (

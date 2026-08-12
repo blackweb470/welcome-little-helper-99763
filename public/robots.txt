@@ -1,5 +1,30 @@
+# Allow all search engines and crawlers
 User-agent: *
 Allow: /
 
-# Sitemap
+# Allow AI Search Engines & Recommendation Bots
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Sitemaps & LLM Context Indexes
 Sitemap: https://lyqn.app/sitemap.xml
+Allow: /llms.txt
+Allow: /llms-full.txt

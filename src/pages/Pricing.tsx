@@ -115,7 +115,7 @@ const Pricing = () => {
   ];
 
   const faqs = [
-    { q: "Can I change plans later?", a: "Yes — upgrade or downgrade anytime. Changes apply immediately with prorated charges." },
+    { q: "Can I change plans later?", a: "Yes, upgrade or downgrade anytime. Changes apply immediately with prorated charges." },
     { q: "What happens at the business limit?", a: "You'll need to upgrade to create more businesses. Existing ones keep working." },
     { q: "Is there a setup fee?", a: "No setup fees, no hidden charges. Just the monthly subscription." },
     { q: "Do you offer annual billing?", a: "Annual billing with 20% discount is coming soon. Contact us for business contracts." },
@@ -141,7 +141,7 @@ const Pricing = () => {
         .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }
       `}} />
       <SEO 
-        title="LYQN Pricing — Simple, Transparent Plans" 
+        title="LYQN Pricing: Simple, Transparent Plans" 
         description="Choose the perfect LYQN plan for your business. Start with a 2-week free trial. Outperform competitors with our affordable AI chatbot and live agent integration."
         url="https://lyqn.app/pricing"
         schema={schema}

@@ -1,4 +1,3 @@
-// @ts-ignore: Deno module resolution
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
 
 const corsHeaders = {
@@ -25,36 +24,51 @@ function parseCommand(text: string): AdminCommand | null {
   return { command, args };
 }
 
-// Admin commands handler for WhatsApp
-// @ts-ignore: Deno namespace
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    let { businessId, senderPhone, messageText, conversationId, phoneNumberId, accessToken } = await req.json();
+    let { businessId, senderPhone, messageText, conversationId } = await req.json();
 
     console.log('Admin command request:', { businessId, senderPhone, messageText: messageText?.substring(0, 50) });
 
-    // @ts-ignore: Deno namespace
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    // @ts-ignore: Deno namespace
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    let waSettings: any = null;
 
     // Normalize businessId lookup from senderPhone if not provided
     if (!businessId) {
       const { data: settings } = await supabase
         .from('whatsapp_settings')
-        .select('business_id')
+        .select('*')
         .or(`admin_phone_numbers.cs.{"${senderPhone}"},admin_phone_numbers.cs.{"${'+' + senderPhone}"}`)
         .limit(1);
       
       if (settings && settings.length > 0) {
-        businessId = settings[0].business_id;
+        waSettings = settings[0];
+        businessId = waSettings.business_id;
       }
+    } else {
+      const { data: settings } = await supabase
+        .from('whatsapp_settings')
+        .select('*')
+        .eq('business_id', businessId)
+        .maybeSingle();
+      waSettings = settings;
     }
+
+    if (!waSettings) {
+      console.error('WhatsApp settings not found for command processing');
+      return new Response(JSON.stringify({ handled: false, error: 'Settings not found' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const provider = waSettings.provider || 'meta';
 
     const parsed = parseCommand(messageText);
     if (!parsed) {
@@ -68,6 +82,100 @@ Deno.serve(async (req: Request) => {
 
     console.log('Processing admin command:', command, 'with args:', args);
 
+    // Refresh Twilio token if expired
+    let currentAccessToken = waSettings.access_token;
+    if (provider === 'twilio' && waSettings.expires_at && new Date(waSettings.expires_at) <= new Date(Date.now() + 60000)) {
+      console.log('Twilio access token expired in admin commands, refreshing...');
+      try {
+        const clientId = Deno.env.get('TWILIO_CLIENT_ID');
+        const clientSecret = Deno.env.get('TWILIO_CLIENT_SECRET');
+
+        if (clientId && clientSecret && waSettings.refresh_token) {
+          const refreshParams = new URLSearchParams();
+          refreshParams.append('grant_type', 'refresh_token');
+          refreshParams.append('refresh_token', waSettings.refresh_token);
+          refreshParams.append('client_id', clientId);
+          refreshParams.append('client_secret', clientSecret);
+
+          const refreshResponse = await fetch('https://oauth.twilio.com/v2/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: refreshParams.toString(),
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            currentAccessToken = refreshData.access_token;
+            const newExpiresAt = new Date(Date.now() + (refreshData.expires_in || 14400) * 1000).toISOString();
+            
+            await supabase
+              .from('whatsapp_settings')
+              .update({
+                access_token: currentAccessToken,
+                refresh_token: refreshData.refresh_token || waSettings.refresh_token,
+                expires_at: newExpiresAt,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', waSettings.id);
+
+            waSettings.access_token = currentAccessToken;
+            console.log('Token refreshed successfully in admin commands.');
+          }
+        }
+      } catch (refreshErr) {
+        console.error('Error refreshing token in admin commands:', refreshErr);
+      }
+    }
+
+    // Unified send message helper
+    const sendMessage = async (to: string, bodyText: string) => {
+      if (provider === 'twilio') {
+        const twilioParams = new URLSearchParams();
+        twilioParams.append('To', `whatsapp:${to}`);
+        twilioParams.append('From', `whatsapp:${waSettings.phone_number}`);
+        twilioParams.append('Body', bodyText);
+
+        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${waSettings.waba_id}/Messages.json`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentAccessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: twilioParams.toString(),
+        });
+
+        if (!res.ok) {
+          console.error(`Twilio send error: ${await res.text()}`);
+          return { success: false };
+        }
+        return { success: true };
+      } else {
+        // Meta
+        const res = await fetch(`https://graph.facebook.com/v21.0/${waSettings.phone_number_id}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${waSettings.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: to,
+            type: 'text',
+            text: { body: bodyText }
+          }),
+        });
+
+        if (!res.ok) {
+          console.error(`Meta send error: ${await res.text()}`);
+          return { success: false };
+        }
+        return { success: true };
+      }
+    };
+
     switch (command) {
       case 'help':
       case 'h':
@@ -77,7 +185,7 @@ Deno.serve(async (req: Request) => {
           `/accept [id] - Accept a chat request\n` +
           `/active - View active chats\n` +
           `/end [id] - End a chat (current session if ID omitted)\n\n` +
-          `💡 *Tip:* You can click buttons and list items to quickly accept chats without typing IDs!`;
+          `💡 *Tip:* Type \`/accept [id]\` (using the first 8 characters of session ID) to join!`;
         break;
 
       case 'queue':
@@ -100,51 +208,65 @@ Deno.serve(async (req: Request) => {
           if (!queuedSessions || queuedSessions.length === 0) {
             responseText = '✅ No pending chat requests in queue.';
           } else {
-            // Send as interactive list message
-            const rows = queuedSessions.map((session: any) => {
-              const conv = session.conversations;
-              const visitorName = conv?.visitor_name || conv?.visitor_email || conv?.visitor_phone || 'Anonymous';
-              return {
-                id: `accept_${session.id.substring(0, 8)}`,
-                title: `Accept ${visitorName.substring(0, 15)}`,
-                description: `${getTimeAgo(session.created_at)} - ${session.transfer_reason?.substring(0, 40) || 'No reason'}`
-              };
-            });
+            if (provider === 'meta') {
+              // Send interactive list for Meta
+              const rows = queuedSessions.map((session: any) => {
+                const conv = session.conversations;
+                const visitorName = conv?.visitor_name || conv?.visitor_email || conv?.visitor_phone || 'Anonymous';
+                return {
+                  id: `accept_${session.id.substring(0, 8)}`,
+                  title: `Accept ${visitorName.substring(0, 15)}`,
+                  description: `${getTimeAgo(session.created_at)} - ${session.transfer_reason?.substring(0, 40) || 'No reason'}`
+                };
+              });
 
-            await fetch(
-              `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  messaging_product: 'whatsapp',
-                  to: senderPhone,
-                  type: 'interactive',
-                  interactive: {
-                    type: 'list',
-                    header: { type: 'text', text: '📬 Pending Requests' },
-                    body: { text: `There are ${queuedSessions.length} customers waiting for an agent. Select one below to accept.` },
-                    footer: { text: 'Queue Management' },
-                    action: {
-                      button: 'View Queue',
-                      sections: [
-                        {
-                          title: 'Waitlist',
-                          rows: rows
-                        }
-                      ]
+              await fetch(
+                `https://graph.facebook.com/v21.0/${waSettings.phone_number_id}/messages`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${waSettings.access_token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    messaging_product: 'whatsapp',
+                    to: senderPhone,
+                    type: 'interactive',
+                    interactive: {
+                      type: 'list',
+                      header: { type: 'text', text: '📬 Pending Requests' },
+                      body: { text: `There are ${queuedSessions.length} customers waiting for an agent. Select one below to accept.` },
+                      footer: { text: 'Queue Management' },
+                      action: {
+                        button: 'View Queue',
+                        sections: [
+                          {
+                            title: 'Waitlist',
+                            rows: rows
+                          }
+                        ]
+                      }
                     }
-                  }
-                }),
-              }
-            );
-            
-            return new Response(JSON.stringify({ handled: true }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
+                  }),
+                }
+              );
+              
+              return new Response(JSON.stringify({ handled: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              });
+            } else {
+              // Send text queue list for Twilio
+              responseText = `📬 *Pending Requests (${queuedSessions.length})*\n\n`;
+              queuedSessions.forEach((session: any, index: number) => {
+                const conv = session.conversations;
+                const visitorName = conv?.visitor_name || conv?.visitor_email || conv?.visitor_phone || 'Anonymous';
+                responseText += `${index + 1}. *${visitorName}*\n`;
+                responseText += `   ID: \`${session.id.substring(0, 8)}\`\n`;
+                responseText += `   Reason: ${session.transfer_reason || 'No reason'}\n`;
+                responseText += `   Waiting: ${getTimeAgo(session.created_at)}\n\n`;
+              });
+              responseText += `💡 *Tip:* Type \`/accept [id]\` to join a session.`;
+            }
           }
         }
         break;
@@ -187,7 +309,6 @@ Deno.serve(async (req: Request) => {
 
           if (args.length > 0) {
             const sessionIdPrefix = args[0];
-            // Find active session matching the prefix for this business
             const { data: sessions } = await supabase
               .from('live_chat_sessions')
               .select('id, conversation_id, conversations!inner(business_id)')
@@ -201,7 +322,6 @@ Deno.serve(async (req: Request) => {
               break;
             }
           } else {
-            // Find active session for this admin
             const { data: activeSessions } = await supabase
               .from('live_chat_sessions')
               .select('id, conversation_id')
@@ -220,19 +340,16 @@ Deno.serve(async (req: Request) => {
           if (sessionToEnd) {
             const now = new Date().toISOString();
 
-            // End session
             await supabase
               .from('live_chat_sessions')
               .update({ status: 'ended', ended_at: now })
               .eq('id', sessionToEnd.id);
 
-            // End conversation
             await supabase
               .from('conversations')
               .update({ ended_at: now })
               .eq('id', sessionToEnd.conversation_id);
 
-            // Check if there are other people waiting in the queue
             const { count: pendingCount } = await supabase
               .from('live_chat_sessions')
               .select('id', { count: 'exact', head: true })
@@ -245,7 +362,6 @@ Deno.serve(async (req: Request) => {
               responseText = '✅ Conversation ended successfully. Your queue is now empty.';
             }
             
-            // Notify visitor and save to messages
             const endMsg = '👋 This chat session has been ended by the agent. Have a great day!';
             const { data: savedMsg } = await supabase
               .from('messages')
@@ -257,7 +373,6 @@ Deno.serve(async (req: Request) => {
               .select()
               .single();
               
-            // Notify visitor via WhatsApp or Web Widget
             try {
               const { data: conv } = await supabase
                 .from('conversations')
@@ -268,22 +383,7 @@ Deno.serve(async (req: Request) => {
               if (conv?.channel === 'whatsapp') {
                 const customerPhone = (conv.channel_metadata as any)?.phone_number;
                 if (customerPhone) {
-                  await fetch(
-                    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        messaging_product: 'whatsapp',
-                        to: customerPhone,
-                        type: 'text',
-                        text: { body: endMsg }
-                      }),
-                    }
-                  );
+                  await sendMessage(customerPhone, endMsg);
                 }
               } else {
                 const broadcastBusinessId = conv?.business_id || businessId;
@@ -321,7 +421,6 @@ Deno.serve(async (req: Request) => {
           let sessionToAccept = null;
           
           if (args.length === 0) {
-            // Find oldest queued session for this specific business
             const { data: queuedSessions } = await supabase
               .from('live_chat_sessions')
               .select('id, conversation_id, conversations!inner(business_id)')
@@ -338,7 +437,6 @@ Deno.serve(async (req: Request) => {
             }
           } else {
             const sessionIdPrefix = args[0];
-            // Find session matching the prefix - fetch all queued for this business and match in memory
             const { data: sessions } = await supabase
               .from('live_chat_sessions')
               .select('id, conversation_id, conversations!inner(business_id)')
@@ -355,14 +453,12 @@ Deno.serve(async (req: Request) => {
           }
 
           if (sessionToAccept) {
-            // Get the business owner as agent
             const { data: business } = await supabase
               .from('businesses')
               .select('owner_id')
               .eq('id', businessId)
               .single();
 
-            // Update session with agent info and WhatsApp phone
             const { error: updateError } = await supabase
               .from('live_chat_sessions')
               .update({
@@ -378,7 +474,6 @@ Deno.serve(async (req: Request) => {
             } else {
               responseText = `✅ Chat accepted!\n\nSession ID: \`${sessionToAccept.id.substring(0, 8)}\`\n\nCustomer messages will now be forwarded to you here. Reply directly to respond.`;
               
-              // Notify customer
               const { data: conv } = await supabase
                 .from('conversations')
                 .select('channel, channel_metadata, visitor_id')
@@ -388,25 +483,9 @@ Deno.serve(async (req: Request) => {
               if (conv?.channel === 'whatsapp') {
                 const customerPhone = (conv.channel_metadata as any)?.phone_number;
                 if (customerPhone) {
-                  await fetch(
-                    `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-                    {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        messaging_product: 'whatsapp',
-                        to: customerPhone,
-                        type: 'text',
-                        text: { body: '👋 A support agent has joined the chat. How can we help you today?' }
-                      }),
-                    }
-                  );
+                  await sendMessage(customerPhone, '👋 A support agent has joined the chat. How can we help you today?');
                 }
               } else {
-                // If it's a web chat, we should still save the message so it shows up in the widget
                 await supabase
                   .from('messages')
                   .insert({
@@ -415,7 +494,6 @@ Deno.serve(async (req: Request) => {
                     content: '👋 A support agent has joined the chat. How can we help you today?'
                   });
 
-                // Broadcast the agent_joined event to immediately notify the web widget
                 try {
                   const joinChannel = supabase.channel(`visitor-messages-${sessionToAccept.conversation_id}`);
                   await new Promise<void>((resolve) => {
@@ -448,23 +526,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // Send response via WhatsApp
-    if (responseText && phoneNumberId && accessToken) {
-      await fetch(
-        `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: senderPhone,
-            type: 'text',
-            text: { body: responseText }
-          }),
-        }
-      );
+    if (responseText) {
+      await sendMessage(senderPhone, responseText);
     }
 
     return new Response(JSON.stringify({ 

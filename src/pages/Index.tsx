@@ -233,7 +233,7 @@ const Index = () => {
       "name": "LYQN",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
-      "description": "Self-learning AI chat with one-click handoff to humans and a WhatsApp bridge. Deploy on your site in one line. Outperform your competitors with advanced AI customer service.",
+      "description": "Affordable self-learning AI chatbot for startup founders and SMBs with human handoff and WhatsApp integration. Deploy in seconds for a fraction of the enterprise cost.",
       "url": "https://lyqn.app/",
       "offers": {
         "@type": "Offer",
@@ -356,8 +356,8 @@ const Index = () => {
             <div className="flex-1 max-w-4xl text-left">
               {/* LYQN Badge */}
               <div className="mb-6 inline-flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: "#dbeafe", color: "#1e40af", animation: "cio-fade .6s ease both" }}>
-                <span className="font-bold text-[10px] tracking-wider uppercase bg-white px-2 py-0.5 rounded-full text-[#2563eb] shadow-sm">New</span>
-                <span className="text-sm font-medium">Now with WhatsApp integration &rarr;</span>
+                <span className="font-bold text-[10px] tracking-wider uppercase bg-white px-2 py-0.5 rounded-full text-[#2563eb] shadow-sm">Built for Founders & SMBs</span>
+                <span className="text-sm font-medium">Affordable 24/7 AI Chatbot &rarr;</span>
               </div>
 
               <h1
@@ -370,7 +370,7 @@ const Index = () => {
                   animation: "cio-fade-up .7s ease .05s both",
                 }}
               >
-                The global AI agent platform for small businesses.
+                The affordable AI chatbot built for startup founders & SMBs.
               </h1>
 
               <p
@@ -384,7 +384,7 @@ const Index = () => {
                   animation: "cio-fade-up .7s ease .15s both",
                 }}
               >
-                Join thousands of forward-thinking companies. Automate your customer support, answer business questions instantly 24/7, and seamlessly escalate to a human when needed.
+                Stop overpaying for customer support tools. LYQN gives startup founders and small businesses a self-learning 24/7 AI chatbot with WhatsApp integration at a price that fits your budget.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-16" style={{ animation: "cio-fade-up .7s ease .25s both" }}>
@@ -465,7 +465,7 @@ const Index = () => {
                 Every time your team resolves a ticket, your AI agents get smarter.
               </h2>
               <p className="text-gray-500 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-                When your team resolves a ticket, your AI agent learns from it. Your team's judgment compounds into the AI's capability — so the more your team works, the less they have to.
+                When your team resolves a ticket, your AI agent learns from it. Your team's judgment compounds into the AI's capability, so the more your team works, the less they have to.
               </p>
             </div>
             
@@ -664,7 +664,7 @@ const Index = () => {
                         </div>
                         <div>
                           <div className="font-bold text-gray-900 text-[14px]">LYQN Support</div>
-                          <div className="text-[12px] text-gray-500">Handles Tier-1 support & FAQs</div>
+                          <div className="text-[12px] text-gray-500">Handles Tier 1 support & FAQs</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-gray-400">
@@ -836,7 +836,7 @@ const Index = () => {
                 <div>
                   <h3 className="font-bold mb-3 text-gray-900" style={{ fontSize: 18, letterSpacing: "-0.01em" }}>Reliable infrastructure</h3>
                   <p className="text-gray-500 leading-relaxed" style={{ fontSize: 14 }}>
-                    Built on AWS with automatic scaling and zero maintenance required. LYQN handles peak traffic without interruption — your team never has to think about it.
+                    Built on AWS with automatic scaling and zero maintenance required. LYQN handles peak traffic without interruption, so your team never has to think about it.
                   </p>
                 </div>
               </div>
@@ -855,7 +855,7 @@ const Index = () => {
                 <div>
                   <h3 className="font-bold mb-3 text-gray-900" style={{ fontSize: 18, letterSpacing: "-0.01em" }}>AI that knows its limits</h3>
                   <p className="text-gray-500 leading-relaxed" style={{ fontSize: 14 }}>
-                    LYQN agents are built with escalation rules and fallback logic that determine exactly when AI acts and when it escalates. Full context passed to your team every time — no cold handoffs.
+                    LYQN agents are built with escalation rules and fallback logic that determine exactly when AI acts and when it escalates. Full context passed to your team every time with no cold handoffs.
                   </p>
                 </div>
               </div>

@@ -123,6 +123,8 @@ Deno.serve(async (req) => {
       );
     }
 
+    const provider = waSettings.provider || 'meta';
+
     // Prepare message content for database
     let messageContent: string;
     if (interactive) {
@@ -136,7 +138,7 @@ Deno.serve(async (req) => {
         messageContent = interactive.body;
       }
     } else if (imageUrl) {
-      messageContent = message ? `[Image: ${message}]` : '[Image]';
+      messageContent = message ? message : '';
     } else {
       messageContent = message!;
     }
@@ -147,7 +149,7 @@ Deno.serve(async (req) => {
       .insert({
         conversation_id: conversationId,
         role: 'assistant',
-        content: messageContent,
+        content: messageContent || '[Media Message]',
         audio_url: imageUrl || null
       })
       .select()
@@ -171,141 +173,235 @@ Deno.serve(async (req) => {
         });
     }
 
-    // Build WhatsApp API payload
-    let whatsappPayload: any;
+    if (provider === 'twilio') {
+      // Refresh Twilio OAuth access token if expired
+      let currentAccessToken = waSettings.access_token;
+      if (waSettings.expires_at && new Date(waSettings.expires_at) <= new Date(Date.now() + 60000)) {
+        console.log('Twilio access token expired in sender, refreshing...');
+        try {
+          const clientId = Deno.env.get('TWILIO_CLIENT_ID');
+          const clientSecret = Deno.env.get('TWILIO_CLIENT_SECRET');
 
-    if (interactive) {
-      // Interactive message payload
-      if (interactive.type === 'quick_reply') {
-        whatsappPayload = {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: recipientPhone,
-          type: 'interactive',
-          interactive: {
-            type: 'button',
-            body: { text: interactive.body },
-            action: {
-              buttons: interactive.buttons?.map(btn => ({
-                type: 'reply',
-                reply: {
-                  id: btn.id,
-                  title: btn.title
-                }
-              }))
+          if (clientId && clientSecret && waSettings.refresh_token) {
+            const refreshParams = new URLSearchParams();
+            refreshParams.append('grant_type', 'refresh_token');
+            refreshParams.append('refresh_token', waSettings.refresh_token);
+            refreshParams.append('client_id', clientId);
+            refreshParams.append('client_secret', clientSecret);
+
+            const refreshResponse = await fetch('https://oauth.twilio.com/v2/token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: refreshParams.toString(),
+            });
+
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              currentAccessToken = refreshData.access_token;
+              const newExpiresAt = new Date(Date.now() + (refreshData.expires_in || 14400) * 1000).toISOString();
+              
+              await supabase
+                .from('whatsapp_settings')
+                .update({
+                  access_token: currentAccessToken,
+                  refresh_token: refreshData.refresh_token || waSettings.refresh_token,
+                  expires_at: newExpiresAt,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', waSettings.id);
+
+              console.log('Token refreshed successfully in sender.');
             }
           }
-        };
-
-        // Add optional header
-        if (interactive.header) {
-          whatsappPayload.interactive.header = {
-            type: 'text',
-            text: interactive.header
-          };
-        }
-
-        // Add optional footer
-        if (interactive.footer) {
-          whatsappPayload.interactive.footer = { text: interactive.footer };
-        }
-      } else if (interactive.type === 'list') {
-        whatsappPayload = {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: recipientPhone,
-          type: 'interactive',
-          interactive: {
-            type: 'list',
-            body: { text: interactive.body },
-            action: {
-              button: interactive.listButtonText || 'View Options',
-              sections: interactive.sections?.map(section => ({
-                title: section.title,
-                rows: section.rows.map(row => ({
-                  id: row.id,
-                  title: row.title,
-                  description: row.description || undefined
-                }))
-              }))
-            }
-          }
-        };
-
-        // Add optional header
-        if (interactive.header) {
-          whatsappPayload.interactive.header = {
-            type: 'text',
-            text: interactive.header
-          };
-        }
-
-        // Add optional footer
-        if (interactive.footer) {
-          whatsappPayload.interactive.footer = { text: interactive.footer };
+        } catch (refreshErr) {
+          console.error('Error refreshing token in sender:', refreshErr);
         }
       }
-    } else if (imageUrl) {
-      // Image message payload
-      whatsappPayload = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: recipientPhone,
-        type: 'image',
-        image: {
-          link: imageUrl,
-          caption: message || undefined
-        }
-      };
-    } else {
-      // Regular text message payload
-      whatsappPayload = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: recipientPhone,
-        type: 'text',
-        text: { body: message }
-      };
-    }
 
-    console.log('Sending WhatsApp payload:', JSON.stringify(whatsappPayload, null, 2));
+      // Send via Twilio Messages API
+      console.log('Sending message via Twilio to:', recipientPhone);
 
-    // Send via WhatsApp Cloud API
-    const whatsappResponse = await fetch(
-      `https://graph.facebook.com/v21.0/${waSettings.phone_number_id}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${waSettings.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(whatsappPayload),
+      const twilioParams = new URLSearchParams();
+      twilioParams.append('To', `whatsapp:${recipientPhone}`);
+      twilioParams.append('From', `whatsapp:${waSettings.phone_number}`);
+      twilioParams.append('Body', messageContent);
+      if (imageUrl) {
+        twilioParams.append('MediaUrl', imageUrl);
       }
-    );
 
-    if (!whatsappResponse.ok) {
-      const errorText = await whatsappResponse.text();
-      console.error('WhatsApp API error:', whatsappResponse.status, errorText);
+      const twilioResponse = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${waSettings.waba_id}/Messages.json`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentAccessToken}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: twilioParams.toString(),
+        }
+      );
+
+      if (!twilioResponse.ok) {
+        const errorText = await twilioResponse.text();
+        console.error('Twilio API error:', twilioResponse.status, errorText);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to send WhatsApp message via Twilio', 
+            details: errorText 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const result = await twilioResponse.json();
+      console.log('Twilio WhatsApp message sent successfully:', result.sid);
+
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to send WhatsApp message', 
-          details: errorText 
+          success: true, 
+          messageId: result.sid,
+          type: interactive ? interactive.type : 'text'
         }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } else {
+      // Send via Meta Cloud API
+      let whatsappPayload: any;
+
+      if (interactive) {
+        // Interactive message payload
+        if (interactive.type === 'quick_reply') {
+          whatsappPayload = {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: recipientPhone,
+            type: 'interactive',
+            interactive: {
+              type: 'button',
+              body: { text: interactive.body },
+              action: {
+                buttons: interactive.buttons?.map(btn => ({
+                  type: 'reply',
+                  reply: {
+                    id: btn.id,
+                    title: btn.title
+                  }
+                }))
+              }
+            }
+          };
+
+          // Add optional header
+          if (interactive.header) {
+            whatsappPayload.interactive.header = {
+              type: 'text',
+              text: interactive.header
+            };
+          }
+
+          // Add optional footer
+          if (interactive.footer) {
+            whatsappPayload.interactive.footer = { text: interactive.footer };
+          }
+        } else if (interactive.type === 'list') {
+          whatsappPayload = {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: recipientPhone,
+            type: 'interactive',
+            interactive: {
+              type: 'list',
+              body: { text: interactive.body },
+              action: {
+                button: interactive.listButtonText || 'View Options',
+                sections: interactive.sections?.map(section => ({
+                  title: section.title,
+                  rows: section.rows.map(row => ({
+                    id: row.id,
+                    title: row.title,
+                    description: row.description || undefined
+                  }))
+                }))
+              }
+            }
+          };
+
+          // Add optional header
+          if (interactive.header) {
+            whatsappPayload.interactive.header = {
+              type: 'text',
+              text: interactive.header
+            };
+          }
+
+          // Add optional footer
+          if (interactive.footer) {
+            whatsappPayload.interactive.footer = { text: interactive.footer };
+          }
+        }
+      } else if (imageUrl) {
+        // Image message payload
+        whatsappPayload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipientPhone,
+          type: 'image',
+          image: {
+            link: imageUrl,
+            caption: message || undefined
+          }
+        };
+      } else {
+        // Regular text message payload
+        whatsappPayload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: recipientPhone,
+          type: 'text',
+          text: { body: message }
+        };
+      }
+
+      console.log('Sending Meta WhatsApp payload:', JSON.stringify(whatsappPayload, null, 2));
+
+      const whatsappResponse = await fetch(
+        `https://graph.facebook.com/v21.0/${waSettings.phone_number_id}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${waSettings.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(whatsappPayload),
+        }
+      );
+
+      if (!whatsappResponse.ok) {
+        const errorText = await whatsappResponse.text();
+        console.error('Meta WhatsApp API error:', whatsappResponse.status, errorText);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to send WhatsApp message via Meta', 
+            details: errorText 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const result = await whatsappResponse.json();
+      console.log('Meta WhatsApp message sent successfully:', result);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          messageId: result.messages?.[0]?.id,
+          type: interactive ? interactive.type : 'text'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const result = await whatsappResponse.json();
-    console.log('WhatsApp message sent successfully:', result);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        messageId: result.messages?.[0]?.id,
-        type: interactive ? interactive.type : 'text'
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
 
   } catch (error) {
     console.error('Error sending WhatsApp message:', error);

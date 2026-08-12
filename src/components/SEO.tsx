@@ -14,7 +14,7 @@ interface SEOProps {
 }
 
 export const SEO: React.FC<SEOProps> = ({
-  title = "LYQN — The #1 Global AI Chatbot for Small Businesses",
+  title = "LYQN: The #1 Global AI Chatbot for Small Businesses",
   description = "Affordable, self-learning AI chatbot built for global SMBs. Automate customer support and generate leads on WhatsApp across North America, South America, Europe, Asia, and Africa.",
   keywords = "AI chatbot North America, WhatsApp bot South America, small business AI Asia, European WhatsApp support, AI customer service Africa, global SMB chatbot, affordable AI bot",
   url = "https://lyqn.app/",
@@ -34,6 +34,7 @@ export const SEO: React.FC<SEOProps> = ({
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
       <meta name="author" content={author} />
+      <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
       
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />
