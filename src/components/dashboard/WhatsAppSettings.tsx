@@ -39,6 +39,8 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   
   // SDK States for Meta
   const [sdkStatus, setSdkStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [metaAppId, setMetaAppId] = useState<string>('2143263399800980');
+  const [metaConfigId, setMetaConfigId] = useState<string>('970530725626776');
   
   // Connection validation inputs
   const [testLoading, setTestLoading] = useState(false);
@@ -51,12 +53,36 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
     phone_number: ''
   });
 
-  // Load Meta Facebook SDK on mount for Meta Embedded Signup (Meta OAuth)
+  // Fetch Meta App ID & Config ID from platform_settings or env
   useEffect(() => {
-    const initMetaSDK = () => {
+    const loadPlatformMetaConfig = async () => {
       try {
-        const appId = import.meta.env.VITE_META_APP_ID || '242161592913036';
+        const { data, error } = await (supabase
+          .from('platform_settings' as any)
+          .select('key, value') as any);
         
+        let appId = import.meta.env.VITE_META_APP_ID || '2143263399800980';
+        let configId = import.meta.env.VITE_META_CONFIG_ID || '970530725626776';
+
+        if (!error && data) {
+          const dbAppId = data.find((s: any) => s.key === 'meta_app_id')?.value;
+          const dbConfigId = data.find((s: any) => s.key === 'whatsapp_config_id')?.value;
+          if (dbAppId) appId = dbAppId;
+          if (dbConfigId) configId = dbConfigId;
+        }
+
+        setMetaAppId(appId);
+        setMetaConfigId(configId);
+        initMetaSDK(appId);
+      } catch (err) {
+        console.error('Error fetching Meta platform settings:', err);
+        const fallbackAppId = import.meta.env.VITE_META_APP_ID || '2143263399800980';
+        initMetaSDK(fallbackAppId);
+      }
+    };
+
+    const initMetaSDK = (appId: string) => {
+      try {
         window.fbAsyncInit = function() {
           window.FB.init({
             appId: appId,
@@ -65,13 +91,21 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
             version: 'v21.0'
           });
           setSdkStatus('ready');
-          console.log('Meta SDK initialized successfully');
+          console.log('Meta SDK initialized successfully with App ID:', appId);
         };
 
         const d = document;
         const s = 'script';
         const id = 'facebook-jssdk';
         if (d.getElementById(id)) {
+          if (window.FB) {
+            window.FB.init({
+              appId: appId,
+              cookie: true,
+              xfbml: true,
+              version: 'v21.0'
+            });
+          }
           setSdkStatus('ready');
           return;
         }
@@ -86,7 +120,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
       }
     };
 
-    initMetaSDK();
+    loadPlatformMetaConfig();
   }, []);
 
   // Fetch active settings for the business
@@ -150,7 +184,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         setConnecting(false);
       }
     }, {
-      config_id: '1592913036', // Meta WABA Config ID
+      config_id: metaConfigId, // Meta WABA Configuration ID (970530725626776)
       response_type: 'code',
       override_default_response_type: true
     });
