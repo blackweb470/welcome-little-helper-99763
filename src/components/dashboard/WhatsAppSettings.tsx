@@ -161,42 +161,58 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
   const launchMetaSignup = () => {
     setConnecting(true);
     
-    if (!window.FB) {
+    // Direct Meta Onboarding URI fallback helper
+    const openDirectMetaOnboarding = () => {
+      const onboardUrl = `https://business.facebook.com/messaging/whatsapp/onboard/?app_id=${metaAppId}&config_id=${metaConfigId}`;
+      const width = 600;
+      const height = 700;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+      window.open(onboardUrl, 'MetaWhatsAppSignup', `width=${width},height=${height},top=${top},left=${left}`);
       toast({
-        variant: "destructive",
-        title: "SDK Error",
-        description: "Facebook SDK is not initialized. Please try disabling ad-blockers and refreshing."
+        title: "Meta Signup Opened",
+        description: "Complete your WhatsApp setup in the Meta popup window."
       });
       setConnecting(false);
+    };
+
+    if (!window.FB) {
+      console.warn("Facebook SDK not ready, opening direct Meta onboarding flow...");
+      openDirectMetaOnboarding();
       return;
     }
 
-    window.FB.login((response: any) => {
-      if (response.authResponse) {
-        const code = response.authResponse.code;
-        if (code) {
-          handleMetaSignupResponse(code);
+    try {
+      window.FB.login((response: any) => {
+        if (response.authResponse) {
+          const code = response.authResponse.code;
+          if (code) {
+            handleMetaSignupResponse(code);
+          } else {
+            toast({
+              variant: "destructive",
+              title: "Signup Failed",
+              description: "No authorization code returned from Meta."
+            });
+            setConnecting(false);
+          }
         } else {
           toast({
             variant: "destructive",
-            title: "Signup Failed",
-            description: "No authorization code returned from Meta."
+            title: "Cancelled",
+            description: "WhatsApp registration was cancelled."
           });
           setConnecting(false);
         }
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Cancelled",
-          description: "WhatsApp registration was cancelled."
-        });
-        setConnecting(false);
-      }
-    }, {
-      config_id: metaConfigId, // Meta WABA Configuration ID (970530725626776)
-      response_type: 'code',
-      override_default_response_type: true
-    });
+      }, {
+        config_id: metaConfigId,
+        response_type: 'code',
+        override_default_response_type: true
+      });
+    } catch (err: any) {
+      console.error("FB.login failed, falling back to direct Meta onboarding:", err);
+      openDirectMetaOnboarding();
+    }
   };
 
   const handleMetaSignupResponse = async (code: string) => {
