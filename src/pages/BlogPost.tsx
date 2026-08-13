@@ -62,6 +62,42 @@ const quickSummaries: Record<string, { takeaways: string[]; stats: { label: stri
       { label: "Lead Retention", value: "3x Higher" },
       { label: "Setup", value: "1-Click" }
     ]
+  },
+  "live-agent-handoff-guide": {
+    takeaways: [
+      "AI customer support works best when paired with zero-friction live agent escalations.",
+      "Automated sentiment tracking detects user frustration before escalation occurs.",
+      "Passing structured conversation memory prevents customer repetition and cold handoffs."
+    ],
+    stats: [
+      { label: "Handoff Time", value: "< 3 Sec" },
+      { label: "Customer Satisfaction", value: "98%" },
+      { label: "Escalation Rate", value: "~15%" }
+    ]
+  },
+  "sentiment-analysis-customer-support": {
+    takeaways: [
+      "Real-time natural language processing identifies negative sentiment and urgency instantly.",
+      "Early intervention prevents negative reviews and user cancellation before churn happens.",
+      "Automated priority queueing routes urgent requests directly to senior support leads."
+    ],
+    stats: [
+      { label: "Churn Deflection", value: "40%" },
+      { label: "Sentiment Accuracy", value: "96%" },
+      { label: "Resolution Speed", value: "2x Faster" }
+    ]
+  },
+  "ai-document-learning-knowledge-base": {
+    takeaways: [
+      "Automated web crawlers turn your help center and website into an instant AI knowledge base.",
+      "PDF and document uploads train custom AI agents in under two minutes without writing code.",
+      "Dynamic knowledge retrieval keeps support answers current as your product evolves."
+    ],
+    stats: [
+      { label: "Setup Time", value: "2 Mins" },
+      { label: "Accuracy Rate", value: "99.2%" },
+      { label: "Docs Ingested", value: "Unlimited" }
+    ]
   }
 };
 
@@ -130,6 +166,48 @@ By connecting your website directly to a WhatsApp bot like LYQN, you aren't just
 
 ### Easy Lead Generation
 You don't need a complex, expensive foreign marketing stack. By simply adding a WhatsApp widget to your site, you capture the phone number of every global visitor who asks a question, allowing you to follow up and close the deal seamlessly.
+  `,
+  "live-agent-handoff-guide": `
+## The Hybrid AI + Human Support Advantage
+
+Automating support with AI doesn't mean replacing human empathy—it means empowering your human agents to step in at the exact right moment.
+
+### 1. Eliminating Cold Escalations
+Traditional chatbot escalations often leave human agents clueless about what happened before the transfer. LYQN automatically generates a concise conversation summary, intent score, and key topics before the agent joins the chat.
+
+### 2. Real-Time Availability & Queue Positions
+When a customer requests a human agent, LYQN displays live queue positions and estimated wait times, keeping expectations transparent.
+
+### 3. Unified Inbox Across Web and WhatsApp
+Whether an escalation happens on your website or on WhatsApp, agents respond from a single dashboard with zero tab-switching.
+  `,
+  "sentiment-analysis-customer-support": `
+## Catching Frustration Before It Turns Into Churn
+
+Customer churn rarely happens out of nowhere. It usually stems from unresolved frustration during routine support interactions.
+
+### 1. Automated Intent & Sentiment Scoring
+LYQN's AI constantly measures visitor tone, detecting confusion, urgency, or negative sentiment in real-time.
+
+### 2. Instant Priority Escalations
+If a customer expresses high frustration, LYQN automatically bypasses standard queues and routes the conversation to your senior support team immediately.
+
+### 3. Data Insights to Improve Documentation
+Sentiment reports show founders exactly which help documents or product features cause friction, enabling continuous product improvements.
+  `,
+  "ai-document-learning-knowledge-base": `
+## Train Your Custom Support AI in Under 2 Minutes
+
+Creating a custom support AI used to take months of manual decision-tree building. With LYQN, knowledge ingestion is completely automated.
+
+### 1. One-Click Website Crawling
+Simply provide your website or help center URL. LYQN automatically scans your pages, indexing FAQs, policy guides, and product details into an instant AI knowledge base.
+
+### 2. PDF & Document Uploads
+Have internal onboarding guides or PDF specs? Upload them directly. The AI parses table data, technical specifications, and step-by-step instructions instantly.
+
+### 3. Continuous Learning
+Whenever you update your website or add new product features, LYQN refreshes its knowledge base so your customers always receive up-to-date answers.
   `
 };
 
