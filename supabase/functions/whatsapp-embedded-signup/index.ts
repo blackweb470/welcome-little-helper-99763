@@ -109,10 +109,7 @@ Deno.serve(async (req) => {
         waba_id: wabaId,
         phone_number_id: phoneNumberId,
         phone_number: phoneNumber,
-        display_name: displayName,
-        verify_token: verifyToken,
         connection_method: 'embedded_signup',
-        provider: 'meta',
         enabled: true,
         updated_at: new Date().toISOString()
       });

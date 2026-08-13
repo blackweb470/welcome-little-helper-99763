@@ -142,7 +142,7 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         console.warn('Error fetching whatsapp_settings with select(*), trying fallback:', error.message);
         const fallback = await supabase
           .from('whatsapp_settings')
-          .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, display_name, connection_method, verify_token')
+          .select('id, business_id, phone_number_id, waba_id, enabled, phone_number, connection_method')
           .eq('business_id', businessId)
           .maybeSingle();
         data = fallback.data as any;
