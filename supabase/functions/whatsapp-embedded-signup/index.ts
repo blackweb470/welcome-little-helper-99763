@@ -75,14 +75,16 @@ Deno.serve(async (req) => {
       throw new Error('No phone numbers found in the WhatsApp Business Account');
     }
 
-    // We take the first verified number
+    // We take the first verified number and display name from Meta
     const phoneNumber = phonesData.data[0].display_phone_number;
     const phoneNumberId = phonesData.data[0].id;
+    const displayName = phonesData.data[0].verified_name || phonesData.data[0].display_phone_number || 'Meta WhatsApp Business';
 
     console.log('Successfully retrieved Meta data:', {
       wabaId,
       phoneNumberId,
-      phoneNumber
+      phoneNumber,
+      displayName
     });
 
     // 4. Save to database
@@ -101,6 +103,7 @@ Deno.serve(async (req) => {
         waba_id: wabaId,
         phone_number_id: phoneNumberId,
         phone_number: phoneNumber,
+        display_name: displayName,
         verify_token: verifyToken,
         connection_method: 'embedded_signup',
         provider: 'meta', // Explicitly indicate Meta provider
