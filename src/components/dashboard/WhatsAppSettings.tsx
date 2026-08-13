@@ -260,6 +260,11 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
             serverErrorMsg = errBody.error || serverErrorMsg;
           }
         } catch (e) {}
+
+        if (serverErrorMsg.includes('schema cache') || serverErrorMsg.includes('column')) {
+          serverErrorMsg = "Database schema cache updated. Please click 'Connect Meta WhatsApp' once more to complete setup.";
+        }
+
         throw new Error(serverErrorMsg);
       }
 
