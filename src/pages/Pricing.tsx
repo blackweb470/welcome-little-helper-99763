@@ -31,7 +31,7 @@ const TOKENS = `
   }
   .cio-pricing h1, .cio-pricing h2, .cio-pricing h3, .cio-pricing h4 {
     font-family: 'Bricolage Grotesque', 'Inter', sans-serif;
-    color: var(--ink);
+    color: inherit;
     letter-spacing: -0.01em;
   }
   .cio-pill-primary {
@@ -548,7 +548,7 @@ const Pricing = () => {
 
           <div className="bg-[#111111] text-white p-10 sm:p-14 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 shadow-2xl">
             <div>
-              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
+              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3 text-white">
                 Start free trial <span className="text-[#abffae]">↗</span>
               </h2>
               <p className="text-gray-300 text-base max-w-lg">
