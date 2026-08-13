@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ArrowRight, ArrowUpRight, HelpCircle, ShieldCheck, Zap, Star, Building2, Sparkles } from "lucide-react";
@@ -7,6 +7,88 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
 import { SEO } from "@/components/SEO";
+
+/* =========================================================================
+   Customer.io-inspired design system tokens aligned with Index.tsx
+   ========================================================================= */
+const TOKENS = `
+  .cio-pricing {
+    --ink: #111111;
+    --ocean: #222222;
+    --slate: #444444;
+    --stone: #666666;
+    --ash: #d1cfc5;
+    --leaf: #abffae;
+    --mint: #e2eafc;
+    --canvas: #f4f3ed;
+    --white: #ffffff;
+    --fog: #ebeae3;
+    --electric: #006af2;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--canvas);
+    letter-spacing: -0.01em;
+  }
+  .cio-pricing h1, .cio-pricing h2, .cio-pricing h3, .cio-pricing h4 {
+    font-family: 'Bricolage Grotesque', 'Inter', sans-serif;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .cio-pill-primary {
+    background: var(--ink);
+    color: var(--white);
+    border: 1px solid var(--ink);
+    border-radius: 9999px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: transform .25s ease, box-shadow .25s ease, background .2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .cio-pill-primary:hover {
+    background: var(--ocean);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  .cio-pill-white {
+    background: var(--white);
+    color: var(--ink);
+    border: 1px solid var(--white);
+    border-radius: 9999px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: transform .25s ease, box-shadow .25s ease, background .2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .cio-pill-white:hover {
+    background: #f0f0f0;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(255,255,255,0.2);
+  }
+  .cio-link {
+    color: var(--ocean); text-decoration: none;
+    position: relative; transition: color .2s ease;
+  }
+  .cio-link:hover { color: var(--ink); }
+  .cio-reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .7s cubic-bezier(0.16, 1, 0.3, 1), transform .7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cio-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
 
 const useReveal = () => {
   useEffect(() => {
@@ -51,7 +133,7 @@ const Pricing = () => {
       monthlyPrice: 5,
       annualPrice: 4,
       productId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
-      description: "FOR ONE BUSINESS",
+      description: "For individual founders & solo projects",
       icon: Star,
       features: [
         { num: "01", text: "2 weeks free trial" },
@@ -62,7 +144,7 @@ const Pricing = () => {
         { num: "06", text: "Email notifications" },
         { num: "07", text: "Chat history" },
       ],
-      cta: "START FREE TRIAL",
+      cta: "Start Free Trial",
       popular: false,
       isDark: false,
     },
@@ -71,7 +153,7 @@ const Pricing = () => {
       monthlyPrice: 10,
       annualPrice: 8,
       productId: "65495367-3163-49af-9ae4-0c3e740d332a",
-      description: "FOR GROWING TEAMS",
+      description: "For growing teams scaling customer support",
       icon: Zap,
       features: [
         { num: "01", text: "Everything in Basic" },
@@ -82,7 +164,7 @@ const Pricing = () => {
         { num: "06", text: "Proactive chat rules" },
         { num: "07", text: "Priority support" },
       ],
-      cta: "CHOOSE PRO PLAN",
+      cta: "Get Started with Pro",
       popular: true,
       isDark: true,
     },
@@ -91,7 +173,7 @@ const Pricing = () => {
       monthlyPrice: 20,
       annualPrice: 16,
       productId: "495da580-72e9-4fb9-a706-b098921df542",
-      description: "FOR SERIOUS SCALE",
+      description: "For serious scale & multi-brand operations",
       icon: Building2,
       features: [
         { num: "01", text: "Everything in Pro" },
@@ -102,7 +184,7 @@ const Pricing = () => {
         { num: "06", text: "Team management" },
         { num: "07", text: "Dedicated account manager" },
       ],
-      cta: "CHOOSE BUSINESS",
+      cta: "Get Started with Business",
       popular: false,
       isDark: false,
     },
@@ -130,176 +212,176 @@ const Pricing = () => {
   });
 
   return (
-    <div className="min-h-screen text-[#111111] antialiased selection:bg-blue-600 selection:text-white" style={{ background: "#faf9f5" }}>
-      <style dangerouslySetInnerHTML={{__html: `
-        .cio-reveal { opacity: 0; transform: translateY(16px); transition: opacity .7s cubic-bezier(0.16, 1, 0.3, 1), transform .7s cubic-bezier(0.16, 1, 0.3, 1); }
-        .cio-reveal.is-visible { opacity: 1; transform: translateY(0); }
-      `}} />
+    <div className="cio-pricing min-h-screen">
       <SEO 
         title="LYQN Pricing: Simple, Transparent Plans" 
         description="Choose the perfect LYQN plan for your business. Start with a 2-week free trial. Outperform competitors with our affordable AI chatbot and live agent integration."
         url="https://lyqn.app/pricing"
         schema={schema}
       />
+      <style>{TOKENS}</style>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#faf9f5]/90 backdrop-blur-md border-b border-gray-300/80">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => navigate("/")} 
-              className="group text-2xl font-bold tracking-tight text-[#111111] flex items-center gap-1.5 focus:outline-none"
-            >
-              <span className="font-extrabold tracking-tighter">LYQN</span>
-              <span className="inline-flex gap-1 items-center ml-0.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-600 group-hover:scale-125 transition-transform"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 group-hover:scale-125 transition-transform"></span>
-              </span>
-            </button>
-          </div>
+      {/* ============== Header ============== */}
+      <header className="sticky top-0 z-50 pt-4 pb-4 transition-all" style={{ background: "var(--canvas)" }}>
+        <div className="container mx-auto px-6 h-14 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5 font-bold text-lg text-[#111]">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm bg-[#111]" />
+              <div className="w-2.5 h-2.5 rounded-sm opacity-60 bg-[#111]" />
+            </div>
+            LYQN
+          </Link>
 
-          <div className="hidden md:flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-gray-500">
-            <span>CUSTOMER SUPPORT</span>
-            <span className="text-gray-300">/</span>
-            <span className="text-blue-600 font-semibold">01–24</span>
-            <span className="text-gray-300">/</span>
-            <span>ALWAYS ON</span>
-          </div>
+          <nav className="hidden lg:flex items-center gap-6" style={{ fontSize: 14, fontWeight: 500, color: "#111" }}>
+            <Link to="/pricing" className="hover:opacity-70 font-semibold">Pricing</Link>
+            <Link to="/blog" className="hover:opacity-70">Blog</Link>
+            <Link to="/docs" className="hover:opacity-70">Docs</Link>
+          </nav>
 
           <div className="flex items-center gap-4">
             {isNewUser ? (
-              <span className="text-xs font-mono font-semibold px-3.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200/80 rounded-full">
-                STEP 2 OF 2: CHOOSE YOUR PLAN
+              <span className="text-xs font-semibold px-3.5 py-1.5 bg-[#e2eafc] text-[#006af2] border border-blue-200/80 rounded-full">
+                Step 2 of 2: Choose Your Plan
               </span>
             ) : (
-              <button 
-                onClick={() => navigate(userId ? "/dashboard" : "/")}
-                className="text-xs font-mono font-semibold uppercase tracking-wider text-gray-600 hover:text-black transition-colors"
-              >
-                {userId ? "DASHBOARD →" : "BACK HOME →"}
-              </button>
+              <>
+                <button onClick={() => navigate("/auth")} className="hidden sm:inline-block font-medium hover:opacity-70 text-sm text-[#111]">
+                  Log in
+                </button>
+                <button onClick={() => navigate(userId ? "/dashboard" : "/auth")} className="cio-pill-primary text-sm">
+                  {userId ? "Dashboard →" : "Start free trial"}
+                </button>
+              </>
             )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 pt-12 pb-24">
+      {/* ============== Main Content ============== */}
+      <main className="container mx-auto px-6 pt-12 pb-24">
         {/* Hero Section */}
         <div className="mb-16 cio-reveal">
-          <div className="font-mono text-xs font-semibold uppercase tracking-widest text-blue-600 mb-4 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#e2eafc] text-[#006af2] border border-blue-200/60 mb-6">
             <span>SUPPORT FOR THE SMALL SIDE</span>
           </div>
 
           <div className="grid lg:grid-cols-12 gap-8 items-end">
             <div className="lg:col-span-8">
-              <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold tracking-tight text-[#111111] leading-[0.95] font-display">
-                Big support.<br />
-                <span className="text-blue-600">Small bill.</span>
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#111111] leading-[1.02]">
+                Big support. <br />
+                <span className="text-[#006af2] italic font-normal font-sans">Small bill.</span>
               </h1>
             </div>
 
             <div className="lg:col-span-4 flex flex-col justify-between gap-6">
-              <div className="flex items-start justify-end gap-4">
-                <div className="border border-gray-900/90 rounded-none px-6 py-4 bg-white shadow-sm flex flex-col items-center min-w-[120px]">
-                  <span className="text-4xl font-extrabold text-rose-500 leading-none">24</span>
-                  <span className="text-sm font-mono font-bold text-gray-400 mt-1">/7</span>
+              <div className="flex items-start lg:justify-end">
+                <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-sm flex items-center gap-4">
+                  <div className="flex flex-col items-center">
+                    <span className="text-4xl font-extrabold text-[#006af2] leading-none">24</span>
+                    <span className="text-xs font-bold text-gray-400 mt-0.5">/7</span>
+                  </div>
+                  <div className="h-10 w-[1px] bg-gray-200" />
+                  <div className="text-xs font-medium text-gray-600 max-w-[140px] leading-snug">
+                    Always online AI support for your users
+                  </div>
                 </div>
               </div>
-              <p className="text-base sm:text-lg text-gray-600 leading-relaxed font-normal">
+              <p className="text-base sm:text-lg text-[#444444] leading-relaxed">
                 An affordable, self-learning AI teammate for founders who need every customer answered.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Section 01 Divider */}
-        <div className="border-t border-b border-gray-300/80 py-4 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs text-gray-500 uppercase tracking-widest cio-reveal">
+        {/* Section 01 Header & Billing Switcher */}
+        <div className="border-t border-b border-black/10 py-4 mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold uppercase tracking-wider text-[#666666] cio-reveal">
           <div className="flex items-center gap-2">
-            <span className="text-blue-600 font-bold">01</span>
+            <span className="text-[#006af2] font-bold">01</span>
             <span>/</span>
-            <span className="text-gray-900 font-semibold">CHOOSE YOUR LEVEL</span>
+            <span className="text-[#111111]">CHOOSE YOUR LEVEL</span>
           </div>
 
           {/* Billing Switcher */}
           <div className="flex items-center gap-3">
-            <span className={!isAnnual ? "text-gray-900 font-bold" : "text-gray-400"}>MONTHLY</span>
+            <span className={!isAnnual ? "text-[#111111] font-bold" : "text-gray-400"}>MONTHLY</span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
-              className="relative w-12 h-6 rounded-full bg-gray-900 transition-colors p-1 focus:outline-none"
+              className="relative w-12 h-6 rounded-full bg-[#111111] transition-colors p-1 focus:outline-none"
               aria-label="Toggle annual billing"
             >
               <div
                 className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                  isAnnual ? "translate-x-6 bg-blue-400" : "translate-x-0"
+                  isAnnual ? "translate-x-6 bg-[#006af2]" : "translate-x-0"
                 }`}
               />
             </button>
-            <span className={isAnnual ? "text-gray-900 font-bold" : "text-gray-400"}>
-              ANNUAL <span className="text-blue-600 font-bold">(SAVE 20%)</span>
+            <span className={isAnnual ? "text-[#111111] font-bold" : "text-gray-400"}>
+              ANNUAL <span className="text-[#006af2] font-bold">(SAVE 20%)</span>
             </span>
             <span className="hidden lg:inline-block text-gray-300 ml-2">/</span>
             <span className="hidden lg:inline-block text-gray-400">NO ENTERPRISE THEATRE</span>
           </div>
         </div>
 
-        {/* 3-Column Plan Grid */}
-        <div className="grid lg:grid-cols-3 border border-gray-300/90 bg-white rounded-xl overflow-hidden shadow-sm mb-16 cio-reveal">
+        {/* 3-Column Plan Cards */}
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch mb-20 cio-reveal">
           {plans.map((plan, idx) => {
             const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
 
             return (
               <div
                 key={plan.name}
-                className={`p-8 sm:p-10 flex flex-col justify-between transition-all duration-300 ${
+                className={`p-8 sm:p-10 rounded-3xl flex flex-col justify-between transition-all duration-300 ${
                   plan.isDark 
-                    ? "bg-[#111111] text-white border-y lg:border-y-0 lg:border-x border-gray-800 shadow-2xl relative" 
-                    : idx === 0 
-                      ? "bg-white text-gray-900" 
-                      : "bg-[#faf9f5]/50 text-gray-900 border-t lg:border-t-0 lg:border-l border-gray-300/80"
+                    ? "bg-[#111111] text-white shadow-2xl scale-[1.02] relative overflow-hidden border border-black" 
+                    : "bg-white text-[#111111] border border-black/10 shadow-sm hover:shadow-md"
                 }`}
               >
-                {plan.isDark && (
-                  <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-blue-600 via-rose-500 to-blue-600" />
+                {plan.popular && (
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-[#abffae] text-[#111111] text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                      Most Popular
+                    </span>
+                  </div>
                 )}
 
                 <div>
-                  {/* Plan Top Meta */}
-                  <div className="flex items-center justify-between font-mono text-xs uppercase tracking-widest pb-6 mb-6 border-b border-gray-200/80 dark:border-gray-800">
-                    <span className={plan.isDark ? "text-blue-400 font-bold" : "text-blue-600 font-bold"}>
+                  {/* Plan Category Tag */}
+                  <div className="text-xs font-bold uppercase tracking-wider mb-6 flex items-center gap-2">
+                    <span className={plan.isDark ? "text-[#abffae]" : "text-[#006af2]"}>
                       0{idx + 1} / PLAN
-                    </span>
-                    <span className={plan.isDark ? "text-gray-400 font-semibold" : "text-gray-500 font-semibold"}>
-                      {plan.popular ? "POPULAR" : isAnnual ? "ANNUAL" : "MONTHLY"}
                     </span>
                   </div>
 
                   {/* Title & Price */}
-                  <div className="flex items-baseline justify-between gap-4 mb-4">
-                    <h3 className={`text-4xl font-bold tracking-tight ${plan.isDark ? "text-white" : "text-[#111111]"}`}>
+                  <div className="flex items-baseline justify-between gap-4 mb-3">
+                    <h3 className={`text-3xl sm:text-4xl font-bold ${plan.isDark ? "text-white" : "text-[#111111]"}`}>
                       {plan.name}
                     </h3>
                     <div className="flex items-baseline">
-                      <span className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${plan.isDark ? "text-white" : "text-[#111111]"}`}>
+                      <span className={`text-4xl sm:text-5xl font-extrabold ${plan.isDark ? "text-white" : "text-[#111111]"}`}>
                         ${price}
                       </span>
-                      <span className={`text-sm font-mono ml-1 ${plan.isDark ? "text-gray-400" : "text-gray-500"}`}>
+                      <span className={`text-sm font-medium ml-1 ${plan.isDark ? "text-gray-400" : "text-gray-500"}`}>
                         /mo
                       </span>
                     </div>
                   </div>
 
-                  <p className={`font-mono text-xs uppercase tracking-wider mb-8 font-semibold ${plan.isDark ? "text-blue-400" : "text-gray-500"}`}>
+                  <p className={`text-sm mb-8 leading-relaxed ${plan.isDark ? "text-gray-300" : "text-gray-600"}`}>
                     {plan.description}
                   </p>
 
                   {/* Feature List */}
-                  <ul className="space-y-3.5 mb-10">
+                  <ul className="space-y-3.5 mb-10 border-t pt-6 border-black/10 dark:border-white/10">
                     {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start text-sm leading-tight">
-                        <span className={`font-mono text-xs font-semibold mr-3 select-none ${plan.isDark ? "text-blue-400" : "text-blue-600"}`}>
-                          {feature.num}
-                        </span>
-                        <span className={plan.isDark ? "text-gray-200" : "text-gray-800"}>
+                      <li key={i} className="flex items-center gap-3 text-sm">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                          plan.isDark ? "bg-white/10 text-[#abffae]" : "bg-blue-50 text-[#006af2]"
+                        }`}>
+                          <Check className="w-3.5 h-3.5" />
+                        </div>
+                        <span className={plan.isDark ? "text-gray-200" : "text-gray-700"}>
                           {feature.text}
                         </span>
                       </li>
@@ -308,32 +390,24 @@ const Pricing = () => {
                 </div>
 
                 {/* Card CTA */}
-                <div className="pt-6 border-t border-gray-200/80 dark:border-gray-800">
+                <div>
                   {userId ? (
                     <PolarCheckout
                       planName={plan.name.toLowerCase()}
                       productId={plan.productId}
                       userId={userId}
-                      className={`w-full rounded-none py-6 font-mono text-xs uppercase tracking-widest font-bold flex items-center justify-between transition-all group ${
-                        plan.isDark
-                          ? "bg-white text-black hover:bg-gray-100"
-                          : "bg-[#111111] text-white hover:bg-gray-800"
-                      }`}
+                      className={plan.isDark ? "cio-pill-white w-full" : "cio-pill-primary w-full"}
                     >
                       <span>{plan.cta}</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4" />
                     </PolarCheckout>
                   ) : (
                     <button
-                      className={`w-full rounded-none py-4 px-6 font-mono text-xs uppercase tracking-widest font-bold flex items-center justify-between transition-all group ${
-                        plan.isDark
-                          ? "bg-white text-black hover:bg-gray-100"
-                          : "bg-[#111111] text-white hover:bg-gray-800"
-                      }`}
+                      className={plan.isDark ? "cio-pill-white w-full" : "cio-pill-primary w-full"}
                       onClick={() => navigate("/auth")}
                     >
                       <span>{plan.cta}</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -344,49 +418,49 @@ const Pricing = () => {
 
         {/* Section 02 Header & Reassurance Grid */}
         <div className="mb-20 cio-reveal">
-          <div className="border-t border-b border-gray-300/80 py-4 mb-8 flex items-center justify-between font-mono text-xs text-gray-500 uppercase tracking-widest">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">02</span>
+              <span className="text-[#006af2] font-bold">02</span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">THE REASSURANCE</span>
+              <span className="text-[#111111]">THE REASSURANCE</span>
             </div>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-8 items-start mb-8">
-            <div className="lg:col-span-5">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111111] leading-tight font-display">
+          <div className="grid lg:grid-cols-12 gap-8 items-center mb-8">
+            <div className="lg:col-span-4">
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111111] leading-tight">
                 Start useful.<br />Stay in control.
               </h2>
             </div>
 
-            <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-6 border-t lg:border-t-0 lg:border-l border-gray-300/80 pt-6 lg:pt-0 lg:pl-8">
+            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
                 { num: "01", label: "2-week free trial" },
                 { num: "02", label: "No card to start" },
                 { num: "03", label: "No setup fees" },
                 { num: "04", label: "No hidden charges" },
               ].map((item, idx) => (
-                <div key={idx} className="border-l-2 border-blue-600 pl-3">
-                  <span className="font-mono text-xs font-bold text-gray-400 block mb-1">{item.num}</span>
-                  <span className="text-sm font-semibold text-gray-900 leading-snug">{item.label}</span>
+                <div key={idx} className="bg-white p-5 rounded-2xl border border-black/10 shadow-sm flex flex-col justify-between">
+                  <span className="text-xs font-bold text-[#006af2] mb-2">{item.num}</span>
+                  <span className="text-sm font-semibold text-[#111111] leading-snug">{item.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Section 03 Header & Included in Every Plan Grid */}
+        {/* Section 03 Header & Included Features */}
         <div className="mb-20 cio-reveal">
-          <div className="border-t border-b border-gray-300/80 py-4 mb-8 flex items-center justify-between font-mono text-xs text-gray-500 uppercase tracking-widest">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">03</span>
+              <span className="text-[#006af2] font-bold">03</span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">ENTERPRISE CORE</span>
+              <span className="text-[#111111]">ENTERPRISE CORE</span>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-300/80 p-8 sm:p-12 shadow-sm">
-            <h3 className="text-2xl font-bold text-[#111111] mb-8 font-display">
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-black/10 shadow-sm">
+            <h3 className="text-2xl font-bold text-[#111111] mb-8">
               Included standard in every level
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-8">
@@ -401,7 +475,9 @@ const Pricing = () => {
                 "GDPR Compliant",
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <span className="font-mono text-xs font-bold text-blue-600">✓</span>
+                  <div className="w-6 h-6 rounded-full bg-blue-50 text-[#006af2] flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" />
+                  </div>
                   <span className="text-sm font-semibold text-gray-800">{feature}</span>
                 </div>
               ))}
@@ -411,41 +487,41 @@ const Pricing = () => {
 
         {/* Section 04 Header & FAQ Section */}
         <div className="mb-20 cio-reveal">
-          <div className="border-t border-b border-gray-300/80 py-4 mb-8 flex items-center justify-between font-mono text-xs text-gray-500 uppercase tracking-widest">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">04</span>
+              <span className="text-[#006af2] font-bold">04</span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">FREQUENTLY ASKED QUESTIONS</span>
+              <span className="text-[#111111]">FREQUENTLY ASKED QUESTIONS</span>
             </div>
           </div>
 
           <div className="grid lg:grid-cols-12 gap-12">
             <div className="lg:col-span-5">
-              <h2 className="text-4xl font-bold text-[#111111] mb-4 font-display leading-tight">
+              <h2 className="text-4xl font-bold text-[#111111] mb-4 leading-tight">
                 Frequently asked questions.
               </h2>
               <p className="text-gray-600 text-base leading-relaxed">
                 Everything you need to know about LYQN pricing and plans. Have more questions?{" "}
                 <button 
                   onClick={() => navigate("/docs")}
-                  className="font-semibold text-blue-600 underline underline-offset-4 hover:text-black transition-colors"
+                  className="font-semibold text-[#006af2] underline underline-offset-4 hover:text-black transition-colors"
                 >
                   Read our docs
                 </button>
               </p>
             </div>
 
-            <div className="lg:col-span-7 border-t border-gray-300/80">
+            <div className="lg:col-span-7 border-t border-black/10">
               {faqs.map((faq, idx) => (
-                <div key={idx} className="border-b border-gray-300/80">
+                <div key={idx} className="border-b border-black/10">
                   <button
                     onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
                     className="w-full py-6 flex items-center justify-between text-left focus:outline-none group"
                   >
-                    <span className="text-lg font-medium text-gray-900 pr-6 group-hover:text-blue-600 transition-colors">
+                    <span className="text-lg font-semibold text-gray-900 pr-6 group-hover:text-[#006af2] transition-colors">
                       {faq.q}
                     </span>
-                    <span className="font-mono text-lg font-bold text-gray-400 group-hover:text-black shrink-0">
+                    <span className="text-xl font-bold text-gray-400 group-hover:text-black shrink-0">
                       {openFaq === idx ? "−" : "+"}
                     </span>
                   </button>
@@ -462,52 +538,75 @@ const Pricing = () => {
 
         {/* Section 05 Banner & Autopilot CTA */}
         <div className="cio-reveal">
-          <div className="border-t border-b border-gray-300/80 py-4 mb-8 flex items-center justify-between font-mono text-xs text-gray-500 uppercase tracking-widest">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-blue-600 font-bold">05</span>
+              <span className="text-[#006af2] font-bold">05</span>
               <span>/</span>
-              <span className="text-gray-900 font-semibold">PUT YOUR SUPPORT ON AUTOPILOT</span>
+              <span className="text-[#111111]">PUT YOUR SUPPORT ON AUTOPILOT</span>
             </div>
           </div>
 
-          <div className="bg-[#111111] text-white p-10 sm:p-16 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 shadow-xl">
+          <div className="bg-[#111111] text-white p-10 sm:p-14 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 shadow-2xl">
             <div>
-              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3 font-display">
-                Start free trial <span className="text-rose-500">↗</span>
+              <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3">
+                Start free trial <span className="text-[#abffae]">↗</span>
               </h2>
-              <p className="text-gray-400 text-base max-w-lg">
+              <p className="text-gray-300 text-base max-w-lg">
                 No credit card required. Experience 14 days of full AI automation for your business.
               </p>
             </div>
 
             <button
               onClick={() => navigate("/auth")}
-              className="px-8 py-5 bg-white text-black font-mono text-xs uppercase tracking-widest font-bold hover:bg-gray-100 transition-colors shrink-0 flex items-center gap-2 group"
+              className="cio-pill-white text-sm shrink-0"
             >
-              <span>GET STARTED NOW</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <span>Get Started Now</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-300/80 py-10 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-1.5 text-xl font-extrabold tracking-tighter text-[#111111]">
-            <span>LYQN</span>
-            <span className="inline-flex gap-1 items-center ml-0.5">
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-              <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-            </span>
+      {/* ============== Footer ============== */}
+      <footer className="py-16" style={{ background: "var(--fog)", borderTop: "1px solid rgba(11,54,59,0.08)" }}>
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-5 gap-8 mb-12">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-2.5 font-bold mb-4" style={{ fontSize: 18, color: "var(--ink)" }}>
+                <div className="flex items-center gap-1">
+                  <div className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--ink)" }} />
+                  <div className="w-2.5 h-2.5 rounded-sm opacity-60" style={{ background: "var(--ink)" }} />
+                </div>
+                <span>LYQN</span>
+              </div>
+              <p style={{ fontSize: 14, color: "var(--slate)", lineHeight: 1.55, maxWidth: 320 }}>
+                AI-powered customer support platform that helps businesses deliver exceptional experiences across every channel.
+              </p>
+            </div>
+            {[
+              { title: "Product", links: [["Pricing", "/pricing"], ["Documentation", "/docs"]] },
+              { title: "Company", links: [["About", "/about"], ["Blog", "/blog"], ["Contact", "/contact"]] },
+              { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/delete"]] },
+            ].map((col, i) => (
+              <div key={i}>
+                <h4 className="font-semibold mb-4" style={{ fontSize: 14, color: "var(--ink)" }}>{col.title}</h4>
+                <ul className="space-y-3">
+                  {col.links.map(([label, href]) => (
+                    <li key={label}>
+                      <Link to={href} className="cio-link" style={{ fontSize: 14 }}>{label}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-
-          <div className="font-mono text-xs text-gray-500 text-center">
-            © 2026 LYQN AI. PAYMENTS PROCESSED SECURELY VIA POLAR.
-          </div>
-
-          <div className="font-mono text-xs font-bold text-gray-900 tracking-widest">
-            LYQN.APP
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: "1px solid rgba(11,54,59,0.08)", fontSize: 13, color: "var(--stone)" }}>
+            <p>© 2026 LYQN AI. All rights reserved.</p>
+            <div className="flex items-center gap-6">
+              <a href="#" className="cio-link">Twitter</a>
+              <a href="#" className="cio-link">LinkedIn</a>
+              <a href="#" className="cio-link">GitHub</a>
+            </div>
           </div>
         </div>
       </footer>
