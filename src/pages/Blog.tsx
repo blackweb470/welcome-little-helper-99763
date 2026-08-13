@@ -25,6 +25,17 @@ const useReveal = () => {
 
 export const blogPosts = [
   {
+    id: "cheapest-ai-chatbot-support-comparison",
+    title: "Why LYQN is the Best and Cheapest AI Support Chatbot in 2026: Full Competitor Comparison",
+    excerpt: "Comparing LYQN ($5/mo) vs ManyChat ($14/mo), Freshchat ($15/mo), Chatbase ($19/mo), ChatBot.com ($19/mo), and Chatfuel ($19.99/mo). See why LYQN delivers 3x more value at a fraction of the cost.",
+    date: "2026-08-13",
+    author: "LYQN Strategy Team",
+    category: "Startup Guides",
+    readTime: "6 min read",
+    featured: true,
+    tags: ["AI Comparison", "Cheap AI Chatbot", "LYQN vs Competitors", "Pricing"]
+  },
+  {
     id: "cheap-ai-chatbot-startup-founders-smb",
     title: "The Best Cheap AI Chatbot for Startup Founders and Small Businesses (2026)",
     excerpt: "Why bootstrapped founders and SMB owners are switching to LYQN: an affordable, self-learning 24/7 AI chatbot with WhatsApp integration at $5/mo.",
@@ -32,7 +43,7 @@ export const blogPosts = [
     author: "LYQN Team",
     category: "Startup Guides",
     readTime: "5 min read",
-    featured: true,
+    featured: false,
     tags: ["Startup Founders", "SMBs", "Cheap AI Chatbot", "Productivity"]
   },
   {
