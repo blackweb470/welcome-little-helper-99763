@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { ArrowLeft, Calendar, User, Clock, Share2, CheckCircle2, Zap, ArrowRight, BookOpen, ExternalLink, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { blogPosts } from "./Blog";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -462,6 +463,7 @@ const BlogPost = () => {
         {/* Main Article Content Card */}
         <article className="cio-reveal bg-white rounded-3xl p-6 md:p-12 border border-gray-200/80 shadow-sm mb-12">
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               h2: ({ node, ...props }) => (
                 <div className="mt-12 mb-6 pt-6 border-t border-gray-100 first:mt-0 first:pt-0 first:border-0">
@@ -507,6 +509,26 @@ const BlogPost = () => {
                 <blockquote className="my-8 p-6 rounded-2xl bg-gray-50 border-l-4 border-[#111] text-gray-800 italic text-lg leading-relaxed">
                   {props.children}
                 </blockquote>
+              ),
+              table: ({ node, ...props }) => (
+                <div className="my-8 overflow-x-auto rounded-2xl border border-gray-200 shadow-sm bg-white">
+                  <table className="w-full text-left border-collapse text-sm sm:text-base" {...props} />
+                </div>
+              ),
+              thead: ({ node, ...props }) => (
+                <thead className="bg-[#111111] text-white text-xs font-mono uppercase tracking-wider" {...props} />
+              ),
+              tbody: ({ node, ...props }) => (
+                <tbody className="divide-y divide-gray-100 text-gray-800 font-normal" {...props} />
+              ),
+              tr: ({ node, ...props }) => (
+                <tr className="hover:bg-gray-50/80 transition-colors" {...props} />
+              ),
+              th: ({ node, ...props }) => (
+                <th className="py-4 px-5 font-semibold text-white border-b border-gray-800" {...props} />
+              ),
+              td: ({ node, ...props }) => (
+                <td className="py-4 px-5 leading-relaxed" {...props} />
               )
             }}
           >
