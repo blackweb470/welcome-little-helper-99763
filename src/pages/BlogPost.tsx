@@ -256,36 +256,6 @@ Chatfuel charges **$19.99/mo** for basic messenger flows. For small businesses t
 
 [Get started with LYQN's 14-day free trial today](https://lyqn.app/auth) and transform your customer support.
   `,
-
-#### 1. LYQN ($5/mo) vs ManyChat ($14/mo)
-While ManyChat is popular for Instagram and Facebook DM marketing, its website chat and AI RAG capabilities are limited. Starting at **$14/mo**, costs quickly scale up as your subscriber list grows.
-* **Why LYQN Wins**: At **$5/mo**, LYQN provides a dedicated website widget, self-learning document RAG, and instant WhatsApp bridging without charging contact surcharges.
-
-#### 2. LYQN ($5/mo) vs Freshchat ($15/mo)
-Freshchat is a solid live chat tool, but their starting plan of **$15/mo per seat** forces bootstrapped teams to pay per team member. Advanced AI bots are locked behind high enterprise tiers ($300+/mo).
-* **Why LYQN Wins**: LYQN includes self-learning AI, conversation memory, and live agent escalation standard—at 1/3 of Freshchat's entry seat price.
-
-#### 3. LYQN ($5/mo) vs Chatbase ($19/mo)
-Chatbase allows you to upload PDFs and links to build a chatbot, but charges a steep **$19/mo entry price**. Furthermore, Chatbase lacks a native live agent transfer queue when complex issues arise.
-* **Why LYQN Wins**: LYQN gives you the exact same document and website RAG training plus a full live agent handoff queue for just **$5/mo**—saving you nearly 75% every single month.
-
-#### 4. LYQN ($5/mo) vs ChatBot.com ($19/mo)
-ChatBot.com relies on drag-and-drop visual trees. Building decision trees manually takes hours of effort and breaks whenever customer phrasing varies slightly.
-* **Why LYQN Wins**: LYQN eliminates manual flowchart building. You simply paste your website URL or upload your FAQ document, and GPT-4 automatically answers customer questions accurately.
-
-#### 5. LYQN ($5/mo) vs Chatfuel ($19.99/mo)
-Chatfuel charges **$19.99/mo** for basic messenger flows. For small businesses that need website chat, WhatsApp integration, and AI document ingestion, Chatfuel requires expensive add-ons.
-* **Why LYQN Wins**: LYQN is nearly **4x cheaper** ($5/mo vs $19.99/mo) while offering a complete omnichannel AI support suite.
-
----
-
-### Why Founders Are Switching to LYQN Today
-1. **Unbeatable Value**: Full AI RAG capabilities starting at **$5/mo**.
-2. **2-Minute Setup**: Just paste your website link or upload help PDFs.
-3. **No Risk**: Start with a 14-day free trial—no credit card required.
-
-[Get started with LYQN's 14-day free trial today](https://lyqn.app/auth) and transform your customer support.
-  `,
   "cheap-ai-chatbot-startup-founders-smb": `
 ## Why Startup Founders & SMBs Need an Affordable AI Chatbot in 2026
 
@@ -484,7 +454,7 @@ const BlogPost = () => {
 
       {/* Sticky Top Header */}
       <header className="sticky top-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-md border-b border-gray-200/60 shadow-sm">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="w-[90%] mx-auto h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/blog")}
@@ -507,7 +477,7 @@ const BlogPost = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-10 md:py-16 max-w-3xl">
+      <main className="w-[90%] mx-auto py-8 md:py-14">
         {/* Article Meta Header */}
         <div className="cio-reveal mb-10">
           <div className="flex flex-wrap gap-2 mb-5">
@@ -719,7 +689,7 @@ const BlogPost = () => {
       </main>
 
       <footer className="border-t border-gray-200/80 py-8 bg-white mt-16 text-center text-sm text-gray-500">
-        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 max-w-4xl">
+        <div className="w-[90%] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="font-bold tracking-tighter text-xl text-gray-900">LYQN</div>
           <div>© 2026 LYQN AI. The affordable AI chatbot for founders & SMBs.</div>
         </div>

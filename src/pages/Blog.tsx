@@ -157,7 +157,7 @@ const Blog = () => {
 
       {/* ============== Header ============== */}
       <header className="sticky top-0 z-50 pt-4 pb-4 transition-all" style={{ background: "var(--canvas)" }}>
-        <div className="container mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="w-[90%] mx-auto h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2.5 font-bold text-lg text-[#111]">
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-sm bg-[#111]" />
@@ -187,7 +187,7 @@ const Blog = () => {
       </header>
 
       {/* ============== Main Content ============== */}
-      <main className="container mx-auto px-6 pt-10 pb-24 max-w-7xl">
+      <main className="w-[90%] mx-auto pt-10 pb-24">
         
         {/* Monospace Rule Banner */}
         <div className="border-t border-b border-black/10 py-3.5 mb-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs text-gray-500 uppercase tracking-widest cio-reveal">
