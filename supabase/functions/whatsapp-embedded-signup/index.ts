@@ -107,8 +107,6 @@ Deno.serve(async (req) => {
         verify_token: verifyToken,
         connection_method: 'embedded_signup',
         provider: 'meta', // Explicitly indicate Meta provider
-        refresh_token: null,
-        expires_at: null,
         enabled: true,
         updated_at: new Date().toISOString()
       });
