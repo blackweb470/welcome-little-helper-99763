@@ -114,7 +114,6 @@ const Pricing = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [isAnnual, setIsAnnual] = useState(false);
   useReveal();
 
   useEffect(() => {
@@ -130,8 +129,7 @@ const Pricing = () => {
   const plans = [
     {
       name: "Basic",
-      monthlyPrice: 5,
-      annualPrice: 4,
+      price: 5,
       productId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
       description: "For individual founders & solo projects",
       icon: Star,
@@ -150,8 +148,7 @@ const Pricing = () => {
     },
     {
       name: "Pro",
-      monthlyPrice: 10,
-      annualPrice: 8,
+      price: 10,
       productId: "65495367-3163-49af-9ae4-0c3e740d332a",
       description: "For growing teams scaling customer support",
       icon: Zap,
@@ -170,8 +167,7 @@ const Pricing = () => {
     },
     {
       name: "Business",
-      monthlyPrice: 20,
-      annualPrice: 16,
+      price: 20,
       productId: "495da580-72e9-4fb9-a706-b098921df542",
       description: "For serious scale & multi-brand operations",
       icon: Building2,
@@ -301,33 +297,16 @@ const Pricing = () => {
             <span className="text-[#111111]">CHOOSE YOUR LEVEL</span>
           </div>
 
-          {/* Billing Switcher */}
-          <div className="flex items-center gap-3">
-            <span className={!isAnnual ? "text-[#111111] font-bold" : "text-gray-400"}>MONTHLY</span>
-            <button
-              onClick={() => setIsAnnual(!isAnnual)}
-              className="relative w-12 h-6 rounded-full bg-[#111111] transition-colors p-1 focus:outline-none"
-              aria-label="Toggle annual billing"
-            >
-              <div
-                className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                  isAnnual ? "translate-x-6 bg-[#006af2]" : "translate-x-0"
-                }`}
-              />
-            </button>
-            <span className={isAnnual ? "text-[#111111] font-bold" : "text-gray-400"}>
-              ANNUAL <span className="text-[#006af2] font-bold">(SAVE 20%)</span>
-            </span>
-            <span className="hidden lg:inline-block text-gray-300 ml-2">/</span>
-            <span className="hidden lg:inline-block text-gray-400">NO ENTERPRISE THEATRE</span>
+          <div className="flex items-center gap-2 font-mono text-xs text-gray-500 uppercase tracking-widest">
+            <span className="text-[#111111] font-bold">MONTHLY</span>
+            <span className="text-gray-300">/</span>
+            <span className="text-gray-400">NO ENTERPRISE THEATRE</span>
           </div>
         </div>
 
         {/* 3-Column Plan Cards */}
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch mb-20 cio-reveal">
           {plans.map((plan, idx) => {
-            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
-
             return (
               <div
                 key={plan.name}
@@ -360,7 +339,7 @@ const Pricing = () => {
                     </h3>
                     <div className="flex items-baseline">
                       <span className={`text-4xl sm:text-5xl font-extrabold ${plan.isDark ? "text-white" : "text-[#111111]"}`}>
-                        ${price}
+                        ${plan.price}
                       </span>
                       <span className={`text-sm font-medium ml-1 ${plan.isDark ? "text-gray-400" : "text-gray-500"}`}>
                         /mo
