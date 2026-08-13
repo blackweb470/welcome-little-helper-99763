@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       displayName
     });
 
-    // 4. Save to database
+    // 4. Save to database - clean existing record first to avoid constraint/schema errors
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -95,9 +95,15 @@ Deno.serve(async (req) => {
     // Generate a unique verify token for this business
     const verifyToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
+    // Delete any old record for this business to ensure clean insert
+    await supabase
+      .from('whatsapp_settings')
+      .delete()
+      .eq('business_id', businessId);
+
     const { error: dbError } = await supabase
       .from('whatsapp_settings')
-      .upsert({
+      .insert({
         business_id: businessId,
         access_token: accessToken,
         waba_id: wabaId,
@@ -106,7 +112,7 @@ Deno.serve(async (req) => {
         display_name: displayName,
         verify_token: verifyToken,
         connection_method: 'embedded_signup',
-        provider: 'meta', // Explicitly indicate Meta provider
+        provider: 'meta',
         enabled: true,
         updated_at: new Date().toISOString()
       });
