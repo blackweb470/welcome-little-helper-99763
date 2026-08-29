@@ -384,7 +384,7 @@ const Index = () => {
                   animation: "cio-fade-up .7s ease .15s both",
                 }}
               >
-                Get a free 30-minute support audit and see how LYQN can help your business respond to more customer questions automatically. Includes a free two-week trial and guided setup.
+                Stop overpaying for customer support tools. LYQN gives startup founders and small businesses a self-learning 24/7 AI chatbot with WhatsApp integration at a price that fits your budget.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-16" style={{ animation: "cio-fade-up .7s ease .25s both" }}>
@@ -866,6 +866,38 @@ const Index = () => {
                     LYQN agents are built with escalation rules and fallback logic that determine exactly when AI acts and when it escalates. Full context passed to your team every time with no cold handoffs.
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ============== Book a Call / Audit Section ============== */}
+        <section className="py-20" style={{ background: "#f8fafc" }}>
+          <div className="container mx-auto px-6">
+            <div className="cio-reveal max-w-5xl mx-auto rounded-[32px] p-10 md:p-14 border border-gray-200/80 bg-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="max-w-2xl text-left">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold uppercase tracking-wider mb-4">
+                  Free 1-on-1 Consultation
+                </div>
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 tracking-tight">
+                  Book a Call with the LYQN Founder
+                </h2>
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  Get a free 30-minute support audit and see how Lyqn can help your business respond to more customer questions automatically. Includes a free two-week trial and guided setup.
+                </p>
+              </div>
+              <div className="shrink-0 w-full md:w-auto">
+                <a
+                  href="https://calendly.com/akhatasebhudojoseph1/book-a-call-with-the-lyqn-founder"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all shadow-md hover:shadow-lg text-white"
+                  style={{ background: "#111", padding: "16px 36px", fontSize: 16 }}
+                  onMouseOver={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                  onMouseOut={e => e.currentTarget.style.transform = "translateY(0)"}
+                >
+                  Book a Call &rarr;
+                </a>
               </div>
             </div>
           </div>
