@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
   
   // Handle GET request: supports Meta verification and Twilio status check

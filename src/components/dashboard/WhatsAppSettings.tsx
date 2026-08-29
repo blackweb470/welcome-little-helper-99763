@@ -366,9 +366,25 @@ export const WhatsAppSettings = ({ businessId }: { businessId: string }) => {
         enabled: true
       };
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from('whatsapp_settings')
         .upsert(payload as any, { onConflict: 'business_id' });
+
+      if (error) {
+        // Fallback to base columns if new columns trigger schema cache error
+        const basePayload = {
+          business_id: businessId,
+          phone_number_id: manualSettings.phone_number_id.trim(),
+          waba_id: manualSettings.waba_id.trim() || manualSettings.phone_number_id.trim(),
+          access_token: manualSettings.access_token.trim(),
+          phone_number: manualSettings.phone_number.trim() || 'Meta WhatsApp Number',
+          enabled: true
+        };
+        const fallbackRes = await supabase
+          .from('whatsapp_settings')
+          .upsert(basePayload as any, { onConflict: 'business_id' });
+        error = fallbackRes.error;
+      }
 
       if (error) throw error;
 

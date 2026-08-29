@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -101,22 +101,38 @@ Deno.serve(async (req) => {
       .delete()
       .eq('business_id', businessId);
 
-    const { error: dbError } = await supabase
+    const basePayload = {
+      business_id: businessId,
+      access_token: accessToken,
+      waba_id: wabaId,
+      phone_number_id: phoneNumberId,
+      phone_number: phoneNumber,
+      enabled: true,
+      updated_at: new Date().toISOString()
+    };
+
+    let insertError = null;
+    const { error: fullError } = await supabase
       .from('whatsapp_settings')
       .insert({
-        business_id: businessId,
-        access_token: accessToken,
-        waba_id: wabaId,
-        phone_number_id: phoneNumberId,
-        phone_number: phoneNumber,
+        ...basePayload,
         connection_method: 'embedded_signup',
-        enabled: true,
-        updated_at: new Date().toISOString()
+        provider: 'meta',
+        display_name: displayName,
+        connected_at: new Date().toISOString()
       });
 
-    if (dbError) {
-      console.error('Database error saving settings:', dbError);
-      throw dbError;
+    if (fullError) {
+      console.warn('Could not insert full payload, falling back to base payload:', fullError.message);
+      const { error: baseError } = await supabase
+        .from('whatsapp_settings')
+        .insert(basePayload);
+      insertError = baseError;
+    }
+
+    if (insertError) {
+      console.error('Database error saving settings:', insertError);
+      throw insertError;
     }
 
     return new Response(

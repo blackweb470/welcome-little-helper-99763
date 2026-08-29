@@ -384,16 +384,24 @@ const Index = () => {
                   animation: "cio-fade-up .7s ease .15s both",
                 }}
               >
-                Stop overpaying for customer support tools. LYQN gives startup founders and small businesses a self-learning 24/7 AI chatbot with WhatsApp integration at a price that fits your budget.
+                Get a free 30-minute support audit and see how LYQN can help your business respond to more customer questions automatically. Includes a free two-week trial and guided setup.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-16" style={{ animation: "cio-fade-up .7s ease .25s both" }}>
                 <button onClick={() => navigate("/auth")} className="flex items-center justify-center gap-2 rounded-full font-semibold transition-all" style={{ background: "#111", color: "#fff", padding: "16px 32px", fontSize: 16 }} onMouseOver={e => e.currentTarget.style.transform = "translateY(-2px)"} onMouseOut={e => e.currentTarget.style.transform = "translateY(0)"}>
                   Start free trial &rarr;
                 </button>
-                <button onClick={() => navigate("/docs")} className="flex items-center justify-center gap-2 rounded-full font-semibold transition-all" style={{ background: "transparent", color: "#111", border: "1px solid rgba(17,17,17,0.15)", padding: "16px 32px", fontSize: 16 }} onMouseOver={e => {e.currentTarget.style.borderColor = "#111"; e.currentTarget.style.background = "rgba(0,0,0,0.02)"}} onMouseOut={e => {e.currentTarget.style.borderColor = "rgba(17,17,17,0.15)"; e.currentTarget.style.background = "transparent"}}>
-                  Watch demo
-                </button>
+                <a 
+                  href="https://calendly.com/akhatasebhudojoseph1/book-a-call-with-the-lyqn-founder" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center justify-center gap-2 rounded-full font-semibold transition-all" 
+                  style={{ background: "transparent", color: "#111", border: "1px solid rgba(17,17,17,0.15)", padding: "16px 32px", fontSize: 16 }} 
+                  onMouseOver={e => {e.currentTarget.style.borderColor = "#111"; e.currentTarget.style.background = "rgba(0,0,0,0.02)"}} 
+                  onMouseOut={e => {e.currentTarget.style.borderColor = "rgba(17,17,17,0.15)"; e.currentTarget.style.background = "transparent"}}
+                >
+                  Book a Call
+                </a>
               </div>
 
             </div>
