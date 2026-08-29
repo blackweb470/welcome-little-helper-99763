@@ -4,6 +4,8 @@ import { ArrowLeft, Shield, FileText, Trash2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+import { SEO } from "@/components/SEO";
+
 interface PolicyLayoutProps {
   children: ReactNode;
   title: string;
@@ -28,6 +30,11 @@ const PolicyLayout = ({ children, title, lastUpdated, icon }: PolicyLayoutProps)
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <SEO 
+        title={`${title} — LYQN`} 
+        description={`Read the official ${title} for LYQN AI Customer Support Platform.`} 
+        url={`https://lyqn.app${location.pathname}`} 
+      />
       {/* Simple Header */}
       <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-md dark:bg-zinc-900/80">
         <div className="container flex h-16 items-center justify-between px-6">

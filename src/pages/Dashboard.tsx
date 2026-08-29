@@ -13,6 +13,7 @@ import { AnalyticsDashboard } from "@/components/dashboard/AnalyticsDashboard";
 
 
 import { FeaturesDocumentation } from "@/components/dashboard/FeaturesDocumentation";
+import { Helmet } from "react-helmet-async";
 
 import { LiveChatQueue } from "@/components/dashboard/LiveChatQueue";
 import { ProactiveChatRules } from "@/components/dashboard/ProactiveChatRules";
@@ -173,6 +174,10 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
+      <Helmet>
+        <title>Dashboard — LYQN</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar 
           hasSelectedBusiness={!!selectedBusinessId} 

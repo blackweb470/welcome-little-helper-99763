@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 
+import { Helmet } from "react-helmet-async";
+
 const Auth = () => {
   const navigate = useNavigate();
 
@@ -90,6 +92,10 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex w-full" style={{ background: "#0b0d0e" }}>
+      <Helmet>
+        <title>Sign In — LYQN</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       {/* Left Column - Auth */}
       <div className="w-full lg:w-[480px] xl:w-[540px] flex flex-col min-h-screen p-8 lg:p-12 border-r border-[#1f2225]">
         <Link to="/" className="flex items-center gap-2.5 font-bold text-lg mb-auto" style={{ color: "#fff", letterSpacing: "-0.02em" }}>

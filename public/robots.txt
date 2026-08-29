@@ -1,6 +1,20 @@
-# Allow all search engines and crawlers
+# Allow search engines and crawlers
 User-agent: *
 Allow: /
+
+# Disallow private/auth/admin routes from search index
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /billing
+Disallow: /profile
+Disallow: /onboarding
+Disallow: /accept-invite
+Disallow: /reset-password
+Disallow: /auth
+Disallow: /widget/
+Disallow: /embed/
+Disallow: /widget-demo/
+Disallow: /docs-old
 
 # Allow AI Search Engines & Recommendation Bots
 User-agent: GPTBot
