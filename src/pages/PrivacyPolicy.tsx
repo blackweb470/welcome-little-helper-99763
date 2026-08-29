@@ -56,7 +56,7 @@ const PrivacyPolicy = () => {
 
       <h2>7. Your Rights (GDPR/CCPA)</h2>
       <p>
-        Depending on your location, you may have rights to access, correct, delete, or limit the use of your personal data. To exercise these rights, please contact us at <strong>akhatasebhudojoseph1@gmail.com</strong>.
+        Depending on your location, you may have rights to access, correct, delete, or limit the use of your personal data. To exercise these rights, please contact us at <strong>hello@lyqn.app</strong>.
       </p>
 
       <h2>8. Changes to This Policy</h2>
@@ -67,7 +67,7 @@ const PrivacyPolicy = () => {
       <h2>9. Contact Us</h2>
       <p>
         If you have questions about this Privacy Policy, please contact us at:<br />
-        <strong>Email: akhatasebhudojoseph1@gmail.com</strong>
+        <strong>Email: hello@lyqn.app</strong>
       </p>
     </PolicyLayout>
   );

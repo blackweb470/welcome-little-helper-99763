@@ -75,7 +75,7 @@ const PolicyLayout = ({ children, title, lastUpdated, icon }: PolicyLayoutProps)
                 </div>
                 <p className="text-xs text-violet-600/80 dark:text-violet-400/80 leading-relaxed">
                   Have questions? Contact us at <br />
-                  <span className="font-semibold select-all">akhatasebhudojoseph1@gmail.com</span>
+                  <a href="mailto:hello@lyqn.app" className="font-semibold hover:underline select-all">hello@lyqn.app</a>
                 </p>
               </div>
             </div>

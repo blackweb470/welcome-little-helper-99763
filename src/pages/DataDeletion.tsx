@@ -37,7 +37,7 @@ const DataDeletion = () => {
 
       <h3>Method B: Manual Request</h3>
       <p>
-        If you are unable to access your account, please send an email to <strong>akhatasebhudojoseph1@gmail.com</strong> with the subject "Data Deletion Request". Please provide the email address associated with the account you wish to delete.
+        If you are unable to access your account, please send an email to <strong>hello@lyqn.app</strong> with the subject "Data Deletion Request". Please provide the email address associated with the account you wish to delete.
       </p>
 
       <h2>4. Processing Time</h2>
@@ -53,7 +53,7 @@ const DataDeletion = () => {
       <h2>6. Contact for Privacy Inquiries</h2>
       <p>
         For any other questions regarding your data or our privacy practices, please reach out to:<br />
-        <strong>Privacy Team: akhatasebhudojoseph1@gmail.com</strong>
+        <strong>Privacy Team: hello@lyqn.app</strong>
       </p>
     </PolicyLayout>
   );

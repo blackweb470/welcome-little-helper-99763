@@ -65,7 +65,7 @@ const TermsOfService = () => {
       <h2>10. Contact Information</h2>
       <p>
         Questions about the Terms of Service should be sent to us at:<br />
-        <strong>Email: akhatasebhudojoseph1@gmail.com</strong>
+        <strong>Email: hello@lyqn.app</strong>
       </p>
     </PolicyLayout>
   );

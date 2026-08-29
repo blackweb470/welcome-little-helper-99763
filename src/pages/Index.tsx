@@ -19,6 +19,7 @@ import {
   Link2,
   Play,
   ChevronDown,
+  Mail,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
@@ -1035,13 +1036,17 @@ const Index = () => {
                 </div>
                 <span>LYQN</span>
               </div>
-              <p style={{ fontSize: 14, color: "var(--slate)", lineHeight: 1.55, maxWidth: 320 }}>
+              <p style={{ fontSize: 14, color: "var(--slate)", lineHeight: 1.55, maxWidth: 320 }} className="mb-3">
                 AI-powered customer support platform that helps businesses deliver exceptional experiences across every channel.
               </p>
+              <a href="mailto:hello@lyqn.app" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80" style={{ color: "var(--ink)" }}>
+                <Mail className="w-4 h-4" />
+                hello@lyqn.app
+              </a>
             </div>
             {[
               { title: "Product", links: [["Pricing", "/pricing"], ["Documentation", "/docs"]] },
-              { title: "Company", links: [["About", "/about"], ["Blog", "/blog"], ["Contact", "/contact"]] },
+              { title: "Company", links: [["About", "/about"], ["Blog", "/blog"], ["Contact Us", "mailto:hello@lyqn.app"]] },
               { title: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/delete"]] },
             ].map((col, i) => (
               <div key={i}>
@@ -1049,7 +1054,11 @@ const Index = () => {
                 <ul className="space-y-3">
                   {col.links.map(([label, href]) => (
                     <li key={label}>
-                      <Link to={href} className="cio-link" style={{ fontSize: 14 }}>{label}</Link>
+                      {href.startsWith("mailto:") ? (
+                        <a href={href} className="cio-link" style={{ fontSize: 14 }}>{label}</a>
+                      ) : (
+                        <Link to={href} className="cio-link" style={{ fontSize: 14 }}>{label}</Link>
+                      )}
                     </li>
                   ))}
                 </ul>
