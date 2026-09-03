@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { enforceRateLimit } from '../_shared/ratelimit.ts';
+import { getMemoryCache, setMemoryCache, getCachedAiResponse, setCachedAiResponse } from '../_shared/cache.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,11 +55,63 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: settings } = await supabase
-      .from('widget_settings')
-      .select('system_prompt, pre_chat_enabled, pre_chat_required_fields, pre_chat_welcome_message, max_input_characters, show_qa_to_visitors, welcome_message, agent_name, primary_color, voice_enabled')
-      .eq('business_id', businessId)
-      .single();
+    // ── 1. RATE LIMITING ──────────────────────────────────────────────────
+    // Visitor Rate Limit: 15 messages / minute per visitorId
+    const visitorRateCheck = await enforceRateLimit(supabase, `visitor:${visitorId}`, 15, 0.25);
+    if (!visitorRateCheck.allowed) {
+      console.warn(`Visitor rate limit exceeded for ${visitorId}`);
+      return new Response(
+        JSON.stringify({
+          error: 'Too many requests. Please wait a moment before sending another message.',
+          retryAfter: visitorRateCheck.retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(visitorRateCheck.retryAfter),
+          },
+        }
+      );
+    }
+
+    // IP Rate Limit: 45 messages / minute per IP address
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anon';
+    const ipRateCheck = await enforceRateLimit(supabase, `ip:${clientIp}`, 45, 0.75);
+    if (!ipRateCheck.allowed) {
+      console.warn(`IP rate limit exceeded for ${clientIp}`);
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded. Please try again shortly.',
+          retryAfter: ipRateCheck.retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': String(ipRateCheck.retryAfter),
+          },
+        }
+      );
+    }
+
+    // ── 2. WIDGET SETTINGS EDGE CACHE ──────────────────────────────────────
+    const settingsCacheKey = `settings_${businessId}`;
+    let settings = getMemoryCache<any>(settingsCacheKey);
+
+    if (!settings) {
+      const { data: fetchedSettings } = await supabase
+        .from('widget_settings')
+        .select('system_prompt, pre_chat_enabled, pre_chat_required_fields, pre_chat_welcome_message, max_input_characters, show_qa_to_visitors, welcome_message, agent_name, primary_color, voice_enabled')
+        .eq('business_id', businessId)
+        .single();
+      settings = fetchedSettings;
+      if (settings) {
+        setMemoryCache(settingsCacheKey, settings, 300000); // Cache 5 mins
+      }
+    }
 
     const preChatEnabled = settings?.pre_chat_enabled !== false;
 
@@ -192,11 +246,8 @@ Deno.serve(async (req: Request) => {
     if (liveSession) {
       console.log('Human agent active, skipping AI response');
 
-      // Forward message to admin on WhatsApp if they are managing via WhatsApp
       if (liveSession.metadata?.agent_whatsapp_phone && message) {
         try {
-          // Find whatsapp settings. Try the business first, then try to find 
-          // settings where the active agent's phone is an admin (for multi-business support)
           let waSettings = null;
           const { data: directSettings } = await supabase
             .from('whatsapp_settings')
@@ -209,8 +260,6 @@ Deno.serve(async (req: Request) => {
             waSettings = directSettings;
           } else {
             const agentPhone = liveSession.metadata.agent_whatsapp_phone;
-            // Fallback: Search for settings where this phone is an admin.
-            // We check both the exact number and the number with a '+' prefix.
             const { data: fallbackSettings } = await supabase
               .from('whatsapp_settings')
               .select('access_token, phone_number_id')
@@ -220,8 +269,6 @@ Deno.serve(async (req: Request) => {
             
             if (fallbackSettings && fallbackSettings.length > 0) {
               waSettings = fallbackSettings[0];
-            } else {
-              console.warn('No WhatsApp settings found for agent forwarding', { businessId, agentPhone });
             }
           }
           
@@ -277,16 +324,13 @@ Deno.serve(async (req: Request) => {
     if (qaPairs && qaPairs.length > 0) {
       const messageLower = message.toLowerCase();
       
-      // Try to find exact or keyword match
       for (const pair of qaPairs) {
         const questionLower = pair.question.toLowerCase();
         const keywords = pair.keywords || [];
         
-        // Check for exact question match or keyword match
         if (messageLower.includes(questionLower) || 
             keywords.some((kw: string) => messageLower.includes(kw.toLowerCase()))) {
           
-          // Save the programmed response
           await supabase
             .from('messages')
             .insert({
@@ -304,9 +348,39 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Get AI response
+    // ── 3. AI RESPONSE CACHE CHECK ──────────────────────────────────────────
+    const cachedResponse = await getCachedAiResponse(supabase, businessId, message);
+    if (cachedResponse) {
+      console.log('AI Response Cache Hit! Returning response in <100ms');
 
-    // Validate message length against configured max_input_characters
+      const { data: savedMessage } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: conversationId,
+          role: 'assistant',
+          content: cachedResponse.responseText
+        })
+        .select('id')
+        .single();
+
+      return new Response(
+        JSON.stringify({
+          reply: cachedResponse.responseText,
+          conversationId,
+          messageId: savedMessage?.id || null,
+          cached: true,
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'X-Cache': 'HIT',
+          },
+        }
+      );
+    }
+
+    // Validate message length
     const maxChars = settings?.max_input_characters || 500;
     if (message.length > maxChars) {
       return new Response(
@@ -323,7 +397,7 @@ Deno.serve(async (req: Request) => {
       throw new Error('OPENAI_API_KEY not configured');
     }
 
-    // 1. Fetch conversation history first so it's fully populated and accessible for the RAG query context augmentation
+    // 1. Fetch conversation history
     const historyResult = await supabase
       .from('messages')
       .select('role, content')
@@ -333,7 +407,6 @@ Deno.serve(async (req: Request) => {
 
     // 2. Fetch learnings and RAG knowledge in parallel
     const [learningsResult, relevantChunks] = await Promise.all([
-      // A. Business learnings
       supabase
         .from('business_learnings')
         .select('content, expires_at, metadata')
@@ -341,13 +414,10 @@ Deno.serve(async (req: Request) => {
         .order('created_at', { ascending: false })
         .limit(40),
 
-      // B. RAG knowledge search — context-augmented query for better short/follow-up question handling
       message.trim().length >= 1
         ? (async (): Promise<string> => {
             try {
-              // Build a richer query: combine the current message with recent conversation context
-              // This helps short messages like "how much?" find the right content
-              const recentHistory = (historyResult.data || []).slice(-4); // last 2 exchanges
+              const recentHistory = (historyResult.data || []).slice(-4);
               const userContext = recentHistory
                 .filter((m: any) => m.role === 'user')
                 .map((m: any) => m.content)
@@ -369,9 +439,9 @@ Deno.serve(async (req: Request) => {
               const queryEmbedding = embedData.data[0].embedding;
               const { data: matchData } = await supabase.rpc('match_knowledge_chunks', {
                 query_embedding: queryEmbedding,
-                match_count: 35, // Drastically increased to ensure no small details are missed
+                match_count: 35,
                 p_business_id: businessId,
-                similarity_threshold: 0.05 // Drastically lowered to catch even loosely related small details
+                similarity_threshold: 0.05
               });
               if (matchData && matchData.length > 0) {
                 console.log(`RAG: ${matchData.length} chunks matched (top similarity: ${matchData[0]?.similarity?.toFixed(3)})`);
@@ -383,7 +453,6 @@ Deno.serve(async (req: Request) => {
                   return `Source: ${sourceLabel}\nContent: ${chunk.content}`;
                 }).join('\n\n---\n\n');
               }
-              console.log('RAG: no chunks above similarity threshold');
               return '';
             } catch (e) {
               console.error('RAG Error:', e);
@@ -399,12 +468,10 @@ Deno.serve(async (req: Request) => {
       if (!expStr) return true;
       return new Date(expStr).getTime() > nowMs;
     });
-    // Fetched DESC for limit efficiency — reverse to restore chronological order
     const history = (historyResult.data || []).reverse();
 
     // Build system prompt
     let systemPrompt = settings?.system_prompt || 'You are a helpful AI assistant.';
-    
     systemPrompt += '\n\nIMPORTANT: When a visitor asks to speak to a live agent, first ask them why they need help and what specific issue they are facing. Try your best to resolve their issue using your knowledge. Only if you truly cannot help them should you suggest they wait for a human agent. In your response, if you determine you cannot help after trying, include the exact phrase "ESCALATE_TO_AGENT" on a new line at the end.';
     
     if (relevantChunks) {
@@ -420,7 +487,7 @@ Deno.serve(async (req: Request) => {
     }
 
     let contextAdded = 0;
-    const MAX_CONTEXT_CHARS = 30000; // rough limit to prevent token explosion
+    const MAX_CONTEXT_CHARS = 30000;
 
     if (learnings && learnings.length > 0) {
       systemPrompt += '\n\nLearned Insights:\n';
@@ -431,18 +498,13 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Add strict business scope guardrails & fallback instructions
-    systemPrompt += '\n\nSTRICT BUSINESS SCOPE & GUARDRAILS: You are an AI assistant representing THIS specific business ONLY. You MUST NOT answer off-topic, general knowledge, trivia, existential, or non-business questions (such as "when will the world end?", "who won the game?", "write a poem", "solve my math problem"). If the visitor asks any question that is not directly related to this business, its products, services, pricing, or support, YOU MUST POLITELY DECLINE by stating: "I am an AI assistant for this business and can only answer questions related to our business, products, services, and support. How can I help you with our offerings today?"';
+    systemPrompt += '\n\nSTRICT BUSINESS SCOPE & GUARDRAILS: You are an AI assistant representing THIS specific business ONLY. You MUST NOT answer off-topic, general knowledge, trivia, existential, or non-business questions. If the visitor asks any question that is not directly related to this business, its products, services, pricing, or support, YOU MUST POLITELY DECLINE by stating: "I am an AI assistant for this business and can only answer questions related to our business, products, services, and support. How can I help you with our offerings today?"';
     systemPrompt += '\n\nIMPORTANT: If you cannot find the exact answer to the visitor\'s question in the provided business knowledge, website content, or learned insights, YOU MUST NOT GUESS. Politely let them know you do not have that specific information and offer to connect them with a human agent who can assist further.';
 
-    // Call AI
     const aiMessages = [
       { role: 'system', content: systemPrompt },
       ...(history || []).map((m: any) => ({ role: m.role, content: m.content }))
     ];
-
-    // Use OpenAI directly (your own API key)
-
 
     const OPENAI_MODEL = Deno.env.get('OPENAI_MODEL') || 'gpt-4o-mini';
 
@@ -455,7 +517,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model: OPENAI_MODEL,
         messages: aiMessages,
-        temperature: 0.1, // Lower temperature drastically reduces hallucination
+        temperature: 0.1,
       }),
     });
 
@@ -476,7 +538,6 @@ Deno.serve(async (req: Request) => {
     const aiData = await aiResponse.json();
     let reply = aiData.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
     
-    // Check if AI wants to escalate
     const shouldEscalate = reply.includes('ESCALATE_TO_AGENT');
     let cleanReply = reply.replace('ESCALATE_TO_AGENT', '').trim();
 
@@ -492,11 +553,17 @@ Deno.serve(async (req: Request) => {
       .single();
 
     const messageId = savedMessage?.id || null;
-    console.log('AI response generated successfully, messageId:', messageId);
+
+    // Store in AI response cache for future instant cache hits (<100ms response time)
+    if (message && cleanReply && !shouldEscalate) {
+      setCachedAiResponse(supabase, businessId, message, cleanReply, [], 12).catch((err) => {
+        console.error('Failed to populate AI response cache:', err);
+      });
+    }
 
     return new Response(
-      JSON.stringify({ reply: cleanReply, conversationId, shouldEscalate, messageId }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ reply: cleanReply, conversationId, shouldEscalate, messageId, cached: false }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' } }
     );
 
   } catch (error) {

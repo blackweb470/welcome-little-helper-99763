@@ -56,7 +56,19 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes cache
+      gcTime: 15 * 60 * 1000, // 15 minutes garbage collection
+      refetchOnWindowFocus: false,
+      retry: (failureCount, error: any) => {
+        if (error?.status === 429) return false;
+        return failureCount < 2;
+      },
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>

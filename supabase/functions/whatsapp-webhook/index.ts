@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
 import postgres from 'https://deno.land/x/postgres@v0.17.0/mod.ts';
+import { enforceRateLimit } from '../_shared/ratelimit.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -182,6 +183,16 @@ Deno.serve(async (req: Request) => {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Enforce rate limit per WhatsApp sender phone number (max 10 tokens, refill 1/sec)
+      const waRateCheck = await enforceRateLimit(supabase, `wa_sender:${senderPhone}`, 10, 1.0);
+      if (!waRateCheck.allowed) {
+        console.warn(`WhatsApp rate limit exceeded for sender ${senderPhone}`);
+        return new Response(JSON.stringify({ status: 'rate_limited' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
       // Find settings by phone_number_id
       const { data: waSettings, error: settingsError } = await supabase
