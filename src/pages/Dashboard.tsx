@@ -35,6 +35,7 @@ import { SubscriptionManager } from "@/components/billing/SubscriptionManager";
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
 import { UpgradePrompt } from "@/components/dashboard/UpgradePrompt";
+import { TabSkeleton } from "@/components/dashboard/TabSkeleton";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -46,11 +47,19 @@ const Dashboard = () => {
   const currentTab = searchParams.get('tab') || 'businesses';
   const { hasAccess, getRequiredPlan, planName, isAdmin } = useFeatureAccess(user?.id);
   const { hasPermission, isOwner, businesses } = useBusinessPermissions(user?.id);
+  const [isTabLoading, setIsTabLoading] = useState(false);
   const [upgradePrompt, setUpgradePrompt] = useState<{
     open: boolean;
     featureName: string;
     requiredPlan: string;
   }>({ open: false, featureName: '', requiredPlan: '' });
+
+  // Tab transition skeleton trigger
+  useEffect(() => {
+    setIsTabLoading(true);
+    const timer = setTimeout(() => setIsTabLoading(false), 200);
+    return () => clearTimeout(timer);
+  }, [currentTab, selectedBusinessId]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -230,6 +239,10 @@ const Dashboard = () => {
 
         <div className="flex-1 overflow-auto">
           <div className="p-8 space-y-8 max-w-[1600px] mx-auto animate-fade-in">
+            {isTabLoading ? (
+              <TabSkeleton />
+            ) : (
+              <>
             {currentTab === 'businesses' && (
               <div className="space-y-6">
                 <PendingInvitations userId={user.id} />
@@ -344,6 +357,8 @@ const Dashboard = () => {
                   </div>
                 )}
               </>
+            )}
+            </>
             )}
           </div>
         </div>
