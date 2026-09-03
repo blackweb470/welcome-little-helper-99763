@@ -161,7 +161,7 @@ const Auth = () => {
                 }
               }}
               providers={[]}
-              redirectTo={window.location.origin}
+              redirectTo={`${window.location.origin}/onboarding`}
             />
           </div>
         </div>

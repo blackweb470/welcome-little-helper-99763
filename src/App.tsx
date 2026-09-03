@@ -38,6 +38,12 @@ const AuthListener = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         navigate("/reset-password");
+      } else if (session && (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION")) {
+        const currentPath = window.location.pathname;
+        const hasAuthParams = window.location.hash.includes("access_token") || window.location.search.includes("code");
+        if (currentPath === "/" || currentPath === "/auth" || hasAuthParams) {
+          navigate("/onboarding");
+        }
       }
     });
 
