@@ -71,7 +71,7 @@ serve(async (req) => {
       .from('user_subscriptions')
       .insert({
         user_id: userId,
-        plan_name: 'basic',
+        plan_name: 'business',
         trial_ends_at: trialEndsAt.toISOString(),
         expires_at: trialEndsAt.toISOString(),
         started_at: new Date().toISOString(),
