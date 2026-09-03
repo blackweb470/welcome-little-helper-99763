@@ -46,19 +46,19 @@ const planDetails: Record<string, { icon: React.ReactNode; price: string; color:
     icon: <Star className="w-5 h-5" />,
     price: "$5/mo",
     color: "text-blue-500",
-    features: ["1 Business", "Pre-Chat Forms", "Canned Responses", "Basic Analytics", "Email Notifications"],
+    features: ["1 Business (5 during trial)", "Pre-Chat Forms & Canned Responses", "AI Learning & Website Crawler", "Live Agent Transfer & Proactive Rules", "Full Trial Access to All Features"],
   },
   pro: {
     icon: <Zap className="w-5 h-5" />,
     price: "$10/mo",
     color: "text-violet-500",
-    features: ["2 Businesses", "Live Agent Transfer", "Advanced Analytics", "Sentiment Analysis", "Voice Chat"],
+    features: ["2 Businesses", "Live Agent Transfer", "Advanced Analytics", "Sentiment Analysis", "Proactive Chat Rules"],
   },
   business: {
     icon: <Building2 className="w-5 h-5" />,
     price: "$20/mo",
     color: "text-amber-500",
-    features: ["5 Businesses", "AI Learning & Documents", "Visitor Tracking", "API Access", "Custom Training"],
+    features: ["5 Businesses", "AI Learning & Documents", "Visitor Tracking", "Website Crawler", "API Access & Custom Training"],
   },
 };
 
