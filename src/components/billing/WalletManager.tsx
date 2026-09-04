@@ -9,6 +9,7 @@ import { Wallet, PlusCircle, ArrowUpRight, Zap, RefreshCw, AlertTriangle, CheckC
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BrandSuccessModal } from "@/components/billing/BrandSuccessModal";
 
 interface WalletInfo {
   balance_usd: number;
@@ -384,38 +385,14 @@ export const WalletManager = () => {
       </Card>
 
       {/* Deposit Success Celebration Popup Modal */}
-      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
-        <DialogContent className="sm:max-w-md text-center border-emerald-500/20 bg-gradient-to-b from-card via-card to-emerald-500/5 shadow-2xl">
-          <DialogHeader className="pt-4 flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mb-3 shadow-lg shadow-emerald-500/10 border border-emerald-500/20 animate-pulse">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <DialogTitle className="text-2xl font-extrabold text-foreground flex items-center justify-center gap-2">
-              Deposit Successful! 🎉
-            </DialogTitle>
-            <DialogDescription className="text-sm pt-1 text-muted-foreground">
-              Your credit wallet has been topped up successfully. Funds are active immediately with no expiration date.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="my-4 p-4 rounded-xl bg-background/80 border border-emerald-500/20 text-center space-y-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Updated Available Balance</span>
-            <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 block">{formatCurrency(balance)}</span>
-            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground pt-1">
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>~{wallet?.estimated_messages_remaining.toLocaleString()} AI responses available</span>
-            </div>
-          </div>
-
-          <Button
-            onClick={() => setSuccessDialogOpen(false)}
-            className="w-full font-bold h-11 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Awesome, Continue to Dashboard
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <BrandSuccessModal
+        open={successDialogOpen}
+        onOpenChange={setSuccessDialogOpen}
+        title="Deposit Successful!"
+        description="Your credit wallet has been topped up successfully. Funds are active immediately with no expiration date."
+        balance={balance}
+        estimatedMessages={wallet?.estimated_messages_remaining}
+      />
     </div>
   );
 };
