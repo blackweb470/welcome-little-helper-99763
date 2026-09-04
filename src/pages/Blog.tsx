@@ -25,6 +25,17 @@ const useReveal = () => {
 
 export const blogPosts = [
   {
+    id: "lyqn-ai-product-hunt-launch-pay-as-you-go",
+    title: "We're Live on Product Hunt: Why We Built a Pure Pay-As-You-Go AI Support Chatbot",
+    excerpt: "Lyqn AI is officially live on Product Hunt! Discover why we killed $99/mo SaaS subscriptions in favor of $0.005/msg Pay-As-You-Go pricing, and claim your $5 free starter credits.",
+    date: "2026-09-04",
+    author: "Joseph (Maker @ LYQN)",
+    category: "Startup Guides",
+    readTime: "4 min read",
+    featured: true,
+    tags: ["Product Hunt", "Launch", "Pay As You Go", "AI Chatbot"]
+  },
+  {
     id: "why-saas-subscriptions-are-broken-pay-as-you-go-ai",
     title: "Why SaaS Subscriptions Are Broken for AI Tools (And Why We Switched to Pure Pay-As-You-Go)",
     excerpt: "Why fixed $99/mo SaaS seats and expiring monthly credits are a trap for founders, and how pure Pay-As-You-Go ($0.005/msg) saves 90%+ on AI customer support.",
@@ -32,7 +43,7 @@ export const blogPosts = [
     author: "LYQN Strategy Team",
     category: "Startup Guides",
     readTime: "5 min read",
-    featured: true,
+    featured: false,
     tags: ["Pay As You Go", "SaaS Pricing", "AI Chatbot", "Cost Savings"]
   },
   {

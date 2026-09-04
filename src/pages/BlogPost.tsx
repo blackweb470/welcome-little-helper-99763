@@ -28,6 +28,18 @@ const useReveal = () => {
 
 // Executive summary takeaways for each post
 const quickSummaries: Record<string, { takeaways: string[]; stats: { label: string; value: string }[] }> = {
+  "lyqn-ai-product-hunt-launch-pay-as-you-go": {
+    takeaways: [
+      "LYQN AI is officially live on Product Hunt with a pure Pay-As-You-Go credit wallet model ($0.005/msg).",
+      "No $99/mo subscription fees, no per-seat taxes, and credits never expire.",
+      "Get $5.00 in free starter credits (~1,000 AI responses) when you join the launch today."
+    ],
+    stats: [
+      { label: "PH Launch", value: "LIVE" },
+      { label: "Free Credit", value: "$5.00" },
+      { label: "Unit Cost", value: "$0.005" }
+    ]
+  },
   "why-saas-subscriptions-are-broken-pay-as-you-go-ai": {
     takeaways: [
       "Fixed monthly SaaS subscriptions ($49–$199/mo) force founders to pay for unused capacity and expiring monthly credits.",
@@ -226,6 +238,45 @@ const ComparisonTable = () => {
 };
 
 const markdownContent: Record<string, string> = {
+  "lyqn-ai-product-hunt-launch-pay-as-you-go": `
+🚀 **Today is the day! LYQN AI is officially live on Product Hunt!**
+
+If you've ever built a startup, managed an e-commerce store, or launched a side project, you know the frustration: every customer support tool wants to charge you **$49, $99, or $199 every single month**, regardless of whether you get 10 visitors or 10,000.
+
+Worse yet, during low-traffic months or early-stage testing, your unused monthly subscription credits vanish into thin air.
+
+That is why we built **LYQN AI** around a **pure Pay-As-You-Go Credit Wallet model**.
+
+---
+
+### 💡 Why We Built LYQN AI: The Pay-As-You-Go Revolution
+
+Traditional AI customer support software penalizes early-stage founders and seasonal businesses. We decided to flip the script with fair, utility-style pricing:
+
+1. **$0.005 USD per AI Response**: You only pay when our AI answers a customer question. If you get 0 questions in a month, your bill is **$0.00**.
+2. **$0 Monthly Base Fees & $0 Seat Tax**: Zero recurring monthly tier costs, zero charges per team member, and zero hidden lock-in contracts.
+3. **Credits Never Expire**: Top up $5 or $10 whenever you want—your credits remain active indefinitely until used.
+4. **Complete Enterprise Suite Unlocked**: Every single user gets access to self-learning RAG knowledge base ingestion, instant live agent handoff, and WhatsApp integration.
+
+---
+
+### ⚡ Everything Included in Your LYQN AI Workspace
+
+- 🤖 **2-Minute Knowledge Base Training**: Paste your website URL or upload PDFs to train your custom GPT-4 AI assistant instantly.
+- 💬 **Real-Time Live Agent Escalations**: Seamlessly transition active web visitors to your team's live chat inbox when human intervention is needed.
+- 📱 **WhatsApp & Webhook Integration**: Bridge web conversations directly to WhatsApp so visitors are never left waiting.
+- 📊 **Real-Time Wallet Transparency**: Track exact message usage down to the fraction of a cent ($0.005/msg) from your dashboard.
+
+---
+
+### 🎁 Exclusive Product Hunt Launch Offer
+
+To celebrate our Product Hunt launch, we are giving every single founder and builder who signs up today **$5.00 in free starter credits** (approx. 1,000 AI responses). No credit card required to get started!
+
+👉 **[Support us on Product Hunt and try LYQN AI today](https://lyqn.app/auth)**
+
+We would love to hear your feedback, thoughts, and feature requests!
+  `,
   "why-saas-subscriptions-are-broken-pay-as-you-go-ai": `
 If you’ve built or managed a digital business over the past two years, you’ve likely experienced the **SaaS Subscription Fatigue Trap**.
 
