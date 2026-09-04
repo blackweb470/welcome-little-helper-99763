@@ -65,25 +65,24 @@ export const WalletManager = () => {
       if (!user) return;
 
       // Fetch wallet info via RPC
-      const { data: walletData, error: walletError } = await supabase
-        .rpc('get_wallet_info', { p_user_id: user.id });
+      const { data: walletData, error: walletError } = await (supabase.rpc as any)('get_wallet_info', { p_user_id: user.id });
 
       if (walletError) throw walletError;
 
       if (walletData && walletData.length > 0) {
-        setWallet(walletData[0]);
+        setWallet(walletData[0] as WalletInfo);
       }
 
       // Fetch recent transactions
-      const { data: txData } = await supabase
-        .from('wallet_transactions')
+      const { data: txData } = await (supabase
+        .from('wallet_transactions' as any) as any)
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (txData) {
-        setTransactions(txData);
+        setTransactions(txData as Transaction[]);
       }
     } catch (err) {
       console.error('Error fetching wallet:', err);

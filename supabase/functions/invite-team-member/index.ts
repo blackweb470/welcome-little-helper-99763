@@ -7,7 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-visitor-id',
 };
 
-const resend = new Resend(Deno.env.get('RESEND_API_KEY') as string);
+const resendKey = Deno.env.get("RESEND_API_KEY") || Deno.env.get("RESEND_KEY") || "";
+const resend = new Resend(resendKey);
 
 const createInvitationEmail = (
   businessName: string,

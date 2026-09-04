@@ -3,7 +3,8 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resendKey = Deno.env.get("RESEND_API_KEY") || Deno.env.get("RESEND_KEY") || "";
+const resend = new Resend(resendKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,169 +100,123 @@ const handler = async (req: Request): Promise<Response> => {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <title>${title}</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body {
-        background: #0a0a0a;
-        padding: 40px 20px;
-        font-family: 'DM Mono', monospace;
+        background-color: #f1f5f9;
+        padding: 48px 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #334155;
         -webkit-font-smoothing: antialiased;
       }
       .email-card {
-        max-width: 560px;
+        max-width: 600px;
         margin: 0 auto;
-        background: #0f0f0f;
-        border: 0.5px solid #2a2a2a;
-        border-radius: 4px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
         overflow: hidden;
       }
       .email-header {
-        padding: 56px 48px 48px;
-        border-bottom: 0.5px solid #1e1e1e;
-        position: relative;
+        padding: 36px 48px 28px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #ffffff;
       }
-      .corner-mark {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        font-size: 10px;
-        letter-spacing: 0.15em;
-        color: #3a3a3a;
-        text-transform: uppercase;
+      .brand-badge {
+        display: inline-block;
+        font-size: 18px;
+        font-weight: 800;
+        color: #4f46e5;
+        letter-spacing: -0.5px;
       }
-      .logo {
-        font-family: 'DM Serif Display', serif;
-        font-size: 42px;
-        color: #f5f5f5;
-        letter-spacing: -1px;
-        line-height: 1;
-        margin-bottom: 4px;
-      }
-      .tagline {
-        font-size: 10px;
-        letter-spacing: 0.25em;
-        color: #404040;
-        text-transform: uppercase;
-      }
-      .index-num {
-        position: absolute;
-        bottom: 20px;
-        left: 48px;
-        font-size: 10px;
-        letter-spacing: 0.15em;
-        color: #2a2a2a;
+      .brand-badge span {
+        color: #0f172a;
       }
       .email-body {
-        padding: 48px 48px 40px;
-      }
-      .greeting {
-        font-size: 11px;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        color: #505050;
-        margin-bottom: 28px;
+        padding: 40px 48px;
       }
       .headline {
-        font-family: 'DM Serif Display', serif;
-        font-size: 28px;
-        color: #f0f0f0;
-        line-height: 1.25;
-        letter-spacing: -0.5px;
+        font-size: 24px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.3;
         margin-bottom: 20px;
+        letter-spacing: -0.4px;
       }
       .body-text {
-        font-size: 13px;
-        line-height: 1.9;
-        color: #666;
-        margin-bottom: 40px;
+        font-size: 15px;
+        line-height: 1.7;
+        color: #334155;
       }
       .data-box {
-        border: 0.5px solid #222;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
         padding: 24px;
-        margin-bottom: 40px;
+        margin: 28px 0;
+      }
+      .data-row {
+        margin-bottom: 16px;
+      }
+      .data-row:last-child {
+        margin-bottom: 0;
       }
       .data-label {
-        font-size: 10px;
-        letter-spacing: 0.15em;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #505050;
-        margin-bottom: 8px;
+        color: #64748b;
+        margin-bottom: 4px;
         display: block;
       }
       .data-value {
-        font-size: 13px;
-        color: #f0f0f0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0f172a;
         display: block;
-        margin-bottom: 16px;
-      }
-      .data-value:last-child {
-        margin-bottom: 0;
+        word-break: break-word;
       }
       .divider {
         border: none;
-        border-top: 0.5px solid #1e1e1e;
-        margin-bottom: 28px;
+        border-top: 1px solid #f1f5f9;
+        margin: 32px 0 24px;
       }
       .footnote {
-        font-size: 11px;
-        color: #303030;
-        line-height: 1.8;
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.6;
       }
       .email-footer {
-        padding: 20px 48px;
-        border-top: 0.5px solid #1a1a1a;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .footer-brand {
-        font-size: 10px;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        color: #2a2a2a;
-      }
-      .footer-rule {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 10px;
-        color: #252525;
-        letter-spacing: 0.1em;
-      }
-      .footer-dash {
-        width: 20px;
-        height: 0.5px;
-        background: #252525;
+        padding: 28px 48px;
+        background: #f8fafc;
+        border-top: 1px solid #f1f5f9;
+        font-size: 12px;
+        color: #94a3b8;
+        text-align: center;
+        line-height: 1.6;
       }
     </style>
   </head>
   <body>
     <div class="email-card">
       <div class="email-header">
-        <div class="corner-mark">Notification</div>
-        <div class="logo">Lyqn.</div>
-        <div class="tagline">System Alert</div>
-        <div class="index-num">01 / 01</div>
+        <div class="brand-badge">Lyqn <span>AI</span></div>
       </div>
       <div class="email-body">
-        <p class="greeting">Update —</p>
         <h1 class="headline">${title}</h1>
         <div class="body-text">
           ${contentHtml}
         </div>
         <hr class="divider">
         <p class="footnote">
-          This is an automated system notification from your Lyqn workspace.
+          This automated message was sent from your <strong>${sanitizedBusinessName}</strong> workspace.
         </p>
       </div>
       <div class="email-footer">
-        <span class="footer-brand">Lyqn</span>
-        <div class="footer-rule">
-          <div class="footer-dash"></div>
-          <span>Automated message</span>
-          <div class="footer-dash"></div>
-        </div>
+        © ${new Date().getFullYear()} Lyqn AI • All rights reserved
       </div>
     </div>
   </body>
@@ -269,6 +224,29 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     switch (type) {
+      case 'welcome':
+      case 'account_created':
+        recipientEmail = data.userEmail || ownerEmail;
+        subject = `👋 Welcome to ${sanitizedBusinessName}`;
+        html = createNotificationEmail('Welcome to Lyqn AI', `
+          <p>Your workspace account has been successfully created.</p>
+          <p style="margin-top: 12px;">You now have full access to configure your AI assistant, manage widget settings, and invite live chat agents.</p>
+          <div class="data-box" style="background: #f0fdf4; border-color: #bbf7d0;">
+            <div class="data-row">
+              <span class="data-label" style="color: #166534;">Account Email</span>
+              <span class="data-value" style="color: #0f172a;">${recipientEmail}</span>
+            </div>
+            <div class="data-row">
+              <span class="data-label" style="color: #166534;">Included Starter Credits</span>
+              <span class="data-value" style="color: #16a34a; font-size: 18px;">$5.00 USD Free Credits</span>
+            </div>
+          </div>
+          <p style="margin-top: 28px; text-align: center;">
+            <a href="https://lyqn.app/auth" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">Log In to Your Workspace</a>
+          </p>
+        `);
+        break;
+
       case 'agent_accepted':
         recipientEmail = data.visitorEmail || '';
         if (!recipientEmail) {
@@ -278,75 +256,94 @@ const handler = async (req: Request): Promise<Response> => {
           );
         }
         subject = `✅ Agent Joined Your Chat - ${sanitizedBusinessName}`;
-        html = createNotificationEmail('Chat Accepted', `
-          <p>Your chat request has been accepted by <strong style="color: #f0f0f0;">${data.agentName || 'our team'}</strong>.</p>
-          <p>You can now continue your conversation.</p>
+        html = createNotificationEmail('Agent Joined Your Chat', `
+          <p>Your live chat request has been accepted by <strong style="color: #0f172a;">${data.agentName || 'our team member'}</strong>.</p>
+          <p style="margin-top: 8px;">You can now switch back to your chat window to continue the discussion.</p>
           <div class="data-box">
-            <span class="data-label">Conversation ID</span>
-            <span class="data-value">${data.conversationId || 'N/A'}</span>
+            <div class="data-row">
+              <span class="data-label">Conversation Reference</span>
+              <span class="data-value">${data.conversationId || 'N/A'}</span>
+            </div>
           </div>
-          <p>Please return to the chat window to continue.</p>
         `);
         break;
 
       case 'chat_transfer':
         subject = `🔔 Live Chat Transfer Request - ${sanitizedBusinessName}`;
-        html = createNotificationEmail('New Live Chat Transfer', `
-          <p>A visitor has requested to speak with a live agent.</p>
+        html = createNotificationEmail('Live Chat Transfer Request', `
+          <p>A visitor has requested live support from an agent.</p>
           <div class="data-box">
-            <span class="data-label">Conversation ID</span>
-            <span class="data-value">${data.conversationId || 'N/A'}</span>
-            
-            <span class="data-label">Visitor ID</span>
-            <span class="data-value">${data.visitorId || 'N/A'}</span>
-            
+            <div class="data-row">
+              <span class="data-label">Conversation ID</span>
+              <span class="data-value">${data.conversationId || 'N/A'}</span>
+            </div>
+            <div class="data-row">
+              <span class="data-label">Visitor ID</span>
+              <span class="data-value">${data.visitorId || 'N/A'}</span>
+            </div>
             ${data.visitorEmail ? `
-              <span class="data-label">Visitor Email</span>
-              <span class="data-value">${data.visitorEmail}</span>
+              <div class="data-row">
+                <span class="data-label">Visitor Email</span>
+                <span class="data-value">${data.visitorEmail}</span>
+              </div>
             ` : ''}
-            
             ${data.message ? `
-              <span class="data-label">Reason</span>
-              <span class="data-value">${data.message.substring(0, 500)}</span>
+              <div class="data-row">
+                <span class="data-label">Reason / Notes</span>
+                <span class="data-value" style="font-weight: 400;">${data.message.substring(0, 500)}</span>
+              </div>
             ` : ''}
           </div>
-          <p>Please log in to your dashboard to accept this chat.</p>
+          <p style="margin-top: 24px; text-align: center;">
+            <a href="https://lyqn.app/dashboard" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">Open Live Chat Dashboard</a>
+          </p>
         `);
         break;
 
       case 'new_message':
         subject = `💬 New Message - ${sanitizedBusinessName}`;
-        html = createNotificationEmail('New Message Received', `
-          <div class="data-box">
-            <p style="font-style: italic; color: #f0f0f0; margin: 0; font-size: 14px;">"${data.message ? data.message.substring(0, 500) : 'No message content'}"</p>
+        html = createNotificationEmail('New Customer Message', `
+          <div class="data-box" style="background: #f8fafc; border-left: 4px solid #4f46e5;">
+            <span class="data-label">Message Preview</span>
+            <p style="font-style: italic; color: #0f172a; margin-top: 4px; font-size: 15px; line-height: 1.6;">"${data.message ? data.message.substring(0, 500) : 'No message content'}"</p>
           </div>
-          <span class="data-label">Conversation ID</span>
-          <span class="data-value">${data.conversationId || 'N/A'}</span>
+          <div class="data-box">
+            <div class="data-row">
+              <span class="data-label">Conversation ID</span>
+              <span class="data-value">${data.conversationId || 'N/A'}</span>
+            </div>
+          </div>
         `);
         break;
 
       case 'ticket_created':
         subject = `🎫 New Support Ticket - ${sanitizedBusinessName}`;
         html = createNotificationEmail('New Support Ticket Created', `
+          <p>A new support ticket has been submitted to your workspace.</p>
           <div class="data-box">
-            <span class="data-label">Ticket ID</span>
-            <span class="data-value">${data.ticketId || 'N/A'}</span>
-            
+            <div class="data-row">
+              <span class="data-label">Ticket Reference ID</span>
+              <span class="data-value">${data.ticketId || 'N/A'}</span>
+            </div>
             ${data.message ? `
-              <span class="data-label">Details</span>
-              <span class="data-value">${data.message.substring(0, 500)}</span>
+              <div class="data-row">
+                <span class="data-label">Ticket Summary</span>
+                <span class="data-value" style="font-weight: 400;">${data.message.substring(0, 500)}</span>
+              </div>
             ` : ''}
           </div>
         `);
         break;
 
       case 'ticket_resolved':
-        subject = `✅ Ticket Resolved - ${sanitizedBusinessName}`;
+        subject = `✅ Support Ticket Resolved - ${sanitizedBusinessName}`;
         html = createNotificationEmail('Support Ticket Resolved', `
-          <p>Your support ticket has been marked as resolved.</p>
+          <p>Your support ticket has been officially marked as resolved.</p>
           <div class="data-box">
-            <span class="data-label">Ticket ID</span>
-            <span class="data-value" style="margin-bottom: 0;">${data.ticketId || 'N/A'}</span>
+            <div class="data-row">
+              <span class="data-label">Ticket Reference ID</span>
+              <span class="data-value">${data.ticketId || 'N/A'}</span>
+            </div>
           </div>
         `);
         break;
@@ -359,31 +356,28 @@ const handler = async (req: Request): Promise<Response> => {
             { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
-        subject = `⚠️ Team Access Removed - ${data.businessName || sanitizedBusinessName}`;
-        html = createNotificationEmail('Access Revoked', `
-          <p>You have been removed from the team at <strong style="color: #f0f0f0;">${data.businessName || sanitizedBusinessName}</strong>.</p>
-          <p>Your access to the business dashboard and all related features has been revoked.</p>
-          <div class="data-box" style="border-color: #3f1515;">
-            <p style="color: #a35d5d; margin: 0;">If you believe this was done in error, please contact the business owner directly.</p>
+        subject = `⚠️ Team Access Revoked - ${data.businessName || sanitizedBusinessName}`;
+        html = createNotificationEmail('Team Access Revoked', `
+          <p>Your access to <strong style="color: #0f172a;">${data.businessName || sanitizedBusinessName}</strong> has been updated.</p>
+          <div class="data-box" style="background: #fef2f2; border-color: #fecaca;">
+            <p style="color: #991b1b; margin: 0; font-size: 14px; line-height: 1.6;">You have been removed from this workspace team. If you have questions, please contact the workspace owner directly.</p>
           </div>
-          <p>Thank you for your contributions to the team.</p>
         `);
         break;
 
       case 'wallet_depleted':
         subject = `⚠️ Action Required: Credit Wallet Depleted - ${sanitizedBusinessName}`;
         html = createNotificationEmail('Credit Balance Depleted', `
-          <p>Your LYQN credit wallet balance has reached <strong style="color: #ef4444;">$0.00</strong>.</p>
-          <p>Your AI assistant is currently <strong style="color: #f59e0b;">paused</strong> and will not generate responses for visitors until credits are added.</p>
-          <div class="data-box" style="border-color: #591b1b;">
-            <span class="data-label">Business Name</span>
-            <span class="data-value">${sanitizedBusinessName}</span>
-            
-            <span class="data-label">Current Balance</span>
-            <span class="data-value" style="color: #ef4444; font-weight: bold; font-size: 16px;">$0.00 USD</span>
+          <p>Your credit wallet balance for <strong>${sanitizedBusinessName}</strong> is now <strong style="color: #dc2626;">$0.00</strong>.</p>
+          <p style="margin-top: 8px;">Your AI assistant has been temporarily paused and will resume automatically once credits are added.</p>
+          <div class="data-box" style="background: #fef2f2; border-color: #fecaca;">
+            <div class="data-row">
+              <span class="data-label" style="color: #991b1b;">Current Balance</span>
+              <span class="data-value" style="color: #dc2626; font-size: 20px; font-weight: 700;">$0.00 USD</span>
+            </div>
           </div>
-          <p style="margin-top: 24px; text-align: center;">
-            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">Top Up Wallet Credits ($5.00)</a>
+          <p style="margin-top: 28px; text-align: center;">
+            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);">Refill Wallet Credits ($5.00)</a>
           </p>
         `);
         break;
@@ -391,38 +385,41 @@ const handler = async (req: Request): Promise<Response> => {
       case 'low_balance':
         subject = `🔔 Low Credit Balance Alert - ${sanitizedBusinessName}`;
         html = createNotificationEmail('Low Credit Balance Alert', `
-          <p>Your LYQN credit wallet balance is running low.</p>
-          <div class="data-box" style="border-color: #4a3818;">
-            <span class="data-label">Business Name</span>
-            <span class="data-value">${sanitizedBusinessName}</span>
-            
-            <span class="data-label">Remaining Balance</span>
-            <span class="data-value" style="color: #f59e0b; font-weight: bold; font-size: 16px;">$${data.message || '1.50'} USD</span>
+          <p>Your credit wallet balance is running low.</p>
+          <div class="data-box" style="background: #fffbeb; border-color: #fde68a;">
+            <div class="data-row">
+              <span class="data-label" style="color: #92400e;">Remaining Credit Balance</span>
+              <span class="data-value" style="color: #d97706; font-size: 20px; font-weight: 700;">$${data.message || '1.50'} USD</span>
+            </div>
           </div>
-          <p style="margin-top: 24px; text-align: center;">
-            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">Top Up Wallet Credits</a>
+          <p style="margin-top: 28px; text-align: center;">
+            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">Top Up Wallet Credits</a>
           </p>
         `);
         break;
 
       case 'credit_bonus':
         recipientEmail = data.userEmail || ownerEmail;
-        subject = `🎉 You've received a $${(data.amount || 0).toFixed(2)} Credit Bonus!`;
+        subject = `🎉 You've Received a $${(data.amount || 0).toFixed(2)} Credit Bonus!`;
         html = createNotificationEmail('Wallet Credit Bonus Granted', `
-          <p>Great news! An admin has added <strong style="color: #10b981;">+$${(data.amount || 0).toFixed(2)} USD</strong> in credits to your LYQN AI wallet.</p>
-          <div class="data-box" style="border-color: #10b981;">
-            <span class="data-label">Granted Credit Amount</span>
-            <span class="data-value" style="color: #10b981; font-weight: bold; font-size: 18px;">+$${(data.amount || 0).toFixed(2)} USD</span>
-            
-            <span class="data-label">Updated Available Balance</span>
-            <span class="data-value" style="font-bold; font-size: 16px;">$${(data.newBalance || 0).toFixed(2)} USD</span>
-
-            <span class="data-label">Note / Description</span>
-            <span class="data-value">${data.description || 'Admin Promotional Credit Bonus'}</span>
+          <p>Great news! A bonus of <strong style="color: #16a34a;">+$${(data.amount || 0).toFixed(2)} USD</strong> has been added to your credit wallet.</p>
+          <div class="data-box" style="background: #f0fdf4; border-color: #bbf7d0;">
+            <div class="data-row">
+              <span class="data-label" style="color: #166534;">Granted Credit Amount</span>
+              <span class="data-value" style="color: #16a34a; font-size: 22px; font-weight: 700;">+$${(data.amount || 0).toFixed(2)} USD</span>
+            </div>
+            <div class="data-row">
+              <span class="data-label" style="color: #166534;">Updated Available Balance</span>
+              <span class="data-value" style="color: #0f172a; font-size: 16px; font-weight: 600;">$${(data.newBalance || 0).toFixed(2)} USD</span>
+            </div>
+            <div class="data-row">
+              <span class="data-label" style="color: #166534;">Description / Reason</span>
+              <span class="data-value" style="color: #334155; font-weight: 500;">${data.description || 'Admin Promotional Credit Bonus'}</span>
+            </div>
           </div>
-          <p style="margin-top: 16px;">Your credits never expire and are immediately active for AI message responses.</p>
-          <p style="margin-top: 24px; text-align: center;">
-            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">View Your Wallet</a>
+          <p style="margin-top: 12px;">Your credits do not expire and are ready for immediate use across your workspace.</p>
+          <p style="margin-top: 28px; text-align: center;">
+            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);">View Wallet Dashboard</a>
           </p>
         `);
         break;
@@ -433,14 +430,13 @@ const handler = async (req: Request): Promise<Response> => {
         html = createNotificationEmail(
           data.customTitle || data.subject || 'Important Announcement',
           `
-            <h2 class="email-title" style="margin-bottom: 16px; color: #f5f5f5;">${data.customTitle || data.subject || 'Important Announcement'}</h2>
-            <div style="font-size: 14px; line-height: 1.6; color: #d1d5db; white-space: pre-wrap; margin-bottom: 24px;">
+            <div style="font-size: 15px; line-height: 1.7; color: #334155; white-space: pre-wrap; margin-bottom: 24px;">
               ${(data.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>')}
             </div>
             ${
               data.actionUrl && data.actionText
-                ? `<p style="margin-top: 24px; text-align: center;">
-                    <a href="${data.actionUrl}" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">${data.actionText}</a>
+                ? `<p style="margin-top: 28px; text-align: center;">
+                    <a href="${data.actionUrl}" style="display: inline-block; background: #4f46e5; color: #ffffff; padding: 14px 32px; font-weight: 600; text-decoration: none; border-radius: 10px; font-size: 14px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">${data.actionText}</a>
                   </p>`
                 : ''
             }

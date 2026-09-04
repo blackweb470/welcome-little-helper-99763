@@ -187,9 +187,9 @@ export default function Admin() {
       let systemBalanceSum = 0;
 
       // Try RPC get_admin_users_wallets first
-      const { data: adminRpcUsers, error: rpcErr } = await supabase.rpc("get_admin_users_wallets");
+      const { data: adminRpcUsers, error: rpcErr } = await (supabase.rpc as any)("get_admin_users_wallets");
 
-      if (!rpcErr && adminRpcUsers && adminRpcUsers.length > 0) {
+      if (!rpcErr && adminRpcUsers && Array.isArray(adminRpcUsers) && adminRpcUsers.length > 0) {
         formattedUsers = adminRpcUsers.map((u: any) => {
           const bal = parseFloat(u.balance) || 1.0;
           systemBalanceSum += bal;
@@ -215,13 +215,13 @@ export default function Admin() {
         if (profiles) {
           formattedUsers = await Promise.all(
             profiles.map(async (profile) => {
-              const userSub = subscriptions?.find((s) => s.user_id === profile.id);
+              const userSub = subscriptions?.find((s: any) => s.user_id === profile.id);
               const planName = userSub?.plan_name || "free";
               planCounts[planName] = (planCounts[planName] || 0) + 1;
 
               let userBal = 1.0;
               try {
-                const { data: wData } = await supabase.rpc("get_wallet_info", { p_user_id: profile.id });
+                const { data: wData } = await (supabase.rpc as any)("get_wallet_info", { p_user_id: profile.id });
                 if (wData && wData.length > 0) {
                   userBal = parseFloat(wData[0].balance_usd) || 1.0;
                 }
@@ -249,11 +249,11 @@ export default function Admin() {
       formattedUsers.forEach((u) => userLookup.set(u.id, u.email));
 
       // Formatted Businesses
-      const formattedBusinesses: BusinessItem[] = (businesses || []).map((b) => ({
+      const formattedBusinesses: BusinessItem[] = (businesses || []).map((b: any) => ({
         id: b.id,
         name: b.name,
-        user_id: b.user_id,
-        owner_email: userLookup.get(b.user_id) || "Unknown Owner",
+        user_id: b.owner_id || b.user_id,
+        owner_email: userLookup.get(b.owner_id || b.user_id) || "Unknown Owner",
         created_at: b.created_at,
       }));
       setBusinessesList(formattedBusinesses);
@@ -262,9 +262,9 @@ export default function Admin() {
       let formattedTransactions: TransactionItem[] = [];
       let depositsTotal = 0;
 
-      const { data: adminRpcTx, error: txRpcErr } = await supabase.rpc("get_admin_transactions", { p_limit: 100 });
+      const { data: adminRpcTx, error: txRpcErr } = await (supabase.rpc as any)("get_admin_transactions", { p_limit: 100 });
 
-      if (!txRpcErr && adminRpcTx) {
+      if (!txRpcErr && adminRpcTx && Array.isArray(adminRpcTx)) {
         formattedTransactions = adminRpcTx.map((tx: any) => {
           const amt = parseFloat(tx.amount_usd) || 0;
           if (amt > 0) depositsTotal += amt;
@@ -279,13 +279,13 @@ export default function Admin() {
           };
         });
       } else {
-        const { data: transactions } = await supabase
-          .from("wallet_transactions")
+        const { data: transactions } = await (supabase
+          .from("wallet_transactions" as any) as any)
           .select("*")
           .order("created_at", { ascending: false })
           .limit(100);
 
-        formattedTransactions = (transactions || []).map((tx) => {
+        formattedTransactions = (transactions || []).map((tx: any) => {
           const amt = parseFloat(tx.amount_usd) || 0;
           if (amt > 0) depositsTotal += amt;
           return {
@@ -347,7 +347,7 @@ export default function Admin() {
     setIsSubmittingTopup(true);
 
     try {
-      const { data: newBalance, error } = await supabase.rpc("topup_wallet_balance", {
+      const { data: newBalance, error } = await (supabase.rpc as any)("topup_wallet_balance", {
         p_user_id: selectedUserForTopup.id,
         p_amount_usd: topupAmount,
         p_description: topupDescription || "Admin Manual Credit Allocation",
@@ -361,6 +361,8 @@ export default function Admin() {
 
       if (error) throw error;
 
+      const numericBalance = parseFloat(String(newBalance || 0));
+
       // Notify the user via email notification
       try {
         await supabase.functions.invoke("send-notification", {
@@ -369,7 +371,7 @@ export default function Admin() {
             data: {
               userEmail: selectedUserForTopup.email,
               amount: topupAmount,
-              newBalance: parseFloat(newBalance),
+              newBalance: numericBalance,
               description: topupDescription || "Admin Credit Bonus",
             },
           },
@@ -380,7 +382,7 @@ export default function Admin() {
 
       toast({
         title: "Credits Granted & User Notified! 🎉",
-        description: `Granted $${topupAmount.toFixed(2)} to ${selectedUserForTopup.email}. Email notification sent. New Balance: $${parseFloat(newBalance).toFixed(2)}`,
+        description: `Granted $${topupAmount.toFixed(2)} to ${selectedUserForTopup.email}. Email notification sent. New Balance: $${numericBalance.toFixed(2)}`,
       });
 
       setTopupDialogOpen(false);
@@ -1184,52 +1186,20 @@ export default function Admin() {
               <Input
                 value={broadcastSubject}
                 onChange={(e) => setBroadcastSubject(e.target.value)}
-                placeholder="e.g. New Features & Platform Update!"
-                className="h-9"
+                placeholder="e.g. Upgrade Announcement: Pay-As-You-Go & Full Access"
+                className="h-9 font-medium"
               />
             </div>
 
             <div>
-              <label className="font-bold text-foreground block mb-1">Header Title Inside Email (Optional)</label>
-              <Input
-                value={broadcastTitle}
-                onChange={(e) => setBroadcastTitle(e.target.value)}
-                placeholder="e.g. Important Product Announcement"
-                className="h-9"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-foreground block mb-1">Email Message Content</label>
+              <label className="font-bold text-foreground block mb-1">Email Message Body</label>
               <Textarea
-                rows={5}
+                rows={7}
                 value={broadcastMessage}
                 onChange={(e) => setBroadcastMessage(e.target.value)}
-                placeholder="Write your custom email announcement here..."
-                className="text-xs leading-relaxed"
+                placeholder="Write your email announcement message here..."
+                className="text-xs leading-relaxed font-sans"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="font-bold text-foreground block mb-1">Button Label (Optional)</label>
-                <Input
-                  value={broadcastActionText}
-                  onChange={(e) => setBroadcastActionText(e.target.value)}
-                  placeholder="e.g. Open Dashboard"
-                  className="h-9"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-foreground block mb-1">Button URL (Optional)</label>
-                <Input
-                  value={broadcastActionUrl}
-                  onChange={(e) => setBroadcastActionUrl(e.target.value)}
-                  placeholder="https://lyqn.app/dashboard"
-                  className="h-9"
-                />
-              </div>
             </div>
 
             {sendingProgress && (
