@@ -25,6 +25,17 @@ const useReveal = () => {
 
 export const blogPosts = [
   {
+    id: "why-saas-subscriptions-are-broken-pay-as-you-go-ai",
+    title: "Why SaaS Subscriptions Are Broken for AI Tools (And Why We Switched to Pure Pay-As-You-Go)",
+    excerpt: "Why fixed $99/mo SaaS seats and expiring monthly credits are a trap for founders, and how pure Pay-As-You-Go ($0.005/msg) saves 90%+ on AI customer support.",
+    date: "2026-09-04",
+    author: "LYQN Strategy Team",
+    category: "Startup Guides",
+    readTime: "5 min read",
+    featured: true,
+    tags: ["Pay As You Go", "SaaS Pricing", "AI Chatbot", "Cost Savings"]
+  },
+  {
     id: "cheapest-ai-chatbot-support-comparison",
     title: "Why LYQN is the Best and Cheapest AI Support Chatbot in 2026: Full Competitor Comparison",
     excerpt: "Comparing LYQN ($5/mo) vs ManyChat ($14/mo), Freshchat ($15/mo), Chatbase ($19/mo), ChatBot.com ($19/mo), and Chatfuel ($19.99/mo). See why LYQN delivers 3x more value at a fraction of the cost.",
@@ -32,7 +43,7 @@ export const blogPosts = [
     author: "LYQN Strategy Team",
     category: "Startup Guides",
     readTime: "6 min read",
-    featured: true,
+    featured: false,
     tags: ["AI Comparison", "Cheap AI Chatbot", "LYQN vs Competitors", "Pricing"]
   },
   {
