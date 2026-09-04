@@ -1,7 +1,27 @@
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, ArrowUpRight, HelpCircle, ShieldCheck, Zap, Star, Building2, Sparkles, Mail, Wallet, PlusCircle, Calculator, CheckCircle2, Clock, Shield } from "lucide-react";
+import { 
+  Check, 
+  ArrowRight, 
+  ArrowUpRight, 
+  Zap, 
+  Star, 
+  Building2, 
+  Mail, 
+  Calculator, 
+  XCircle, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Layers, 
+  Bot, 
+  FileText, 
+  Users, 
+  Globe, 
+  TrendingUp, 
+  Sparkles,
+  DollarSign
+} from "lucide-react";
 import { PolarCheckout } from "@/components/PolarCheckout";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -9,7 +29,7 @@ import { LyqnWidgetEmbed } from "@/components/LyqnWidgetEmbed";
 import { SEO } from "@/components/SEO";
 
 /* =========================================================================
-   Customer.io-inspired design system tokens aligned with Index.tsx
+   Modern Anti-Slop SaaS Design System Tokens
    ========================================================================= */
 const TOKENS = `
   .cio-pricing {
@@ -158,6 +178,7 @@ const Pricing = () => {
   const [isNewUser, setIsNewUser] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [calcAmount, setCalcAmount] = useState<number>(25);
+  const [customAmount, setCustomAmount] = useState<string>("");
   useReveal();
 
   useEffect(() => {
@@ -177,7 +198,7 @@ const Pricing = () => {
       name: "Starter Deposit",
       price: 5,
       productId: defaultProductId,
-      description: "Ideal for solo founders testing AI customer responses",
+      description: "Ideal for solo founders testing AI customer support responses",
       icon: Star,
       features: [
         { num: "01", text: "$2.00 FREE starter bonus on signup (~400 msgs)" },
@@ -254,6 +275,18 @@ const Pricing = () => {
   });
 
   const calculatedResponses = Math.round(calcAmount / 0.005);
+
+  const handleCustomDepositSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseFloat(customAmount);
+    if (!isNaN(parsed) && parsed >= 5) {
+      if (userId) {
+        navigate(`/dashboard?tab=billing&custom_amount=${parsed}`);
+      } else {
+        navigate(`/auth`);
+      }
+    }
+  };
 
   return (
     <div className="cio-pricing min-h-screen">
@@ -354,7 +387,7 @@ const Pricing = () => {
         </div>
 
         {/* 3-Column Deposit Cards */}
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch mb-16 cio-reveal">
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch mb-12 cio-reveal">
           {depositOptions.map((plan, idx) => {
             return (
               <div
@@ -419,7 +452,7 @@ const Pricing = () => {
                 <div>
                   <button
                     className={plan.isDark ? "cio-pill-white w-full" : "cio-pill-primary w-full"}
-                    onClick={() => navigate(userId ? "/dashboard?tab=billing" : "/auth")}
+                    onClick={() => navigate(userId ? `/dashboard?tab=billing&deposit=${plan.price}` : "/auth")}
                   >
                     <span>{plan.cta}</span>
                     <ArrowRight className="w-4 h-4" />
@@ -428,6 +461,34 @@ const Pricing = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Custom Deposit Field Box */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-black/10 shadow-sm mb-20 cio-reveal">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <h4 className="text-xl font-bold text-[#111111] mb-1">Need a custom deposit amount?</h4>
+              <p className="text-sm text-gray-600">Enter any custom amount ($5 minimum). Funds deposit instantly into your credit wallet.</p>
+            </div>
+
+            <form onSubmit={handleCustomDepositSubmit} className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-48">
+                <DollarSign className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="number"
+                  min="5"
+                  max="5000"
+                  placeholder="50"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 rounded-full border border-gray-300 text-sm font-semibold focus:outline-none focus:border-[#006af2] bg-gray-50/50"
+                />
+              </div>
+              <button type="submit" className="cio-pill-primary text-sm shrink-0">
+                Deposit Custom Amount →
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Section 02 Interactive Calculator Widget */}
@@ -499,7 +560,7 @@ const Pricing = () => {
                 </div>
 
                 <button
-                  onClick={() => navigate(userId ? "/dashboard?tab=billing" : "/auth")}
+                  onClick={() => navigate(userId ? `/dashboard?tab=billing&deposit=${calcAmount}` : "/auth")}
                   className="cio-pill-white text-sm w-full font-bold"
                 >
                   <span>Deposit ${calcAmount} Now</span>
@@ -510,11 +571,151 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 03 Included Core Features */}
+        {/* Section 03 Pay-As-You-Go vs Monthly Subscriptions Table */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
               <span className="text-[#006af2] font-bold">03</span>
+              <span>/</span>
+              <span className="text-[#111111]">PAY-AS-YOU-GO VS MONTHLY SUBSCRIPTIONS</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-black/10 shadow-sm overflow-x-auto">
+            <h3 className="text-2xl font-bold text-[#111111] mb-2">
+              Why Pay-As-You-Go beats traditional monthly subscriptions
+            </h3>
+            <p className="text-sm text-gray-600 mb-8">Stop paying monthly retainers for message volume you don't use.</p>
+
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="border-b border-black/10 text-xs font-bold uppercase tracking-wider text-gray-500">
+                  <th className="pb-4 w-1/3">Feature / Benefit</th>
+                  <th className="pb-4 w-1/3 text-gray-400">Traditional Monthly SaaS</th>
+                  <th className="pb-4 w-1/3 text-[#006af2]">LYQN Pay-As-You-Go</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/10 text-sm">
+                <tr>
+                  <td className="py-4 font-semibold text-gray-900">Monthly Minimum Charge</td>
+                  <td className="py-4 text-gray-500 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>$49 – $199 mandatory every month</span>
+                  </td>
+                  <td className="py-4 font-bold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>$0 monthly commitment</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-semibold text-gray-900">Unused Credit Expiration</td>
+                  <td className="py-4 text-gray-500 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>Wiped at the end of every month</span>
+                  </td>
+                  <td className="py-4 font-bold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Credits NEVER expire</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-semibold text-gray-900">Feature Access</td>
+                  <td className="py-4 text-gray-500 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>Gated behind expensive Pro/Enterprise tiers</span>
+                  </td>
+                  <td className="py-4 font-bold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>100% Features unlocked for all users</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-semibold text-gray-900">Per-Message Rate</td>
+                  <td className="py-4 text-gray-500 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>Hidden or inflated in plan limits</span>
+                  </td>
+                  <td className="py-4 font-bold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Transparent $0.005 per message</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-4 font-semibold text-gray-900">Sign Up Bonus</td>
+                  <td className="py-4 text-gray-500 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>Requires credit card for trial</span>
+                  </td>
+                  <td className="py-4 font-bold text-gray-900 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>$2.00 free credit instantly (No card needed)</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Section 04 Unit Economics Rate Card */}
+        <div className="mb-20 cio-reveal">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
+            <div className="flex items-center gap-2">
+              <span className="text-[#006af2] font-bold">04</span>
+              <span>/</span>
+              <span className="text-[#111111]">TRANSPARENT UNIT ECONOMICS RATE CARD</span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-white p-8 rounded-3xl border border-black/10 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#006af2] flex items-center justify-center font-bold mb-4">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <h4 className="text-xl font-bold text-[#111111] mb-2">AI Support Message</h4>
+                <p className="text-sm text-gray-600 mb-6">Fully answered customer inquiry by trained AI agent</p>
+              </div>
+              <div className="border-t border-black/10 pt-4 flex items-baseline justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Rate per unit</span>
+                <span className="text-2xl font-extrabold text-[#006af2]">$0.005</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl border border-black/10 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold mb-4">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <h4 className="text-xl font-bold text-[#111111] mb-2">Website Crawling & Training</h4>
+                <p className="text-sm text-gray-600 mb-6">Deep indexing of your web pages & documentation</p>
+              </div>
+              <div className="border-t border-black/10 pt-4 flex items-baseline justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Rate per unit</span>
+                <span className="text-2xl font-extrabold text-emerald-600">$0.00 FREE</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 rounded-3xl border border-black/10 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold mb-4">
+                  <Users className="w-5 h-5" />
+                </div>
+                <h4 className="text-xl font-bold text-[#111111] mb-2">Live Agent Seats & Handoff</h4>
+                <p className="text-sm text-gray-600 mb-6">Unlimited human agent seats and real-time takeover</p>
+              </div>
+              <div className="border-t border-black/10 pt-4 flex items-baseline justify-between">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Rate per unit</span>
+                <span className="text-2xl font-extrabold text-purple-600">$0.00 FREE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 05 Included Core Features */}
+        <div className="mb-20 cio-reveal">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
+            <div className="flex items-center gap-2">
+              <span className="text-[#006af2] font-bold">05</span>
               <span>/</span>
               <span className="text-[#111111]">UNLOCKED FOR ALL USERS</span>
             </div>
@@ -546,11 +747,11 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 04 FAQ Section */}
+        {/* Section 06 FAQ Section */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">04</span>
+              <span className="text-[#006af2] font-bold">06</span>
               <span>/</span>
               <span className="text-[#111111]">FREQUENTLY ASKED QUESTIONS</span>
             </div>
@@ -597,11 +798,11 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 05 Banner & Starter Bonus CTA */}
+        {/* Section 07 Banner & Starter Bonus CTA */}
         <div className="cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">05</span>
+              <span className="text-[#006af2] font-bold">07</span>
               <span>/</span>
               <span className="text-[#111111]">CLAIM YOUR $2.00 FREE STARTER BONUS</span>
             </div>
