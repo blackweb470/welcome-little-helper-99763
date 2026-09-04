@@ -307,14 +307,14 @@ const Pricing = () => {
         <div className="mb-16 cio-reveal">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-[#e2eafc] text-[#006af2] border border-blue-200/80 mb-6 uppercase tracking-wider">
             <Zap className="w-3.5 h-3.5" />
-            <span>100% PAY-AS-YOU-GO • NO SUBSCRIPTION LOCK-IN</span>
+            <span>PAY-AS-YOU-GO • NO SUBSCRIPTIONS</span>
           </div>
 
           <div className="grid lg:grid-cols-12 gap-8 items-end">
             <div className="lg:col-span-8">
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#111111] leading-[1.02]">
                 Pay only for what <br />
-                you use. <span className="text-[#006af2] italic font-normal font-sans">$0.005 / msg.</span>
+                you use. <span className="text-[#006af2] font-bold font-sans">$0.005 / msg.</span>
               </h1>
             </div>
 
@@ -327,12 +327,12 @@ const Pricing = () => {
                   </div>
                   <div className="h-10 w-[1px] bg-gray-200" />
                   <div className="text-xs font-medium text-gray-600 max-w-[150px] leading-snug">
-                    Get ~400 free AI message responses instantly on sign up.
+                    Get ~400 free AI responses instantly on sign up.
                   </div>
                 </div>
               </div>
-              <p className="text-base sm:text-lg text-[#444444] leading-relaxed">
-                Deposit funds starting at $5 into your credit wallet. No monthly subscription commitments, no feature gating, and funds <strong>never expire</strong>.
+              <p className="text-base sm:text-lg text-[#444444] leading-relaxed font-medium">
+                Deposit funds starting at $5 into your wallet. No monthly fees, no feature gating, and funds <strong>never expire</strong>.
               </p>
             </div>
           </div>
@@ -449,7 +449,7 @@ const Pricing = () => {
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-[#111111]">Estimate Your AI Capacity</h3>
-                    <p className="text-xs text-gray-500">Drag the slider to see how many AI customer responses your deposit buys</p>
+                    <p className="text-xs text-gray-500 font-medium">Drag the slider to see how many AI responses your deposit buys</p>
                   </div>
                 </div>
 
@@ -487,7 +487,7 @@ const Pricing = () => {
                   <span className="text-xs text-gray-400 font-medium block mt-1">AI Customer Message Responses</span>
                 </div>
 
-                <div className="border-t border-white/10 pt-4 space-y-2 text-xs text-gray-300">
+                <div className="border-t border-white/10 pt-4 space-y-2 text-xs text-gray-300 font-medium">
                   <div className="flex justify-between">
                     <span>Rate Per Response:</span>
                     <span className="font-bold text-white">$0.005</span>
@@ -510,44 +510,11 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 03 Reassurance Grid */}
+        {/* Section 03 Included Core Features */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
               <span className="text-[#006af2] font-bold">03</span>
-              <span>/</span>
-              <span className="text-[#111111]">THE REASSURANCE</span>
-            </div>
-          </div>
-
-          <div className="grid lg:grid-cols-12 gap-8 items-center mb-8">
-            <div className="lg:col-span-4">
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111111] leading-tight">
-                No surprises.<br />Complete control.
-              </h2>
-            </div>
-
-            <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { num: "01", label: "$2.00 Free Credit on Signup" },
-                { num: "02", label: "No Monthly Subscription Lock" },
-                { num: "03", label: "Funds Never Expire" },
-                { num: "04", label: "All AI Features Included" },
-              ].map((item, idx) => (
-                <div key={idx} className="bg-white p-5 rounded-2xl border border-black/10 shadow-sm flex flex-col justify-between">
-                  <span className="text-xs font-bold text-[#006af2] mb-2">{item.num}</span>
-                  <span className="text-sm font-semibold text-[#111111] leading-snug">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Section 04 Included Core Features */}
-        <div className="mb-20 cio-reveal">
-          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
-            <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">04</span>
               <span>/</span>
               <span className="text-[#111111]">UNLOCKED FOR ALL USERS</span>
             </div>
@@ -579,11 +546,11 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 05 FAQ Section */}
+        {/* Section 04 FAQ Section */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">05</span>
+              <span className="text-[#006af2] font-bold">04</span>
               <span>/</span>
               <span className="text-[#111111]">FREQUENTLY ASKED QUESTIONS</span>
             </div>
@@ -594,7 +561,7 @@ const Pricing = () => {
               <h2 className="text-4xl font-bold text-[#111111] mb-4 leading-tight">
                 Frequently asked questions.
               </h2>
-              <p className="text-gray-600 text-base leading-relaxed">
+              <p className="text-gray-600 text-base leading-relaxed font-medium">
                 Everything you need to know about LYQN Pay-As-You-Go credit wallet pricing. Have more questions?{" "}
                 <button
                   onClick={() => navigate("/docs")}
@@ -620,7 +587,7 @@ const Pricing = () => {
                     </span>
                   </button>
                   {openFaq === idx && (
-                    <div className="pb-6 pr-8 text-gray-600 leading-relaxed text-sm">
+                    <div className="pb-6 pr-8 text-gray-600 leading-relaxed text-sm font-medium">
                       {faq.a}
                     </div>
                   )}
@@ -630,11 +597,11 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 06 Banner & Starter Bonus CTA */}
+        {/* Section 05 Banner & Starter Bonus CTA */}
         <div className="cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">06</span>
+              <span className="text-[#006af2] font-bold">05</span>
               <span>/</span>
               <span className="text-[#111111]">CLAIM YOUR $2.00 FREE STARTER BONUS</span>
             </div>
@@ -645,8 +612,8 @@ const Pricing = () => {
               <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3 text-white">
                 Claim $2.00 Free Credit <span className="text-[#abffae]">↗</span>
               </h2>
-              <p className="text-gray-300 text-base max-w-lg">
-                No credit card required. Get ~400 free AI message responses instantly upon signup to train your AI assistant.
+              <p className="text-gray-300 text-base max-w-lg font-medium">
+                No credit card required. Get ~400 free AI responses instantly upon signup.
               </p>
             </div>
 
