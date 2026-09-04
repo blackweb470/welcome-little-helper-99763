@@ -126,72 +126,74 @@ const Pricing = () => {
     setIsNewUser(params.get('new_user') === 'true');
   }, []);
 
+  const defaultProductId = import.meta.env.VITE_POLAR_PRODUCT_ID || "f9139046-cf7d-453a-9b23-03a4efd2e5a0";
+
   const plans = [
     {
-      name: "Basic",
+      name: "Starter Deposit",
       price: 5,
-      productId: "2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636",
-      description: "For individual founders & solo projects",
+      productId: defaultProductId,
+      description: "For solo founders & small business projects",
       icon: Star,
       features: [
-        { num: "01", text: "14 days full-access free trial" },
-        { num: "02", text: "Full access to all Pro & Business features" },
-        { num: "03", text: "Up to 5 businesses during trial" },
-        { num: "04", text: "AI learning & document upload" },
+        { num: "01", text: "$2.00 free starter credit on signup (~400 msgs)" },
+        { num: "02", text: "Pay-As-You-Go ($0.005 / AI response)" },
+        { num: "03", text: "Up to ~1,000 AI message responses" },
+        { num: "04", text: "Full AI learning & document upload" },
         { num: "05", text: "Live agent transfer & proactive rules" },
-        { num: "06", text: "Website crawler & sentiment analysis" },
-        { num: "07", text: "Pre-chat forms & email notifications" },
+        { num: "06", text: "Website crawler & deep knowledge" },
+        { num: "07", text: "Create up to 5 businesses" },
       ],
-      cta: "Start Free Trial",
+      cta: "Deposit $5 Credits",
       popular: false,
       isDark: false,
     },
     {
-      name: "Pro",
+      name: "Growth Deposit",
       price: 10,
-      productId: "65495367-3163-49af-9ae4-0c3e740d332a",
+      productId: defaultProductId,
       description: "For growing teams scaling customer support",
       icon: Zap,
       features: [
-        { num: "01", text: "Everything in Basic" },
-        { num: "02", text: "2 businesses" },
-        { num: "03", text: "Live agent transfer" },
-        { num: "04", text: "Advanced analytics" },
-        { num: "05", text: "Sentiment analysis" },
-        { num: "06", text: "Proactive chat rules" },
+        { num: "01", text: "Everything in Starter" },
+        { num: "02", text: "Pay-As-You-Go ($0.005 / AI response)" },
+        { num: "03", text: "Up to ~2,000 AI message responses" },
+        { num: "04", text: "Auto-recharge low balance option" },
+        { num: "05", text: "Sentiment analysis & visitor tracking" },
+        { num: "06", text: "WhatsApp & custom integrations" },
         { num: "07", text: "Priority support" },
       ],
-      cta: "Get Started with Pro",
+      cta: "Deposit $10 Credits",
       popular: true,
       isDark: true,
     },
     {
-      name: "Business",
-      price: 20,
-      productId: "495da580-72e9-4fb9-a706-b098921df542",
-      description: "For serious scale & multi-brand operations",
+      name: "Scale Deposit",
+      price: 25,
+      productId: defaultProductId,
+      description: "For high-volume operations & multi-brand stores",
       icon: Building2,
       features: [
-        { num: "01", text: "Everything in Pro" },
-        { num: "02", text: "5 businesses" },
-        { num: "03", text: "AI learning & documents" },
-        { num: "04", text: "Advanced visitor tracking" },
-        { num: "05", text: "Website crawler" },
-        { num: "06", text: "Team management" },
+        { num: "01", text: "Everything in Growth" },
+        { num: "02", text: "Pay-As-You-Go ($0.005 / AI response)" },
+        { num: "03", text: "Up to ~5,000 AI message responses" },
+        { num: "04", text: "Unlimited custom knowledge training" },
+        { num: "05", text: "Custom API & Webhook access" },
+        { num: "06", text: "Team member management" },
         { num: "07", text: "Dedicated account manager" },
       ],
-      cta: "Get Started with Business",
+      cta: "Deposit $25 Credits",
       popular: false,
       isDark: false,
     },
   ];
 
   const faqs = [
-    { q: "Can I change plans later?", a: "Yes, upgrade or downgrade anytime from your billing dashboard. Changes apply immediately with prorated charges." },
-    { q: "What happens when I reach my business limit?", a: "You can manage up to your plan's business limit. When you're ready to add more businesses, simply upgrade to the next tier." },
-    { q: "Is there a setup fee?", a: "No setup fees, no hidden charges. You only pay the straightforward monthly or discounted annual subscription." },
-    { q: "How does the 2-week free trial work?", a: "You get full access to the Basic plan features for 14 days without entering a credit card. Choose your plan whenever you are ready." },
-    { q: "Do you offer custom enterprise pricing?", a: "Yes! If you need more than 5 businesses or custom SLA agreements, reach out directly to our support team." },
+    { q: "How does Pay-As-You-Go credit wallet work?", a: "You deposit credits into your wallet (e.g. $5 or $10) and only pay $0.005 per AI message response. Credits never expire!" },
+    { q: "Do I get free starter credits?", a: "Yes! Every new user receives $2.00 in free starter credit (~400 AI responses) upon registration with no credit card required." },
+    { q: "What happens when my credit balance runs low?", a: "When your balance falls below $2.00, you will see a top-up alert. You can deposit more credits anytime or enable auto-recharge." },
+    { q: "Are all AI features included?", a: "Yes! All features including AI Learning, Website Crawler, Document Processing, Live Agent Handoff, and Proactive Rules are unlocked for all credit wallet users." },
+    { q: "Do unused credits expire?", a: "Never! Your deposited credits remain in your account indefinitely until used for customer chat responses." },
   ];
 
   const schema = JSON.stringify({
@@ -209,8 +211,8 @@ const Pricing = () => {
 
   return (
     <div className="cio-pricing min-h-screen">
-      <SEO 
-        title="LYQN Pricing: Simple, Transparent Plans" 
+      <SEO
+        title="LYQN Pricing: Simple, Transparent Plans"
         description="Choose the perfect LYQN plan for your business. Start with a 2-week free trial. Outperform competitors with our affordable AI chatbot and live agent integration."
         url="https://lyqn.app/pricing"
         schema={schema}
@@ -310,11 +312,10 @@ const Pricing = () => {
             return (
               <div
                 key={plan.name}
-                className={`p-8 sm:p-10 rounded-3xl flex flex-col justify-between transition-all duration-300 ${
-                  plan.isDark 
-                    ? "bg-[#111111] text-white shadow-2xl scale-[1.02] relative overflow-hidden border border-black" 
+                className={`p-8 sm:p-10 rounded-3xl flex flex-col justify-between transition-all duration-300 ${plan.isDark
+                    ? "bg-[#111111] text-white shadow-2xl scale-[1.02] relative overflow-hidden border border-black"
                     : "bg-white text-[#111111] border border-black/10 shadow-sm hover:shadow-md"
-                }`}
+                  }`}
               >
                 {plan.popular && (
                   <div className="absolute top-4 right-4">
@@ -355,9 +356,8 @@ const Pricing = () => {
                   <ul className="space-y-3.5 mb-10 border-t pt-6 border-black/10 dark:border-white/10">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-3 text-sm">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                          plan.isDark ? "bg-white/10 text-[#abffae]" : "bg-blue-50 text-[#006af2]"
-                        }`}>
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${plan.isDark ? "bg-white/10 text-[#abffae]" : "bg-blue-50 text-[#006af2]"
+                          }`}>
                           <Check className="w-3.5 h-3.5" />
                         </div>
                         <span className={plan.isDark ? "text-gray-200" : "text-gray-700"}>
@@ -370,25 +370,13 @@ const Pricing = () => {
 
                 {/* Card CTA */}
                 <div>
-                  {userId ? (
-                    <PolarCheckout
-                      planName={plan.name.toLowerCase()}
-                      productId={plan.productId}
-                      userId={userId}
-                      className={plan.isDark ? "cio-pill-white w-full" : "cio-pill-primary w-full"}
-                    >
-                      <span>{plan.cta}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </PolarCheckout>
-                  ) : (
-                    <button
-                      className={plan.isDark ? "cio-pill-white w-full" : "cio-pill-primary w-full"}
-                      onClick={() => navigate("/auth")}
-                    >
-                      <span>{plan.cta}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    className={plan.isDark ? "cio-pill-white w-full" : "cio-pill-primary w-full"}
+                    onClick={() => navigate(userId ? "/dashboard?tab=billing" : "/auth")}
+                  >
+                    <span>{plan.cta}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             );
@@ -481,7 +469,7 @@ const Pricing = () => {
               </h2>
               <p className="text-gray-600 text-base leading-relaxed">
                 Everything you need to know about LYQN pricing and plans. Have more questions?{" "}
-                <button 
+                <button
                   onClick={() => navigate("/docs")}
                   className="font-semibold text-[#006af2] underline underline-offset-4 hover:text-black transition-colors"
                 >

@@ -1,112 +1,30 @@
-# Polar Integration Guide
+# Pay-As-You-Go Credit Deposit & Billing Guide
 
 ## Overview
-This application uses Polar for subscription management with a professional signup flow:
-1. Users sign up → automatically enrolled in a 14-day free trial (no credit card required).
-2. Users access the dashboard immediately.
-3. When they choose to upgrade or when the trial ends, they select a plan and complete a Polar checkout.
-4. Auto-charged monthly after successful checkout.
+This application uses a **Pure Pay-As-You-Go Credit Wallet System**:
+1. New users sign up → automatically receive **$2.00 Free Starter Credit** (~400 AI messages).
+2. Users access the dashboard immediately with full feature access.
+3. Users top up credit wallet in flexible deposit amounts ($5, $10, $25, $50, $100).
+4. AI message responses deduct **$0.005 per message response** ($5.00 for 1,000 AI responses).
+5. Unused credits never expire.
 
-## Current Configuration
+## Configuration & Packages
 
-### Product IDs (Configured in code)
-- **Basic Plan**: `2e7f6e6a-cb2a-4167-bf5c-7eb9e55c6636`
-- **Pro Plan**: `65495367-3163-49af-9ae4-0c3e740d332a`
-- **Business Plan**: `495da580-72e9-4fb9-a706-b098921df542`
+### Deposit Packages
+- **Starter Deposit ($5)**: Includes $1.00 free bonus (~1,000 AI responses).
+- **Growth Deposit ($10)**: Auto-recharge option (~2,000 AI responses).
+- **Scale Deposit ($25)**: High-volume operations (~5,000 AI responses).
 
-These are configured in:
-- `src/pages/Pricing.tsx` (frontend)
-- `supabase/functions/polar-webhook/index.ts` (backend)
+## Wallet Database & PL/pgSQL
+Stored in `user_wallets` and `wallet_transactions` tables:
+- `balance_usd` - Available credit balance
+- `deduct_wallet_balance(user_id, cost)` - Atomic deduction per message
+- `topup_wallet_balance(user_id, amount)` - Credit deposit function
 
-## Setup Steps
-
-### 1. Polar Account Setup
-1. Create account at https://polar.sh
-2. Create products for each plan with trial periods
-3. Copy product IDs
-4. If IDs differ, update in both files above
-
-### 2. Configure Webhook
-1. In Polar dashboard, go to Settings → Webhooks
-2. Add webhook URL: `https://rgczbabidcqvpyiiqjfv.supabase.co/functions/v1/polar-webhook`
-3. Select events: `subscription.*`
-4. Copy webhook secret
-
-### 3. Add Secrets
-The webhook secret should already be configured as `POLAR_WEBHOOK_SECRET` in your Supabase edge functions. If not, add it via the dashboard's secrets management or Supabase CLI.
-
-### 4. Test Flow
-1. Sign up as new user
-2. Verify redirect to pricing
-3. Select Basic plan (free trial)
-4. Complete Polar checkout
-5. Verify subscription appears in `/billing`
-
-## Signup Flow
-
-```
-Sign Up → Onboarding Check → Pricing → Polar Checkout → Dashboard
-   ↓            ↓                ↓           ↓            ↓
-Create      Has sub?      Select plan   Add card    Access app
-Account       No→               ↓           ↓            ↓
-              Yes→         Start trial  Save card   Trial status
-            Dashboard                                 visible
-```
-
-## Billing Management
-
-Users can manage subscriptions at `/billing`:
-- View trial status and end date
-- See next billing date  
-- Change plans
-- Cancel subscription (via Polar)
-- View payment method info
-
-## Webhook Events
-
-The webhook handles these Polar events:
-- `subscription.created` - New subscription
-- `subscription.updated` - Plan change, trial end
-- `subscription.cancelled` - User cancelled
-- `subscription.deleted` - Subscription removed
-- `subscription.revoked` - Forced removal
-
-## Database
-
-Subscriptions stored in `user_subscriptions` table:
-- `trial_ends_at` - When trial ends (NULL if not trial)
-- `expires_at` - Next billing date
-- `cancel_at_period_end` - Cancellation scheduled
-- `polar_subscription_id` - Link to Polar
-
-## Features by Plan
-
-### Basic ($9.99/month)
-- 1 Month Free Trial
-- 3 Businesses
-- Pre-Chat Forms
-- Canned Responses
-- Basic Analytics
-
-### Pro ($29.99/month)
-- 10 Businesses
-- Live Agent Transfer
-- Advanced Analytics
-- Sentiment Analysis
-- Voice Chat
-
-### Business ($99.99/month)
-- Unlimited Businesses
-- AI Learning
-- Business Documents
-- Advanced Tracking
-- API Access
-
-## Launch Ready! 🚀
-
-The integration is complete and professional. Just verify:
-1. Product IDs match your Polar products
-2. Webhook secret is configured
-3. Test signup flow works end-to-end
-
-See `SIGNUP_FLOW.md` for complete user journey details.
+## Included Features
+All platform features are included for all active credit wallet holders:
+- Full AI Learning & Document Training
+- Live Agent Transfer & Proactive Chat Rules
+- Website Crawler & Deep Knowledge Search
+- Advanced Visitor Tracking & Analytics
+- WhatsApp & Custom Integrations

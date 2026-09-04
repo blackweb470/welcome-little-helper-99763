@@ -1,7 +1,7 @@
 import { ArrowLeft, Sparkles, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { SubscriptionManager } from "@/components/billing/SubscriptionManager";
+import { WalletManager } from "@/components/billing/WalletManager";
 
 const Billing = () => {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const Billing = () => {
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Secured by Polar</span>
+              <span className="hidden sm:inline">Credit Wallet & Billing</span>
             </div>
           </div>
         </div>
@@ -37,13 +37,13 @@ const Billing = () => {
 
       <main className="container mx-auto px-4 py-10 max-w-5xl">
         <div className="space-y-2 mb-10">
-          <h1 className="text-3xl font-bold tracking-tight">Billing & Subscription</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pay-As-You-Go Credit Wallet</h1>
           <p className="text-muted-foreground">
-            Manage your plan, view invoices, and update billing preferences.
+            Manage your credit balance, top up funds, and view AI message usage logs.
           </p>
         </div>
 
-        <SubscriptionManager />
+        <WalletManager />
       </main>
     </div>
   );

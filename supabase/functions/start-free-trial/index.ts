@@ -81,7 +81,10 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    console.log('Free trial created for user:', userId);
+    // Initialize Pay-As-You-Go credit wallet with $1.00 starter gift
+    await supabaseClient.rpc('get_wallet_info', { p_user_id: userId });
+
+    console.log('Free trial & starter credit wallet created for user:', userId);
 
     return new Response(
       JSON.stringify({ success: true, subscription: data }),

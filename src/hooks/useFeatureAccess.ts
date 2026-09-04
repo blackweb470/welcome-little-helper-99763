@@ -69,33 +69,29 @@ export const useFeatureAccess = (userId: string | undefined) => {
           activePlan = sub.plan_name || 'basic';
         }
 
-        setPlanName(activePlan);
+        setPlanName('pay_as_you_go');
 
-        // Instant local feature map evaluation (0ms DB delay)
-        const isFullAccess = adminUser || isTrialActive || activePlan === 'business';
-        const isProAccess = isFullAccess || activePlan === 'pro';
-        const isBasicAccess = isProAccess || activePlan === 'basic';
-
+        // Pay-As-You-Go model: ALL features are unlocked for all users!
         const featureAccess: PlanFeatures = {
           basic_chat: true,
           widget_customization: true,
-          pre_chat_forms: isBasicAccess,
-          canned_responses: isBasicAccess,
-          basic_analytics: isBasicAccess,
-          email_notifications: isBasicAccess,
-          live_agent: isProAccess,
-          advanced_analytics: isProAccess,
-          sentiment_analysis: isProAccess,
-          proactive_chat: isProAccess,
-          voice_chat: isProAccess,
-          product_catalog: isProAccess,
-          business_documents: isFullAccess,
-          ai_learning: isFullAccess,
-          visitor_tracking: isFullAccess,
-          custom_integrations: isFullAccess,
-          api_access: isFullAccess,
-          white_label: isFullAccess,
-          sla_guarantees: isFullAccess,
+          pre_chat_forms: true,
+          canned_responses: true,
+          basic_analytics: true,
+          email_notifications: true,
+          live_agent: true,
+          advanced_analytics: true,
+          sentiment_analysis: true,
+          proactive_chat: true,
+          voice_chat: true,
+          product_catalog: true,
+          business_documents: true,
+          ai_learning: true,
+          visitor_tracking: true,
+          custom_integrations: true,
+          api_access: true,
+          white_label: true,
+          sla_guarantees: true,
         };
 
         setFeatures(featureAccess);

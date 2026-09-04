@@ -12,7 +12,7 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed']),
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'wallet_depleted', 'low_balance']),
   businessId: z.string().uuid("Invalid business ID format"),
   data: z.object({
     conversationId: z.string().uuid("Invalid conversation ID format").optional(),
@@ -365,6 +365,41 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #a35d5d; margin: 0;">If you believe this was done in error, please contact the business owner directly.</p>
           </div>
           <p>Thank you for your contributions to the team.</p>
+        `);
+        break;
+
+      case 'wallet_depleted':
+        subject = `⚠️ Action Required: Credit Wallet Depleted - ${sanitizedBusinessName}`;
+        html = createNotificationEmail('Credit Balance Depleted', `
+          <p>Your LYQN credit wallet balance has reached <strong style="color: #ef4444;">$0.00</strong>.</p>
+          <p>Your AI assistant is currently <strong style="color: #f59e0b;">paused</strong> and will not generate responses for visitors until credits are added.</p>
+          <div class="data-box" style="border-color: #591b1b;">
+            <span class="data-label">Business Name</span>
+            <span class="data-value">${sanitizedBusinessName}</span>
+            
+            <span class="data-label">Current Balance</span>
+            <span class="data-value" style="color: #ef4444; font-weight: bold; font-size: 16px;">$0.00 USD</span>
+          </div>
+          <p style="margin-top: 24px; text-align: center;">
+            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">Top Up Wallet Credits ($5.00)</a>
+          </p>
+        `);
+        break;
+
+      case 'low_balance':
+        subject = `🔔 Low Credit Balance Alert - ${sanitizedBusinessName}`;
+        html = createNotificationEmail('Low Credit Balance Alert', `
+          <p>Your LYQN credit wallet balance is running low.</p>
+          <div class="data-box" style="border-color: #4a3818;">
+            <span class="data-label">Business Name</span>
+            <span class="data-value">${sanitizedBusinessName}</span>
+            
+            <span class="data-label">Remaining Balance</span>
+            <span class="data-value" style="color: #f59e0b; font-weight: bold; font-size: 16px;">$${data.message || '1.50'} USD</span>
+          </div>
+          <p style="margin-top: 24px; text-align: center;">
+            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">Top Up Wallet Credits</a>
+          </p>
         `);
         break;
 

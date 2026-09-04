@@ -12,8 +12,8 @@ interface PolarCheckoutProps {
   children?: React.ReactNode;
 }
 
-// Base checkout URL provided by Polar
-const POLAR_CHECKOUT_URL = "https://buy.polar.sh/polar_cl_BeNKQxpBOCSJ0SbFU6bZAAAEhurIudMmcRwCx4QSlRF";
+// Base checkout URL provided by Polar (Live Production Mode)
+const POLAR_CHECKOUT_BASE_URL = import.meta.env.VITE_POLAR_CHECKOUT_BASE_URL || "https://buy.polar.sh";
 
 export const PolarCheckout = ({ 
   planName, 
@@ -32,8 +32,8 @@ export const PolarCheckout = ({
       // Get user email for pre-filling
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Build checkout URL with metadata
-      const checkoutUrl = new URL(POLAR_CHECKOUT_URL);
+      const targetProductId = productId || import.meta.env.VITE_POLAR_PRODUCT_ID || "8c68395a-7403-4c73-8f53-456737a22fe4";
+      const checkoutUrl = new URL(`${POLAR_CHECKOUT_BASE_URL}/checkout/${targetProductId}`);
       
       // Add metadata as query parameters
       if (user?.email) {

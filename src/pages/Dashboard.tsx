@@ -30,7 +30,7 @@ import { WhatsAppSettings } from "@/components/dashboard/WhatsAppSettings";
 import { WhatsAppAdminSettings } from "@/components/dashboard/WhatsAppAdminSettings";
 import { PendingInvitations } from "@/components/dashboard/PendingInvitations";
 import { ProfileSettings } from "@/components/dashboard/ProfileSettings";
-import { SubscriptionManager } from "@/components/billing/SubscriptionManager";
+import { WalletManager } from "@/components/billing/WalletManager";
 
 import { useFeatureAccess } from "@/hooks/useFeatureAccess";
 import { useBusinessPermissions } from "@/hooks/useBusinessPermissions";
@@ -267,10 +267,10 @@ const Dashboard = () => {
               <div className="max-w-5xl">
                 <div className="space-y-2 mb-10">
                   <p className="text-muted-foreground">
-                    Manage your plan, view invoices, and update billing preferences.
+                    Manage your Pay-As-You-Go credit wallet balance, top up funds, and view AI message usage logs.
                   </p>
                 </div>
-                <SubscriptionManager />
+                <WalletManager />
               </div>
             )}
 

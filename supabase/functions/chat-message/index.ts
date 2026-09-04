@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.77.0';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { enforceRateLimit } from '../_shared/ratelimit.ts';
 import { getMemoryCache, setMemoryCache, getCachedAiResponse, setCachedAiResponse } from '../_shared/cache.ts';
+import { checkAndDeductWallet } from '../_shared/wallet.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -395,6 +396,37 @@ Deno.serve(async (req: Request) => {
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY not configured');
+    }
+
+    // ── 4. CREDIT WALLET CHECK & DEDUCTION ──────────────────────────────────
+    const { data: bData } = await supabase
+      .from('businesses')
+      .select('owner_id')
+      .eq('id', businessId)
+      .single();
+
+    if (bData?.owner_id) {
+      const walletCheck = await checkAndDeductWallet(supabase, bData.owner_id, 0.005);
+      if (!walletCheck.allowed) {
+        console.warn(`Wallet depleted for owner ${bData.owner_id}`);
+        // Trigger notification email to business owner
+        supabase.functions.invoke('send-notification', {
+          body: {
+            type: 'wallet_depleted',
+            businessId,
+            data: {}
+          }
+        }).catch((err: any) => console.error('Failed to trigger depleted wallet email:', err));
+
+        return new Response(
+          JSON.stringify({
+            reply: "The AI assistant is temporarily paused because the owner's credit wallet balance is depleted. Please top up your wallet in the dashboard to resume automated AI responses.",
+            conversationId,
+            walletDepleted: true,
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // 1. Fetch conversation history

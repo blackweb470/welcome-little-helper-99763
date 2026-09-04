@@ -187,9 +187,9 @@ const Launch = () => {
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { name: "Basic", price: "$5", feats: ["14-day full access free trial", "All Pro & Business features in trial", "Pre-chat forms & responses", "1 business post-trial"] },
-            { name: "Pro", price: "$10", feats: ["2 businesses", "Live agent transfer", "Sentiment analysis", "Proactive rules"], highlight: true },
-            { name: "Business", price: "$20", feats: ["5 businesses", "AI learning + docs", "Priority support", "Dedicated manager"] },
+            { name: "Starter Deposit", price: "$5", feats: ["$2.00 free bonus credit (~400 msgs)", "$0.005 / AI response rate", "~1,000 AI responses included", "All features unlocked"] },
+            { name: "Growth Deposit", price: "$10", feats: ["Everything in Starter", "~2,000 AI responses included", "Auto-recharge low balance option", "Priority support"], highlight: true },
+            { name: "Scale Deposit", price: "$25", feats: ["Everything in Growth", "~5,000 AI responses included", "Custom API & Webhooks", "Dedicated account manager"] },
           ].map((p) => (
             <div
               key={p.name}
@@ -199,7 +199,7 @@ const Launch = () => {
             >
               <div className="text-sm text-white/60 mb-1">{p.name}</div>
               <div className="text-3xl font-bold mb-4">
-                {p.price}<span className="text-base font-normal text-white/40">/mo</span>
+                {p.price}<span className="text-base font-normal text-white/40"> deposit</span>
               </div>
               <ul className="space-y-2 mb-6">
                 {p.feats.map((f) => (

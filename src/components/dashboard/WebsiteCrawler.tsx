@@ -83,15 +83,43 @@ export function WebsiteCrawler({ businessId }: WebsiteCrawlerProps) {
     setIsCrawling(true);
     
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const estimatedCost = maxPages * 0.01;
+
+      if (user) {
+        const { data: walletData } = await supabase.rpc('get_wallet_info', { p_user_id: user.id });
+        const currentBalance = walletData?.[0]?.balance_usd || 0;
+
+        if (currentBalance < estimatedCost) {
+          toast({
+            title: 'Insufficient Wallet Credit',
+            description: `Crawling up to ${maxPages} pages requires $${estimatedCost.toFixed(2)} in wallet credit (Current balance: $${currentBalance.toFixed(2)}). Please top up your wallet in Billing.`,
+            variant: 'destructive',
+          });
+          setIsCrawling(false);
+          return;
+        }
+      }
+
       const result = await firecrawlApi.crawlWebsite(businessId, websiteUrl, maxPages);
 
       if (result.success && result.data) {
+        const pagesStored = result.data.pagesStored || 1;
+        const actualCost = pagesStored * 0.01;
+
+        if (user) {
+          await supabase.rpc('deduct_wallet_balance', {
+            p_user_id: user.id,
+            p_cost_usd: actualCost,
+          });
+        }
+
         const tableMsg = result.data.tablesExtracted 
           ? ` (${result.data.tablesExtracted} tables extracted)` 
           : '';
         toast({
           title: 'Website Crawled Successfully',
-          description: `Stored ${result.data.pagesStored} pages for AI training${tableMsg}`,
+          description: `Stored ${pagesStored} pages for AI training ($${actualCost.toFixed(2)} credit deducted)${tableMsg}`,
         });
         setCurrentWebsite(websiteUrl);
         fetchWebsiteContent();
