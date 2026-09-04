@@ -1,242 +1,899 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Users, Building, MessageSquare, CreditCard, Activity } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Users,
+  Building,
+  MessageSquare,
+  CreditCard,
+  Activity,
+  Search,
+  PlusCircle,
+  RefreshCw,
+  Wallet,
+  ShieldCheck,
+  History,
+  TrendingUp,
+  DollarSign,
+  Filter,
+  CheckCircle2,
+  Sparkles,
+} from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "./NotFound";
 
+interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string | null;
+  created_at: string;
+  plan: string;
+  balance: number;
+}
+
+interface BusinessItem {
+  id: string;
+  name: string;
+  user_id: string;
+  owner_email?: string;
+  created_at: string;
+}
+
+interface TransactionItem {
+  id: string;
+  user_id: string;
+  user_email?: string;
+  amount_usd: number;
+  type: string;
+  description: string;
+  created_at: string;
+}
+
 export default function Admin() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
+
+  // Analytics Stats
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalBusinesses: 0,
     totalConversations: 0,
     totalMessages: 0,
+    totalSystemBalance: 0,
+    totalDepositsAmount: 0,
     planCounts: {} as Record<string, number>,
   });
-  const [usersList, setUsersList] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isUnauthorized, setIsUnauthorized] = useState(false);
+
+  // Data lists
+  const [usersList, setUsersList] = useState<UserProfile[]>([]);
+  const [businessesList, setBusinessesList] = useState<BusinessItem[]>([]);
+  const [transactionsList, setTransactionsList] = useState<TransactionItem[]>([]);
+
+  // Search & Filters
+  const [userSearch, setUserSearch] = useState("");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [businessSearch, setBusinessSearch] = useState("");
+
+  // Admin Topup Dialog State
+  const [topupDialogOpen, setTopupDialogOpen] = useState(false);
+  const [selectedUserForTopup, setSelectedUserForTopup] = useState<UserProfile | null>(null);
+  const [topupAmount, setTopupAmount] = useState<number>(10);
+  const [topupType, setTopupType] = useState<string>("deposit");
+  const [topupDescription, setTopupDescription] = useState<string>("Admin Manual Credit Allocation");
+  const [isSubmittingTopup, setIsSubmittingTopup] = useState(false);
 
   useEffect(() => {
-    async function fetchStats() {
-      try {
-        setLoading(true);
-
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session || session.user.email !== 'akhatasebhudojoseph1@gmail.com') {
-          setIsUnauthorized(true);
-          return;
-        }
-        
-        setIsAuthorized(true);
-
-        // Fetch Total Users
-        const { count: totalUsers } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true });
-
-        // Fetch Total Businesses
-        const { count: totalBusinesses } = await supabase
-          .from('businesses')
-          .select('*', { count: 'exact', head: true });
-
-        // Fetch Total Conversations
-        const { count: totalConversations } = await supabase
-          .from('conversations')
-          .select('*', { count: 'exact', head: true });
-
-        // Fetch Total Messages
-        const { count: totalMessages } = await supabase
-          .from('messages')
-          .select('*', { count: 'exact', head: true });
-
-        // Fetch Subscriptions
-        const { data: subscriptions } = await supabase
-          .from('user_subscriptions')
-          .select('*');
-
-        const planCounts: Record<string, number> = {};
-        if (subscriptions) {
-          subscriptions.forEach((sub) => {
-            const plan = sub.plan_name || 'free';
-            planCounts[plan] = (planCounts[plan] || 0) + 1;
-          });
-        }
-
-        // Fetch All Profiles
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        const formattedUsers = (profiles || []).map(profile => {
-          const userSub = subscriptions?.find(s => s.user_id === profile.id);
-          return {
-            ...profile,
-            plan: userSub?.plan_name || 'free'
-          };
-        });
-
-        setUsersList(formattedUsers);
-
-        setStats({
-          totalUsers: totalUsers || 0,
-          totalBusinesses: totalBusinesses || 0,
-          totalConversations: totalConversations || 0,
-          totalMessages: totalMessages || 0,
-          planCounts,
-        });
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchStats();
+    fetchAdminData();
   }, []);
 
+  const fetchAdminData = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || session.user.email !== "akhatasebhudojoseph1@gmail.com") {
+        setIsUnauthorized(true);
+        setLoading(false);
+        return;
+      }
+
+      setIsAuthorized(true);
+
+      // 1. Fetch Total Users count
+      const { count: totalUsers } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true });
+
+      // 2. Fetch Total Businesses
+      const { data: businesses } = await supabase
+        .from("businesses")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      // 3. Fetch Total Conversations count
+      const { count: totalConversations } = await supabase
+        .from("conversations")
+        .select("*", { count: "exact", head: true });
+
+      // 4. Fetch Total Messages count
+      const { count: totalMessages } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true });
+
+      // 5. Fetch User Subscriptions for plan mapping
+      const { data: subscriptions } = await supabase
+        .from("user_subscriptions")
+        .select("*");
+
+      const planCounts: Record<string, number> = {};
+
+      // 6. Fetch Users & Wallets with accurate balance (RPC or Fallback via SECURITY DEFINER get_wallet_info)
+      let formattedUsers: UserProfile[] = [];
+      let systemBalanceSum = 0;
+
+      // Try RPC get_admin_users_wallets first
+      const { data: adminRpcUsers, error: rpcErr } = await supabase.rpc("get_admin_users_wallets");
+
+      if (!rpcErr && adminRpcUsers && adminRpcUsers.length > 0) {
+        formattedUsers = adminRpcUsers.map((u: any) => {
+          const bal = parseFloat(u.balance) || 1.0;
+          systemBalanceSum += bal;
+          const planName = u.plan || "free";
+          planCounts[planName] = (planCounts[planName] || 0) + 1;
+
+          return {
+            id: u.id,
+            email: u.email,
+            full_name: u.full_name,
+            created_at: u.created_at,
+            plan: planName,
+            balance: bal,
+          };
+        });
+      } else {
+        // Fallback: Query profiles and invoke get_wallet_info RPC per user to bypass RLS safely
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (profiles) {
+          formattedUsers = await Promise.all(
+            profiles.map(async (profile) => {
+              const userSub = subscriptions?.find((s) => s.user_id === profile.id);
+              const planName = userSub?.plan_name || "free";
+              planCounts[planName] = (planCounts[planName] || 0) + 1;
+
+              // Call SECURITY DEFINER RPC to get exact balance
+              let userBal = 1.0;
+              try {
+                const { data: wData } = await supabase.rpc("get_wallet_info", { p_user_id: profile.id });
+                if (wData && wData.length > 0) {
+                  userBal = parseFloat(wData[0].balance_usd) || 1.0;
+                }
+              } catch (_) {}
+
+              systemBalanceSum += userBal;
+
+              return {
+                id: profile.id,
+                email: profile.email,
+                full_name: profile.full_name,
+                created_at: profile.created_at,
+                plan: planName,
+                balance: userBal,
+              };
+            })
+          );
+        }
+      }
+
+      setUsersList(formattedUsers);
+
+      // Create quick user email lookup map
+      const userLookup = new Map<string, string>();
+      formattedUsers.forEach((u) => userLookup.set(u.id, u.email));
+
+      // Formatted Businesses
+      const formattedBusinesses: BusinessItem[] = (businesses || []).map((b) => ({
+        id: b.id,
+        name: b.name,
+        user_id: b.user_id,
+        owner_email: userLookup.get(b.user_id) || "Unknown Owner",
+        created_at: b.created_at,
+      }));
+      setBusinessesList(formattedBusinesses);
+
+      // 7. Fetch Recent Transactions (RPC or Table)
+      let formattedTransactions: TransactionItem[] = [];
+      let depositsTotal = 0;
+
+      const { data: adminRpcTx, error: txRpcErr } = await supabase.rpc("get_admin_transactions", { p_limit: 100 });
+
+      if (!txRpcErr && adminRpcTx) {
+        formattedTransactions = adminRpcTx.map((tx: any) => {
+          const amt = parseFloat(tx.amount_usd) || 0;
+          if (amt > 0) depositsTotal += amt;
+          return {
+            id: tx.id,
+            user_id: tx.user_id,
+            user_email: tx.user_email || userLookup.get(tx.user_id) || "System / Unknown",
+            amount_usd: amt,
+            type: tx.type,
+            description: tx.description,
+            created_at: tx.created_at,
+          };
+        });
+      } else {
+        const { data: transactions } = await supabase
+          .from("wallet_transactions")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        formattedTransactions = (transactions || []).map((tx) => {
+          const amt = parseFloat(tx.amount_usd) || 0;
+          if (amt > 0) depositsTotal += amt;
+          return {
+            id: tx.id,
+            user_id: tx.user_id,
+            user_email: userLookup.get(tx.user_id) || "System / Unknown",
+            amount_usd: amt,
+            type: tx.type,
+            description: tx.description,
+            created_at: tx.created_at,
+          };
+        });
+      }
+
+      setTransactionsList(formattedTransactions);
+
+      setStats({
+        totalUsers: totalUsers || formattedUsers.length,
+        totalBusinesses: formattedBusinesses.length,
+        totalConversations: totalConversations || 0,
+        totalMessages: totalMessages || 0,
+        totalSystemBalance: systemBalanceSum,
+        totalDepositsAmount: depositsTotal,
+        planCounts,
+      });
+    } catch (err) {
+      console.error("Error fetching admin stats:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load admin dashboard data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGrantCredit = async () => {
+    if (!selectedUserForTopup) return;
+    setIsSubmittingTopup(true);
+
+    try {
+      const { data: newBalance, error } = await supabase.rpc("topup_wallet_balance", {
+        p_user_id: selectedUserForTopup.id,
+        p_amount_usd: topupAmount,
+        p_description: topupDescription || "Admin Manual Credit Allocation",
+        p_metadata: {
+          admin_granted: true,
+          granted_by: "super_admin",
+          granted_at: new Date().toISOString(),
+          type: topupType,
+        },
+      });
+
+      if (error) throw error;
+
+      // Notify the user via email notification
+      try {
+        await supabase.functions.invoke("send-notification", {
+          body: {
+            type: "credit_bonus",
+            data: {
+              userEmail: selectedUserForTopup.email,
+              amount: topupAmount,
+              newBalance: parseFloat(newBalance),
+              description: topupDescription || "Admin Credit Bonus",
+            },
+          },
+        });
+      } catch (emailErr) {
+        console.warn("Could not send credit notification email:", emailErr);
+      }
+
+      toast({
+        title: "Credits Granted & User Notified! 🎉",
+        description: `Granted $${topupAmount.toFixed(2)} to ${selectedUserForTopup.email}. Email notification sent. New Balance: $${parseFloat(newBalance).toFixed(2)}`,
+      });
+
+      setTopupDialogOpen(false);
+      setSelectedUserForTopup(null);
+      fetchAdminData();
+    } catch (err: any) {
+      toast({
+        title: "Topup Failed",
+        description: err.message || "Failed to grant credits to user",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingTopup(false);
+    }
+  };
+
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(val);
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Filtered Users
+  const filteredUsers = usersList.filter((user) => {
+    const matchesSearch =
+      user.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+      (user.full_name && user.full_name.toLowerCase().includes(userSearch.toLowerCase())) ||
+      user.id.toLowerCase().includes(userSearch.toLowerCase());
+
+    const matchesPlan = planFilter === "all" || user.plan.toLowerCase() === planFilter.toLowerCase();
+
+    return matchesSearch && matchesPlan;
+  });
+
+  // Filtered Businesses
+  const filteredBusinesses = businessesList.filter((b) => {
+    return (
+      b.name.toLowerCase().includes(businessSearch.toLowerCase()) ||
+      (b.owner_email && b.owner_email.toLowerCase().includes(businessSearch.toLowerCase())) ||
+      b.id.toLowerCase().includes(businessSearch.toLowerCase())
+    );
+  });
+
   if (isUnauthorized) return <NotFound />;
-  if (!isAuthorized) return null;
+  if (!isAuthorized && loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background space-y-4">
+        <RefreshCw className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm font-medium">Authorizing Admin Dashboard...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-muted/30 p-8">
-      <div className="max-w-[1200px] mx-auto space-y-8">
-        <div>
-          <h1 className="text-4xl font-display font-bold tracking-tight text-foreground">
-            Local Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Overview of platform statistics and usage.
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Top Admin Header */}
+      <header className="border-b bg-card/80 backdrop-blur-xl sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold border border-primary/20 shadow-sm">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+                Super Admin Console
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold">
+                  Live System
+                </Badge>
+              </h1>
+              <p className="text-xs text-muted-foreground">Platform metrics, user wallets, and business controls</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button size="sm" variant="outline" onClick={fetchAdminData} disabled={loading} className="gap-2 font-medium">
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh Data
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Admin Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Key Platform Metric Highlights */}
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="shadow-elegant border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3.5 rounded-2xl bg-primary/10 text-primary border border-primary/20">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Users</p>
+                <h3 className="text-2xl font-extrabold tracking-tight text-foreground">{stats.totalUsers.toLocaleString()}</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Registered accounts</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-elegant border-border/60">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                <Wallet className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Wallet Balances</p>
+                <h3 className="text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {formatCurrency(stats.totalSystemBalance)}
+                </h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Active credit funds in wallets</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-elegant border-border/60">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3.5 rounded-2xl bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                <Building className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Businesses</p>
+                <h3 className="text-2xl font-extrabold tracking-tight text-foreground">{stats.totalBusinesses.toLocaleString()}</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Custom bot instances</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-elegant border-border/60">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="p-3.5 rounded-2xl bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                <Activity className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Messages Processed</p>
+                <h3 className="text-2xl font-extrabold tracking-tight text-foreground">{stats.totalMessages.toLocaleString()}</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Across {stats.totalConversations} conversations</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="p-6 shadow-elegant hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-primary/10 rounded-xl">
-                    <Users className="w-6 h-6 text-primary" />
-                  </div>
+        {/* Tabbed Navigation Sections */}
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="bg-muted/60 p-1 rounded-xl gap-1">
+            <TabsTrigger value="users" className="font-semibold rounded-lg text-xs md:text-sm px-4 py-2">
+              <Users className="w-4 h-4 mr-2" />
+              Users & Credit Wallets ({usersList.length})
+            </TabsTrigger>
+            <TabsTrigger value="businesses" className="font-semibold rounded-lg text-xs md:text-sm px-4 py-2">
+              <Building className="w-4 h-4 mr-2" />
+              Businesses ({businessesList.length})
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="font-semibold rounded-lg text-xs md:text-sm px-4 py-2">
+              <History className="w-4 h-4 mr-2" />
+              Transaction Logs
+            </TabsTrigger>
+            <TabsTrigger value="overview" className="font-semibold rounded-lg text-xs md:text-sm px-4 py-2">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Plan Distribution
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB 1: USERS & CREDIT WALLETS */}
+          <TabsContent value="users" className="space-y-6">
+            <Card className="shadow-elegant border-border/60">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                    <h3 className="text-3xl font-bold">{stats.totalUsers}</h3>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Users className="w-5 h-5 text-primary" />
+                      Registered Users & Credit Balances
+                    </CardTitle>
+                    <CardDescription>Inspect user accounts, wallet balances, and grant credits</CardDescription>
+                  </div>
+
+                  {/* Search & Filters */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative w-64">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search name, email, ID..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="pl-9 h-9 text-xs"
+                      />
+                    </div>
+
+                    <Select value={planFilter} onValueChange={setPlanFilter}>
+                      <SelectTrigger className="w-36 h-9 text-xs">
+                        <Filter className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                        <SelectValue placeholder="All Plans" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Plans</SelectItem>
+                        <SelectItem value="free">Free Plan</SelectItem>
+                        <SelectItem value="basic">Basic Plan</SelectItem>
+                        <SelectItem value="pro">Pro Plan</SelectItem>
+                        <SelectItem value="business">Business Plan</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-              </Card>
+              </CardHeader>
 
-              <Card className="p-6 shadow-elegant hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-blue-500/10 rounded-xl">
-                    <Building className="w-6 h-6 text-blue-500" />
-                  </div>
+              <CardContent>
+                <div className="rounded-xl border overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/40">
+                      <TableRow>
+                        <TableHead className="font-bold">User Details</TableHead>
+                        <TableHead className="font-bold">Plan Tier</TableHead>
+                        <TableHead className="font-bold">Credit Wallet Balance</TableHead>
+                        <TableHead className="font-bold">Est. Messages Left</TableHead>
+                        <TableHead className="font-bold">Joined Date</TableHead>
+                        <TableHead className="font-bold text-right">Admin Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.id} className="hover:bg-muted/30 transition-colors">
+                          <TableCell>
+                            <div>
+                              <p className="font-bold text-sm text-foreground">{user.full_name || "Account User"}</p>
+                              <p className="text-xs text-muted-foreground">{user.email}</p>
+                              <span className="text-[10px] text-muted-foreground font-mono">ID: {user.id.slice(0, 8)}...</span>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                user.plan === "pro"
+                                  ? "bg-purple-500/10 text-purple-600 border-purple-500/20 font-semibold"
+                                  : user.plan === "business"
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20 font-semibold"
+                                  : "bg-muted text-muted-foreground font-medium"
+                              }
+                            >
+                              {user.plan.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+
+                          <TableCell>
+                            <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                              {formatCurrency(user.balance)}
+                            </span>
+                          </TableCell>
+
+                          <TableCell className="text-xs font-semibold text-primary">
+                            ~{Math.max(0, Math.floor(user.balance / 0.005)).toLocaleString()} msgs
+                          </TableCell>
+
+                          <TableCell className="text-xs text-muted-foreground">{formatDate(user.created_at)}</TableCell>
+
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedUserForTopup(user);
+                                setTopupDialogOpen(true);
+                              }}
+                              className="h-8 text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-all"
+                            >
+                              <PlusCircle className="w-3.5 h-3.5 mr-1" />
+                              Grant Credit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+
+                      {filteredUsers.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground text-sm">
+                            No matching users found for "{userSearch}".
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* TAB 2: BUSINESSES */}
+          <TabsContent value="businesses" className="space-y-6">
+            <Card className="shadow-elegant border-border/60">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Businesses</p>
-                    <h3 className="text-3xl font-bold">{stats.totalBusinesses}</h3>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Building className="w-5 h-5 text-primary" />
+                      Registered Business Profiles
+                    </CardTitle>
+                    <CardDescription>Custom AI bot instances configured by users</CardDescription>
+                  </div>
+
+                  <div className="relative w-64">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search business name or owner..."
+                      value={businessSearch}
+                      onChange={(e) => setBusinessSearch(e.target.value)}
+                      className="pl-9 h-9 text-xs"
+                    />
                   </div>
                 </div>
-              </Card>
+              </CardHeader>
 
-              <Card className="p-6 shadow-elegant hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-500/10 rounded-xl">
-                    <MessageSquare className="w-6 h-6 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Conversations</p>
-                    <h3 className="text-3xl font-bold">{stats.totalConversations}</h3>
-                  </div>
+              <CardContent>
+                <div className="rounded-xl border overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/40">
+                      <TableRow>
+                        <TableHead className="font-bold">Business Name</TableHead>
+                        <TableHead className="font-bold">Owner Account</TableHead>
+                        <TableHead className="font-bold">Business ID</TableHead>
+                        <TableHead className="font-bold">Created Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBusinesses.map((b) => (
+                        <TableRow key={b.id} className="hover:bg-muted/30 transition-colors">
+                          <TableCell className="font-bold text-foreground text-sm">{b.name}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground font-medium">{b.owner_email}</TableCell>
+                          <TableCell className="text-xs font-mono text-muted-foreground">{b.id}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{formatDate(b.created_at)}</TableCell>
+                        </TableRow>
+                      ))}
+
+                      {filteredBusinesses.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-10 text-muted-foreground text-sm">
+                            No businesses registered yet.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-              </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-              <Card className="p-6 shadow-elegant hover:shadow-lg transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-purple-500/10 rounded-xl">
-                    <Activity className="w-6 h-6 text-purple-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Messages</p>
-                    <h3 className="text-3xl font-bold">{stats.totalMessages}</h3>
-                  </div>
+          {/* TAB 3: TRANSACTION LOGS */}
+          <TabsContent value="transactions" className="space-y-6">
+            <Card className="shadow-elegant border-border/60">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <History className="w-5 h-5 text-primary" />
+                  System-Wide Transaction Log
+                </CardTitle>
+                <CardDescription>Real-time record of all deposits, bonuses, and usage deductions</CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                <div className="rounded-xl border overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/40">
+                      <TableRow>
+                        <TableHead className="font-bold">Timestamp</TableHead>
+                        <TableHead className="font-bold">User Account</TableHead>
+                        <TableHead className="font-bold">Transaction Type</TableHead>
+                        <TableHead className="font-bold">Description</TableHead>
+                        <TableHead className="font-bold text-right">Amount ($)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {transactionsList.map((tx) => {
+                        const isPositive = tx.amount_usd > 0;
+                        return (
+                          <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="text-xs text-muted-foreground">{formatDate(tx.created_at)}</TableCell>
+                            <TableCell className="text-xs font-medium text-foreground">{tx.user_email}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  tx.type === "deposit"
+                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-semibold"
+                                    : tx.type === "starter_bonus"
+                                    ? "bg-blue-500/10 text-blue-600 border-blue-500/20 font-semibold"
+                                    : "bg-muted text-muted-foreground font-medium"
+                                }
+                              >
+                                {tx.type.replace("_", " ").toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs font-medium">{tx.description}</TableCell>
+                            <TableCell className={`text-right font-extrabold text-sm ${isPositive ? "text-emerald-600" : "text-foreground"}`}>
+                              {isPositive ? `+${formatCurrency(tx.amount_usd)}` : formatCurrency(tx.amount_usd)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+
+                      {transactionsList.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground text-sm">
+                            No system transactions recorded yet.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-              </Card>
-            </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
+          {/* TAB 4: OVERVIEW & PLAN DISTRIBUTION */}
+          <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2">
-              <Card className="p-6 shadow-elegant">
-                <div className="flex items-center gap-2 mb-6">
-                  <CreditCard className="w-5 h-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Users by Plan</h3>
-                </div>
-                <div className="space-y-4">
+              <Card className="shadow-elegant border-border/60">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    Subscription Tier Distribution
+                  </CardTitle>
+                  <CardDescription>Breakdown of active plan subscriptions</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   {Object.entries(stats.planCounts).map(([plan, count]) => (
-                    <div key={plan} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div key={plan} className="flex items-center justify-between p-4 bg-muted/40 rounded-xl border border-border/40">
                       <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        <span className="font-medium capitalize">{plan}</span>
+                        <div className="w-3 h-3 rounded-full bg-primary" />
+                        <span className="font-bold capitalize text-sm">{plan} Plan</span>
                       </div>
-                      <span className="font-bold text-lg">{count}</span>
+                      <Badge variant="secondary" className="font-extrabold text-sm px-3 py-1">
+                        {count} user{count > 1 ? "s" : ""}
+                      </Badge>
                     </div>
                   ))}
                   {Object.keys(stats.planCounts).length === 0 && (
-                    <p className="text-muted-foreground text-center py-4">No active subscriptions found.</p>
+                    <p className="text-muted-foreground text-center py-6 text-sm">No plan distributions recorded yet.</p>
                   )}
-                </div>
+                </CardContent>
               </Card>
+
+              <Card className="shadow-elegant border-border/60">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-emerald-600" />
+                    Deposit & Credit Summary
+                  </CardTitle>
+                  <CardDescription>Financial credit wallet overview</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex justify-between items-center">
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Total Deposits Recorded</span>
+                      <span className="text-2xl font-extrabold text-emerald-600">{formatCurrency(stats.totalDepositsAmount)}</span>
+                    </div>
+                    <CheckCircle2 className="w-8 h-8 text-emerald-600 opacity-80" />
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex justify-between items-center">
+                    <div>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">Current User Balances</span>
+                      <span className="text-2xl font-extrabold text-primary">{formatCurrency(stats.totalSystemBalance)}</span>
+                    </div>
+                    <Wallet className="w-8 h-8 text-primary opacity-80" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Admin Manual Wallet Topup Dialog Modal */}
+      <Dialog open={topupDialogOpen} onOpenChange={setTopupDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlusCircle className="w-5 h-5 text-primary" />
+              Grant Manual Wallet Credits
+            </DialogTitle>
+            <DialogDescription>
+              Grant credits or issue a refund directly to <strong className="text-foreground">{selectedUserForTopup?.email}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3 text-xs">
+            <div>
+              <label className="font-bold text-foreground block mb-1">Select / Enter Amount ($)</label>
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {[5, 10, 25, 50].map((amt) => (
+                  <Button
+                    key={amt}
+                    type="button"
+                    variant={topupAmount === amt ? "default" : "outline"}
+                    onClick={() => setTopupAmount(amt)}
+                    className="font-bold text-xs h-9"
+                  >
+                    ${amt}
+                  </Button>
+                ))}
+              </div>
+              <Input
+                type="number"
+                min="1"
+                max="10000"
+                value={topupAmount}
+                onChange={(e) => setTopupAmount(parseFloat(e.target.value) || 0)}
+                className="h-9"
+              />
             </div>
 
-            <div className="mt-8">
-              <Card className="p-6 shadow-elegant overflow-hidden">
-                <div className="flex items-center gap-2 mb-6">
-                  <Users className="w-5 h-5 text-primary" />
-                  <h3 className="text-xl font-semibold">All Registered Users</h3>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b bg-muted/50 text-muted-foreground text-sm">
-                        <th className="p-4 font-medium">Name</th>
-                        <th className="p-4 font-medium">Email</th>
-                        <th className="p-4 font-medium">Plan</th>
-                        <th className="p-4 font-medium">Joined</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {usersList.map(user => (
-                        <tr key={user.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="p-4 font-medium">{user.full_name || 'Unknown'}</td>
-                          <td className="p-4 text-muted-foreground">{user.email}</td>
-                          <td className="p-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary capitalize">
-                              {user.plan}
-                            </span>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">
-                            {new Date(user.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                      {usersList.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                            No users found.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+            <div>
+              <label className="font-bold text-foreground block mb-1">Credit Type</label>
+              <Select value={topupType} onValueChange={setTopupType}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="deposit">Deposit / Topup</SelectItem>
+                  <SelectItem value="starter_bonus">Starter Bonus</SelectItem>
+                  <SelectItem value="refund">Refund / Credit Adjustment</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </>
-        )}
-      </div>
+
+            <div>
+              <label className="font-bold text-foreground block mb-1">Description / Reason</label>
+              <Input
+                value={topupDescription}
+                onChange={(e) => setTopupDescription(e.target.value)}
+                placeholder="e.g. Admin Promotional Credit"
+                className="h-9"
+              />
+            </div>
+
+            <div className="p-3 rounded-lg bg-muted/60 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Current Balance:</span>
+                <span className="font-bold">{formatCurrency(selectedUserForTopup?.balance || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">New Balance After Grant:</span>
+                <span className="font-extrabold text-emerald-600">
+                  {formatCurrency((selectedUserForTopup?.balance || 0) + topupAmount)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={handleGrantCredit} disabled={isSubmittingTopup || topupAmount <= 0} className="w-full font-bold h-10">
+            {isSubmittingTopup ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Granting Credits...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Confirm & Grant ${topupAmount.toFixed(2)} Credits
+              </>
+            )}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       <Toaster />
     </div>
   );

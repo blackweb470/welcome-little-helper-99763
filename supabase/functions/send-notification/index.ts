@@ -12,8 +12,8 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'wallet_depleted', 'low_balance']),
-  businessId: z.string().uuid("Invalid business ID format"),
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'wallet_depleted', 'low_balance', 'credit_bonus']),
+  businessId: z.string().uuid("Invalid business ID format").optional(),
   data: z.object({
     conversationId: z.string().uuid("Invalid conversation ID format").optional(),
     ticketId: z.string().uuid("Invalid ticket ID format").optional(),
@@ -24,6 +24,9 @@ const NotificationRequestSchema = z.object({
     agentName: z.string().optional(),
     userEmail: z.string().email("Invalid email format").optional(),
     businessName: z.string().optional(),
+    amount: z.number().optional(),
+    newBalance: z.number().optional(),
+    description: z.string().optional(),
   }),
 });
 
@@ -52,32 +55,29 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get business owner email
-    const { data: business, error: businessError } = await supabaseClient
-      .from("businesses")
-      .select("owner_id, name")
-      .eq("id", businessId)
-      .single();
+    let ownerEmail = data.userEmail || data.agentEmail || "";
+    let sanitizedBusinessName = data.businessName || "LYQN AI";
 
-    if (businessError || !business) {
-      console.error("Error fetching business:", businessError);
-      return new Response(
-        JSON.stringify({ error: "Business not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (businessId) {
+      const { data: business } = await supabaseClient
+        .from("businesses")
+        .select("owner_id, name")
+        .eq("id", businessId)
+        .maybeSingle();
+
+      if (business) {
+        sanitizedBusinessName = business.name.replace(/[<>]/g, '');
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("email")
+          .eq("id", business.owner_id)
+          .maybeSingle();
+        if (profile?.email) ownerEmail = profile.email;
+      }
     }
 
-    // Get owner's email
-    const { data: profile } = await supabaseClient
-      .from("profiles")
-      .select("email")
-      .eq("id", business.owner_id)
-      .single();
-
-    const ownerEmail = profile?.email || data.agentEmail;
-    
-    if (!ownerEmail) {
-      console.error("No email found for notification");
+    if (!ownerEmail && !data.userEmail) {
+      console.error("No email recipient found for notification");
       return new Response(
         JSON.stringify({ error: "No email found" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -399,6 +399,28 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
           <p style="margin-top: 24px; text-align: center;">
             <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">Top Up Wallet Credits</a>
+          </p>
+        `);
+        break;
+
+      case 'credit_bonus':
+        recipientEmail = data.userEmail || ownerEmail;
+        subject = `🎉 You've received a $${(data.amount || 0).toFixed(2)} Credit Bonus!`;
+        html = createNotificationEmail('Wallet Credit Bonus Granted', `
+          <p>Great news! An admin has added <strong style="color: #10b981;">+$${(data.amount || 0).toFixed(2)} USD</strong> in credits to your LYQN AI wallet.</p>
+          <div class="data-box" style="border-color: #10b981;">
+            <span class="data-label">Granted Credit Amount</span>
+            <span class="data-value" style="color: #10b981; font-weight: bold; font-size: 18px;">+$${(data.amount || 0).toFixed(2)} USD</span>
+            
+            <span class="data-label">Updated Available Balance</span>
+            <span class="data-value" style="font-bold; font-size: 16px;">$${(data.newBalance || 0).toFixed(2)} USD</span>
+
+            <span class="data-label">Note / Description</span>
+            <span class="data-value">${data.description || 'Admin Promotional Credit Bonus'}</span>
+          </div>
+          <p style="margin-top: 16px;">Your credits never expire and are immediately active for AI message responses.</p>
+          <p style="margin-top: 24px; text-align: center;">
+            <a href="https://lyqn.app/dashboard?tab=billing" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">View Your Wallet</a>
           </p>
         `);
         break;
