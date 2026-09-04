@@ -390,12 +390,12 @@ export default function Admin() {
             body: {
               type: "custom_email",
               data: {
-                userEmail: recipient,
-                subject: broadcastSubject,
-                customTitle: broadcastTitle || broadcastSubject,
+                userEmail: recipient.trim(),
+                subject: broadcastSubject.trim(),
+                customTitle: (broadcastTitle || broadcastSubject).trim(),
                 message: broadcastMessage,
-                actionText: broadcastActionText || undefined,
-                actionUrl: broadcastActionUrl || undefined,
+                actionText: broadcastActionText.trim() || undefined,
+                actionUrl: broadcastActionUrl.trim() || undefined,
               },
             },
           });

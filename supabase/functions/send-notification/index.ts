@@ -12,27 +12,27 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'wallet_depleted', 'low_balance', 'credit_bonus', 'custom_email']),
-  businessId: z.string().uuid("Invalid business ID format").optional(),
+  type: z.string(),
+  businessId: z.string().optional().nullable(),
   data: z.object({
-    conversationId: z.string().uuid("Invalid conversation ID format").optional(),
-    ticketId: z.string().uuid("Invalid ticket ID format").optional(),
-    visitorId: z.string().max(255).optional(),
-    visitorEmail: z.string().email("Invalid email format").optional(),
-    message: z.string().max(10000).optional(),
-    agentEmail: z.string().email("Invalid email format").optional(),
-    agentName: z.string().optional(),
-    userEmail: z.string().email("Invalid email format").optional(),
-    businessName: z.string().optional(),
-    amount: z.number().optional(),
-    newBalance: z.number().optional(),
-    description: z.string().optional(),
-    subject: z.string().max(300).optional(),
-    customTitle: z.string().max(300).optional(),
-    actionText: z.string().max(100).optional(),
-    actionUrl: z.string().optional(),
-  }),
-});
+    conversationId: z.string().optional().nullable(),
+    ticketId: z.string().optional().nullable(),
+    visitorId: z.string().optional().nullable(),
+    visitorEmail: z.string().optional().nullable(),
+    message: z.string().optional().nullable(),
+    agentEmail: z.string().optional().nullable(),
+    agentName: z.string().optional().nullable(),
+    userEmail: z.string().optional().nullable(),
+    businessName: z.string().optional().nullable(),
+    amount: z.number().optional().nullable(),
+    newBalance: z.number().optional().nullable(),
+    description: z.string().optional().nullable(),
+    subject: z.string().optional().nullable(),
+    customTitle: z.string().optional().nullable(),
+    actionText: z.string().optional().nullable(),
+    actionUrl: z.string().optional().nullable(),
+  }).passthrough(),
+}).passthrough();
 
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
@@ -45,9 +45,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Validate input
     const validation = NotificationRequestSchema.safeParse(body);
     if (!validation.success) {
+      const issueSummary = validation.error.issues.map((i: any) => `${i.path.join('.')}: ${i.message}`).join(', ');
       console.error("Validation error:", validation.error);
       return new Response(
-        JSON.stringify({ error: "Invalid input", details: validation.error.issues }),
+        JSON.stringify({ error: `Invalid input: ${issueSummary}`, details: validation.error.issues }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
