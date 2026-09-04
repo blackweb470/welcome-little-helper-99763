@@ -12,14 +12,14 @@ const corsHeaders = {
 };
 
 const NotificationRequestSchema = z.object({
-  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'wallet_depleted', 'low_balance', 'credit_bonus']),
+  type: z.enum(['chat_transfer', 'new_message', 'ticket_created', 'ticket_resolved', 'agent_accepted', 'team_member_removed', 'wallet_depleted', 'low_balance', 'credit_bonus', 'custom_email']),
   businessId: z.string().uuid("Invalid business ID format").optional(),
   data: z.object({
     conversationId: z.string().uuid("Invalid conversation ID format").optional(),
     ticketId: z.string().uuid("Invalid ticket ID format").optional(),
     visitorId: z.string().max(255).optional(),
     visitorEmail: z.string().email("Invalid email format").optional(),
-    message: z.string().max(5000).optional(),
+    message: z.string().max(10000).optional(),
     agentEmail: z.string().email("Invalid email format").optional(),
     agentName: z.string().optional(),
     userEmail: z.string().email("Invalid email format").optional(),
@@ -27,6 +27,10 @@ const NotificationRequestSchema = z.object({
     amount: z.number().optional(),
     newBalance: z.number().optional(),
     description: z.string().optional(),
+    subject: z.string().max(300).optional(),
+    customTitle: z.string().max(300).optional(),
+    actionText: z.string().max(100).optional(),
+    actionUrl: z.string().optional(),
   }),
 });
 
@@ -84,12 +88,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Sanitize business name for HTML
-    const sanitizedBusinessName = business.name.replace(/[<>]/g, '');
-    
     let subject = "";
     let html = "";
-    let recipientEmail = ownerEmail; // Default to owner
+    let recipientEmail = ownerEmail; // Default to recipient
 
     const createNotificationEmail = (title: string, contentHtml: string) => `
 <!DOCTYPE html>
@@ -425,6 +426,27 @@ const handler = async (req: Request): Promise<Response> => {
         `);
         break;
 
+      case 'custom_email':
+        recipientEmail = data.userEmail || ownerEmail;
+        subject = data.subject || `Announcement from ${sanitizedBusinessName}`;
+        html = createNotificationEmail(
+          data.customTitle || data.subject || 'Important Announcement',
+          `
+            <h2 class="email-title" style="margin-bottom: 16px; color: #f5f5f5;">${data.customTitle || data.subject || 'Important Announcement'}</h2>
+            <div style="font-size: 14px; line-height: 1.6; color: #d1d5db; white-space: pre-wrap; margin-bottom: 24px;">
+              ${(data.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>')}
+            </div>
+            ${
+              data.actionUrl && data.actionText
+                ? `<p style="margin-top: 24px; text-align: center;">
+                    <a href="${data.actionUrl}" style="display: inline-block; background: #ffffff; color: #000000; padding: 14px 28px; font-weight: bold; text-decoration: none; border-radius: 6px; letter-spacing: 0.05em;">${data.actionText}</a>
+                  </p>`
+                : ''
+            }
+          `
+        );
+        break;
+
       default:
         return new Response(
           JSON.stringify({ error: "Invalid notification type" }),
@@ -432,12 +454,52 @@ const handler = async (req: Request): Promise<Response> => {
         );
     }
 
-    const emailResponse = await resend.emails.send({
-      from: "AI Chat Support <support@lyqn.app>",
-      to: [recipientEmail],
-      subject: subject,
-      html: html,
-    });
+    const smtpHost = Deno.env.get("SMTP_HOST");
+    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpPass = Deno.env.get("SMTP_PASS") || Deno.env.get("SMTP_PASSWORD");
+    const emailFrom = Deno.env.get("EMAIL_FROM") || Deno.env.get("SMTP_FROM") || "LYQN AI <hello@lyqn.app>";
+
+    let emailResponse: any;
+
+    if (smtpHost && smtpUser && smtpPass) {
+      try {
+        const { SMTPClient } = await import("https://deno.land/x/bootstrap_smtp@v0.7.0/mod.ts");
+        const client = new SMTPClient({
+          connection: {
+            hostname: smtpHost,
+            port: parseInt(Deno.env.get("SMTP_PORT") || "465"),
+            tls: true,
+            auth: { username: smtpUser, password: smtpPass },
+          },
+        });
+
+        await client.send({
+          from: emailFrom,
+          to: recipientEmail,
+          subject: subject,
+          content: "Please view this email in an HTML-enabled mail client.",
+          html: html,
+        });
+
+        await client.close();
+        emailResponse = { provider: "smtp", status: "sent", recipient: recipientEmail };
+      } catch (smtpErr: any) {
+        console.warn("SMTP sending failed, falling back to Resend API:", smtpErr);
+        emailResponse = await resend.emails.send({
+          from: emailFrom,
+          to: [recipientEmail],
+          subject: subject,
+          html: html,
+        });
+      }
+    } else {
+      emailResponse = await resend.emails.send({
+        from: emailFrom,
+        to: [recipientEmail],
+        subject: subject,
+        html: html,
+      });
+    }
 
     console.log("Email sent successfully:", emailResponse);
 

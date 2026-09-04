@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,9 @@ import {
   Filter,
   CheckCircle2,
   Sparkles,
+  Mail,
+  Send,
+  SendHorizontal,
 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "./NotFound";
@@ -91,6 +95,18 @@ export default function Admin() {
   const [topupType, setTopupType] = useState<string>("deposit");
   const [topupDescription, setTopupDescription] = useState<string>("Admin Manual Credit Allocation");
   const [isSubmittingTopup, setIsSubmittingTopup] = useState(false);
+
+  // Custom Email Broadcast Dialog State
+  const [broadcastDialogOpen, setBroadcastDialogOpen] = useState(false);
+  const [broadcastTarget, setBroadcastTarget] = useState<"all" | "single">("all");
+  const [broadcastRecipientEmail, setBroadcastRecipientEmail] = useState("");
+  const [broadcastSubject, setBroadcastSubject] = useState("");
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [broadcastActionText, setBroadcastActionText] = useState("");
+  const [broadcastActionUrl, setBroadcastActionUrl] = useState("");
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+  const [sendingProgress, setSendingProgress] = useState("");
 
   useEffect(() => {
     fetchAdminData();
@@ -173,7 +189,6 @@ export default function Admin() {
               const planName = userSub?.plan_name || "free";
               planCounts[planName] = (planCounts[planName] || 0) + 1;
 
-              // Call SECURITY DEFINER RPC to get exact balance
               let userBal = 1.0;
               try {
                 const { data: wData } = await supabase.rpc("get_wallet_info", { p_user_id: profile.id });
@@ -213,7 +228,7 @@ export default function Admin() {
       }));
       setBusinessesList(formattedBusinesses);
 
-      // 7. Fetch Recent Transactions (RPC or Table)
+      // 7. Fetch Recent Transactions
       let formattedTransactions: TransactionItem[] = [];
       let depositsTotal = 0;
 
@@ -333,6 +348,118 @@ export default function Admin() {
     }
   };
 
+  const handleSendCustomEmailBroadcast = async () => {
+    if (!broadcastSubject.trim() || !broadcastMessage.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Subject line and email message body are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSendingBroadcast(true);
+
+    try {
+      let recipients: string[] = [];
+
+      if (broadcastTarget === "single") {
+        if (!broadcastRecipientEmail.trim()) {
+          throw new Error("Recipient email address is required for single email");
+        }
+        recipients = [broadcastRecipientEmail.trim()];
+      } else {
+        // Broadcast to all registered users
+        recipients = usersList.map((u) => u.email).filter((email) => email && email.includes("@"));
+      }
+
+      if (recipients.length === 0) {
+        throw new Error("No valid recipient email addresses found");
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < recipients.length; i++) {
+        const recipient = recipients[i];
+        setSendingProgress(`Sending ${i + 1} of ${recipients.length} (${recipient})...`);
+
+        try {
+          const { error } = await supabase.functions.invoke("send-notification", {
+            body: {
+              type: "custom_email",
+              data: {
+                userEmail: recipient,
+                subject: broadcastSubject,
+                customTitle: broadcastTitle || broadcastSubject,
+                message: broadcastMessage,
+                actionText: broadcastActionText || undefined,
+                actionUrl: broadcastActionUrl || undefined,
+              },
+            },
+          });
+
+          if (error) {
+            failCount++;
+          } else {
+            successCount++;
+          }
+        } catch (_) {
+          failCount++;
+        }
+      }
+
+      toast({
+        title: "Custom Email Sent! 📧",
+        description: `Successfully sent email to ${successCount} user${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` (${failCount} failed)` : ""}`,
+      });
+
+      setBroadcastDialogOpen(false);
+      setBroadcastSubject("");
+      setBroadcastTitle("");
+      setBroadcastMessage("");
+      setBroadcastActionText("");
+      setBroadcastActionUrl("");
+      setSendingProgress("");
+    } catch (err: any) {
+      toast({
+        title: "Broadcast Failed",
+        description: err.message || "Failed to send broadcast email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingBroadcast(false);
+      setSendingProgress("");
+    }
+  };
+
+  const openSingleUserEmailModal = (email: string) => {
+    setBroadcastTarget("single");
+    setBroadcastRecipientEmail(email);
+    setBroadcastSubject("");
+    setBroadcastTitle("");
+    setBroadcastMessage("");
+    setBroadcastDialogOpen(true);
+  };
+
+  const openBroadcastAllEmailModal = () => {
+    setBroadcastTarget("all");
+    setBroadcastRecipientEmail("");
+    setBroadcastSubject("🎉 Upgrade Announcement: Pay-As-You-Go & Full Access Unlocked!");
+    setBroadcastTitle("Welcome to the Upgraded LYQN AI Experience");
+    setBroadcastMessage(
+      "We have upgraded LYQN AI to a transparent Pay-As-You-Go credit model to serve you better and deliver a professional experience.\n\n" +
+      "Here is what this upgrade means for your account:\n" +
+      "• Free Starter Bonus Credits: Added to your credit wallet balance automatically so you can continue generating AI responses seamlessly.\n" +
+      "• Full Application Access: All features (Deep Website Crawler, WhatsApp Integration, Proactive Chat Rules, Document Knowledge Learning, and Live Agent Handoff) are now fully unlocked with zero feature gating.\n" +
+      "• Transparent Pay-As-You-Go Rate: Only $0.005 per AI message response. Your wallet funds NEVER expire!\n\n" +
+      "Thank you for choosing LYQN AI to power your business customer support."
+    );
+    setBroadcastActionText("Explore Your Dashboard & Wallet");
+    setBroadcastActionUrl("https://lyqn.app/dashboard");
+    setBroadcastDialogOpen(true);
+  };
+
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -398,14 +525,18 @@ export default function Admin() {
                   Live System
                 </Badge>
               </h1>
-              <p className="text-xs text-muted-foreground">Platform metrics, user wallets, and business controls</p>
+              <p className="text-xs text-muted-foreground">Platform metrics, user wallets, and custom email broadcasts</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            <Button size="sm" onClick={openBroadcastAllEmailModal} className="gap-2 font-semibold shadow-md">
+              <Mail className="w-4 h-4" />
+              Send Broadcast Email
+            </Button>
             <Button size="sm" variant="outline" onClick={fetchAdminData} disabled={loading} className="gap-2 font-medium">
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh Data
+              Refresh
             </Button>
           </div>
         </div>
@@ -501,7 +632,7 @@ export default function Admin() {
                       <Users className="w-5 h-5 text-primary" />
                       Registered Users & Credit Balances
                     </CardTitle>
-                    <CardDescription>Inspect user accounts, wallet balances, and grant credits</CardDescription>
+                    <CardDescription>Inspect user accounts, wallet balances, grant credits, and email users</CardDescription>
                   </div>
 
                   {/* Search & Filters */}
@@ -529,6 +660,11 @@ export default function Admin() {
                         <SelectItem value="business">Business Plan</SelectItem>
                       </SelectContent>
                     </Select>
+
+                    <Button size="sm" variant="secondary" onClick={openBroadcastAllEmailModal} className="h-9 text-xs font-semibold gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-primary" />
+                      Email All Users
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
@@ -585,18 +721,30 @@ export default function Admin() {
                           <TableCell className="text-xs text-muted-foreground">{formatDate(user.created_at)}</TableCell>
 
                           <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedUserForTopup(user);
-                                setTopupDialogOpen(true);
-                              }}
-                              className="h-8 text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-all"
-                            >
-                              <PlusCircle className="w-3.5 h-3.5 mr-1" />
-                              Grant Credit
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => openSingleUserEmailModal(user.email)}
+                                className="h-8 text-xs font-semibold gap-1"
+                              >
+                                <Mail className="w-3.5 h-3.5 text-primary" />
+                                Email
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                  setSelectedUserForTopup(user);
+                                  setTopupDialogOpen(true);
+                                }}
+                                className="h-8 text-xs font-semibold gap-1"
+                              >
+                                <PlusCircle className="w-3.5 h-3.5" />
+                                Grant Credit
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -882,12 +1030,143 @@ export default function Admin() {
             {isSubmittingTopup ? (
               <>
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                Granting Credits...
+                Granting Credits & Sending Email...
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4 mr-2" />
                 Confirm & Grant ${topupAmount.toFixed(2)} Credits
+              </>
+            )}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Broadcast Custom Email Modal */}
+      <Dialog open={broadcastDialogOpen} onOpenChange={setBroadcastDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-primary" />
+              {broadcastTarget === "all" ? "Send Broadcast Email to All Users" : "Send Custom Email"}
+            </DialogTitle>
+            <DialogDescription>
+              {broadcastTarget === "all"
+                ? `Compose and send an email update to all ${usersList.length} registered users.`
+                : `Send a custom email directly to ${broadcastRecipientEmail}.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3 text-xs">
+            <div>
+              <label className="font-bold text-foreground block mb-1">Recipient Target</label>
+              <Select
+                value={broadcastTarget}
+                onValueChange={(val: "all" | "single") => {
+                  setBroadcastTarget(val);
+                  if (val === "single" && !broadcastRecipientEmail && usersList.length > 0) {
+                    setBroadcastRecipientEmail(usersList[0].email);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">📢 All Users Broadcast ({usersList.length} recipients)</SelectItem>
+                  <SelectItem value="single">👤 Single User Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {broadcastTarget === "single" && (
+              <div>
+                <label className="font-bold text-foreground block mb-1">Recipient Email Address</label>
+                <Input
+                  type="email"
+                  value={broadcastRecipientEmail}
+                  onChange={(e) => setBroadcastRecipientEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  className="h-9"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="font-bold text-foreground block mb-1">Email Subject Line</label>
+              <Input
+                value={broadcastSubject}
+                onChange={(e) => setBroadcastSubject(e.target.value)}
+                placeholder="e.g. New Features & Platform Update!"
+                className="h-9"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-foreground block mb-1">Header Title Inside Email (Optional)</label>
+              <Input
+                value={broadcastTitle}
+                onChange={(e) => setBroadcastTitle(e.target.value)}
+                placeholder="e.g. Important Product Announcement"
+                className="h-9"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-foreground block mb-1">Email Message Content</label>
+              <Textarea
+                rows={5}
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                placeholder="Write your custom email announcement here..."
+                className="text-xs leading-relaxed"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="font-bold text-foreground block mb-1">Button Label (Optional)</label>
+                <Input
+                  value={broadcastActionText}
+                  onChange={(e) => setBroadcastActionText(e.target.value)}
+                  placeholder="e.g. Open Dashboard"
+                  className="h-9"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-foreground block mb-1">Button URL (Optional)</label>
+                <Input
+                  value={broadcastActionUrl}
+                  onChange={(e) => setBroadcastActionUrl(e.target.value)}
+                  placeholder="https://lyqn.app/dashboard"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {sendingProgress && (
+              <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 text-center font-semibold text-primary">
+                <RefreshCw className="w-4 h-4 inline-block mr-2 animate-spin" />
+                {sendingProgress}
+              </div>
+            )}
+          </div>
+
+          <Button
+            onClick={handleSendCustomEmailBroadcast}
+            disabled={isSendingBroadcast || !broadcastSubject.trim() || !broadcastMessage.trim()}
+            className="w-full font-bold h-10 gap-2"
+          >
+            {isSendingBroadcast ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Sending Broadcast Email...
+              </>
+            ) : (
+              <>
+                <SendHorizontal className="w-4 h-4" />
+                {broadcastTarget === "all" ? `Send Broadcast to ${usersList.length} Users` : `Send Email to ${broadcastRecipientEmail}`}
               </>
             )}
           </Button>
