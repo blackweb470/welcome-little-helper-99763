@@ -379,13 +379,14 @@ export default function Admin() {
 
       let successCount = 0;
       let failCount = 0;
+      let lastErrorDetail = "";
 
       for (let i = 0; i < recipients.length; i++) {
         const recipient = recipients[i];
         setSendingProgress(`Sending ${i + 1} of ${recipients.length} (${recipient})...`);
 
         try {
-          const { error } = await supabase.functions.invoke("send-notification", {
+          const res = await supabase.functions.invoke("send-notification", {
             body: {
               type: "custom_email",
               data: {
@@ -399,20 +400,45 @@ export default function Admin() {
             },
           });
 
-          if (error) {
+          const resData = res.data;
+          let errorText = "";
+
+          if (res.error) {
+            try {
+              const errContext = await res.error.context?.json();
+              errorText = errContext?.error || errContext?.message || res.error.message;
+            } catch (_) {
+              errorText = res.error.message;
+            }
+          } else if (resData && !resData.success) {
+            errorText = resData.error || "Delivery failed";
+          }
+
+          if (errorText) {
             failCount++;
+            console.error(`Email error for ${recipient}:`, errorText);
+            lastErrorDetail = errorText;
           } else {
             successCount++;
           }
-        } catch (_) {
+        } catch (e: any) {
           failCount++;
+          lastErrorDetail = e.message || "Network Error";
         }
       }
 
-      toast({
-        title: "Custom Email Sent! 📧",
-        description: `Successfully sent email to ${successCount} user${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` (${failCount} failed)` : ""}`,
-      });
+      if (successCount > 0) {
+        toast({
+          title: "Custom Email Sent! 📧",
+          description: `Successfully sent email to ${successCount} user${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` (${failCount} failed: ${lastErrorDetail})` : ""}`,
+        });
+      } else {
+        toast({
+          title: "Email Sending Failed",
+          description: `Could not send email to recipients. ${lastErrorDetail}`,
+          variant: "destructive",
+        });
+      }
 
       setBroadcastDialogOpen(false);
       setBroadcastSubject("");

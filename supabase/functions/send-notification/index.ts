@@ -484,21 +484,71 @@ const handler = async (req: Request): Promise<Response> => {
         await client.close();
         emailResponse = { provider: "smtp", status: "sent", recipient: recipientEmail };
       } catch (smtpErr: any) {
-        console.warn("SMTP sending failed, falling back to Resend API:", smtpErr);
-        emailResponse = await resend.emails.send({
+        console.warn("SMTP sending failed, trying Resend API:", smtpErr);
+        let resendResult = await resend.emails.send({
           from: emailFrom,
           to: [recipientEmail],
           subject: subject,
           html: html,
         });
+
+        if (resendResult?.error) {
+          console.warn("Resend primary sender error, trying onboarding fallback:", resendResult.error);
+          resendResult = await resend.emails.send({
+            from: "LYQN AI <onboarding@resend.dev>",
+            to: [recipientEmail],
+            subject: subject,
+            html: html,
+          });
+        }
+
+        if (resendResult?.error) {
+          throw new Error(`Email Delivery Error: ${resendResult.error.message || JSON.stringify(resendResult.error)}`);
+        }
+
+        emailResponse = resendResult;
       }
     } else {
-      emailResponse = await resend.emails.send({
+      let resendResult = await resend.emails.send({
         from: emailFrom,
         to: [recipientEmail],
         subject: subject,
         html: html,
       });
+
+      if (resendResult?.error) {
+        const primaryErrorMsg = resendResult.error.message || JSON.stringify(resendResult.error);
+        console.warn("Resend primary sender error:", primaryErrorMsg);
+
+        if (emailFrom !== "LYQN AI <onboarding@resend.dev>") {
+          const fallbackResult = await resend.emails.send({
+            from: "LYQN AI <onboarding@resend.dev>",
+            to: [recipientEmail],
+            subject: subject,
+            html: html,
+          });
+
+          if (!fallbackResult?.error) {
+            resendResult = fallbackResult;
+          } else {
+            console.warn("Resend fallback sender error:", fallbackResult.error);
+          }
+        }
+      }
+
+      if (resendResult?.error) {
+        const errorMsg = resendResult.error.message || JSON.stringify(resendResult.error);
+        console.error("Resend delivery failed:", errorMsg);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Resend Error (${emailFrom}): ${errorMsg}. Note: Verify lyqn.app in Resend Dashboard (resend.com/domains) to deliver to all user email addresses.`,
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      emailResponse = resendResult;
     }
 
     console.log("Email sent successfully:", emailResponse);
@@ -513,9 +563,9 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-notification function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ success: false, error: error.message || "Failed to deliver email" }),
       {
-        status: 500,
+        status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
