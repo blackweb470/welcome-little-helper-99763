@@ -1,7 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, ArrowRight, ArrowUpRight, HelpCircle, ShieldCheck, Zap, Star, Building2, Sparkles, Mail } from "lucide-react";
+import { Check, ArrowRight, ArrowUpRight, HelpCircle, ShieldCheck, Zap, Star, Building2, Sparkles, Mail, Wallet, PlusCircle, Calculator, CheckCircle2, Clock, Shield } from "lucide-react";
 import { PolarCheckout } from "@/components/PolarCheckout";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -54,6 +54,26 @@ const TOKENS = `
     transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   }
+  .cio-pill-electric {
+    background: var(--electric);
+    color: var(--white);
+    border: 1px solid var(--electric);
+    border-radius: 9999px;
+    padding: 14px 28px;
+    font-weight: 700;
+    font-size: 15px;
+    transition: transform .25s ease, box-shadow .25s ease, background .2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  .cio-pill-electric:hover {
+    background: #0056cc;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0,106,242,0.3);
+  }
   .cio-pill-white {
     background: var(--white);
     color: var(--ink);
@@ -88,6 +108,29 @@ const TOKENS = `
     opacity: 1;
     transform: translateY(0);
   }
+  .calc-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    background: #e2e8f0;
+    outline: none;
+  }
+  .calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #006af2;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,106,242,0.4);
+    transition: transform 0.15s ease;
+  }
+  .calc-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
 `;
 
 const useReveal = () => {
@@ -114,6 +157,7 @@ const Pricing = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [calcAmount, setCalcAmount] = useState<number>(25);
   useReveal();
 
   useEffect(() => {
@@ -126,23 +170,23 @@ const Pricing = () => {
     setIsNewUser(params.get('new_user') === 'true');
   }, []);
 
-  const defaultProductId = import.meta.env.VITE_POLAR_PRODUCT_ID || "f9139046-cf7d-453a-9b23-03a4efd2e5a0";
+  const defaultProductId = import.meta.env.VITE_POLAR_PRODUCT_ID || "8c68395a-7403-4c73-8f53-456737a22fe4";
 
-  const plans = [
+  const depositOptions = [
     {
       name: "Starter Deposit",
       price: 5,
       productId: defaultProductId,
-      description: "For solo founders & small business projects",
+      description: "Ideal for solo founders testing AI customer responses",
       icon: Star,
       features: [
-        { num: "01", text: "$2.00 free starter credit on signup (~400 msgs)" },
-        { num: "02", text: "Pay-As-You-Go ($0.005 / AI response)" },
-        { num: "03", text: "Up to ~1,000 AI message responses" },
-        { num: "04", text: "Full AI learning & document upload" },
-        { num: "05", text: "Live agent transfer & proactive rules" },
-        { num: "06", text: "Website crawler & deep knowledge" },
-        { num: "07", text: "Create up to 5 businesses" },
+        { num: "01", text: "$2.00 FREE starter bonus on signup (~400 msgs)" },
+        { num: "02", text: "Pay-As-You-Go ($0.005 / AI message response)" },
+        { num: "03", text: "~1,000 AI message responses included" },
+        { num: "04", text: "Full AI Learning & Document Training" },
+        { num: "05", text: "Website Deep Crawler & Knowledge Base" },
+        { num: "06", text: "Live Agent Handoff & Proactive Chat Rules" },
+        { num: "07", text: "Funds NEVER expire" },
       ],
       cta: "Deposit $5 Credits",
       popular: false,
@@ -152,16 +196,16 @@ const Pricing = () => {
       name: "Growth Deposit",
       price: 10,
       productId: defaultProductId,
-      description: "For growing teams scaling customer support",
+      description: "Most popular for growing e-commerce & SaaS products",
       icon: Zap,
       features: [
         { num: "01", text: "Everything in Starter" },
-        { num: "02", text: "Pay-As-You-Go ($0.005 / AI response)" },
-        { num: "03", text: "Up to ~2,000 AI message responses" },
-        { num: "04", text: "Auto-recharge low balance option" },
-        { num: "05", text: "Sentiment analysis & visitor tracking" },
-        { num: "06", text: "WhatsApp & custom integrations" },
-        { num: "07", text: "Priority support" },
+        { num: "02", text: "Pay-As-You-Go ($0.005 / AI message response)" },
+        { num: "03", text: "~2,000 AI message responses included" },
+        { num: "04", text: "Auto-Topup Low Balance Option" },
+        { num: "05", text: "Sentiment Analysis & Visitor Tracking" },
+        { num: "06", text: "WhatsApp & Custom Channel Integrations" },
+        { num: "07", text: "Funds NEVER expire" },
       ],
       cta: "Deposit $10 Credits",
       popular: true,
@@ -171,16 +215,16 @@ const Pricing = () => {
       name: "Scale Deposit",
       price: 25,
       productId: defaultProductId,
-      description: "For high-volume operations & multi-brand stores",
+      description: "For high-volume customer support & multi-brand businesses",
       icon: Building2,
       features: [
         { num: "01", text: "Everything in Growth" },
-        { num: "02", text: "Pay-As-You-Go ($0.005 / AI response)" },
-        { num: "03", text: "Up to ~5,000 AI message responses" },
-        { num: "04", text: "Unlimited custom knowledge training" },
-        { num: "05", text: "Custom API & Webhook access" },
-        { num: "06", text: "Team member management" },
-        { num: "07", text: "Dedicated account manager" },
+        { num: "02", text: "Pay-As-You-Go ($0.005 / AI message response)" },
+        { num: "03", text: "~5,000 AI message responses included" },
+        { num: "04", text: "Unlimited Document & Website Crawler" },
+        { num: "05", text: "Custom API & Webhook Access" },
+        { num: "06", text: "Team Member Collaboration" },
+        { num: "07", text: "Funds NEVER expire" },
       ],
       cta: "Deposit $25 Credits",
       popular: false,
@@ -189,11 +233,11 @@ const Pricing = () => {
   ];
 
   const faqs = [
-    { q: "How does Pay-As-You-Go credit wallet work?", a: "You deposit credits into your wallet (e.g. $5 or $10) and only pay $0.005 per AI message response. Credits never expire!" },
-    { q: "Do I get free starter credits?", a: "Yes! Every new user receives $2.00 in free starter credit (~400 AI responses) upon registration with no credit card required." },
-    { q: "What happens when my credit balance runs low?", a: "When your balance falls below $2.00, you will see a top-up alert. You can deposit more credits anytime or enable auto-recharge." },
-    { q: "Are all AI features included?", a: "Yes! All features including AI Learning, Website Crawler, Document Processing, Live Agent Handoff, and Proactive Rules are unlocked for all credit wallet users." },
-    { q: "Do unused credits expire?", a: "Never! Your deposited credits remain in your account indefinitely until used for customer chat responses." },
+    { q: "How does the Pay-As-You-Go Credit Wallet work?", a: "Unlike rigid monthly subscriptions that charge you regardless of usage, LYQN uses a transparent credit wallet. You deposit funds (e.g., $5, $10, $25, or custom amounts) and only pay $0.005 for each AI assistant message response. Your deposited credits NEVER expire!" },
+    { q: "Do I get free starter credits when I sign up?", a: "Yes! Every new user automatically receives $2.00 in free starter credit upon registration (~400 AI message responses). No credit card is required to sign up and start testing." },
+    { q: "What happens when my credit balance runs low?", a: "When your wallet balance falls below $2.00, your dashboard notifies you. You can deposit additional credits anytime or enable auto-topup to ensure uninterrupted AI support." },
+    { q: "Are all AI features unlocked on Pay-As-You-Go?", a: "100% YES! All users get full access to AI Learning, Document Training, Website Deep Crawler, Live Agent Handoff, Proactive Chat Rules, and Analytics. We do not gate features behind expensive monthly tiers." },
+    { q: "Do my wallet credits ever expire?", a: "Never! Your deposited credits remain in your wallet indefinitely until used for AI customer responses." },
   ];
 
   const schema = JSON.stringify({
@@ -209,11 +253,13 @@ const Pricing = () => {
     }))
   });
 
+  const calculatedResponses = Math.round(calcAmount / 0.005);
+
   return (
     <div className="cio-pricing min-h-screen">
       <SEO
-        title="LYQN Pricing: Simple, Transparent Plans"
-        description="Choose the perfect LYQN plan for your business. Start with a 2-week free trial. Outperform competitors with our affordable AI chatbot and live agent integration."
+        title="LYQN Pay-As-You-Go Pricing: $0.005/Msg • No Monthly Subscriptions"
+        description="Transparent Pay-As-You-Go credit wallet. Only pay $0.005 per AI message response. Get $2.00 free starter credit on signup. Funds never expire."
         url="https://lyqn.app/pricing"
         schema={schema}
       />
@@ -231,7 +277,7 @@ const Pricing = () => {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-6" style={{ fontSize: 14, fontWeight: 500, color: "#111" }}>
-            <Link to="/pricing" className="hover:opacity-70 font-semibold">Pricing</Link>
+            <Link to="/pricing" className="hover:opacity-70 font-semibold text-[#006af2]">Pricing</Link>
             <Link to="/blog" className="hover:opacity-70">Blog</Link>
             <Link to="/docs" className="hover:opacity-70">Docs</Link>
           </nav>
@@ -239,15 +285,15 @@ const Pricing = () => {
           <div className="flex items-center gap-4">
             {isNewUser ? (
               <span className="text-xs font-semibold px-3.5 py-1.5 bg-[#e2eafc] text-[#006af2] border border-blue-200/80 rounded-full">
-                Step 2 of 2: Choose Your Plan
+                Step 2 of 2: Claim Your $2.00 Free Bonus
               </span>
             ) : (
               <>
                 <button onClick={() => navigate("/auth")} className="hidden sm:inline-block font-medium hover:opacity-70 text-sm text-[#111]">
                   Log in
                 </button>
-                <button onClick={() => navigate(userId ? "/dashboard" : "/auth")} className="cio-pill-primary text-sm">
-                  {userId ? "Dashboard →" : "Start free trial"}
+                <button onClick={() => navigate(userId ? "/dashboard?tab=billing" : "/auth")} className="cio-pill-primary text-sm">
+                  {userId ? "Go to Wallet →" : "Get $2.00 Free Credit"}
                 </button>
               </>
             )}
@@ -259,15 +305,16 @@ const Pricing = () => {
       <main className="container mx-auto px-6 pt-12 pb-24">
         {/* Hero Section */}
         <div className="mb-16 cio-reveal">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#e2eafc] text-[#006af2] border border-blue-200/60 mb-6">
-            <span>SUPPORT FOR THE SMALL SIDE</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-[#e2eafc] text-[#006af2] border border-blue-200/80 mb-6 uppercase tracking-wider">
+            <Zap className="w-3.5 h-3.5" />
+            <span>100% PAY-AS-YOU-GO • NO SUBSCRIPTION LOCK-IN</span>
           </div>
 
           <div className="grid lg:grid-cols-12 gap-8 items-end">
             <div className="lg:col-span-8">
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-[#111111] leading-[1.02]">
-                Big support. <br />
-                <span className="text-[#006af2] italic font-normal font-sans">Small bill.</span>
+                Pay only for what <br />
+                you use. <span className="text-[#006af2] italic font-normal font-sans">$0.005 / msg.</span>
               </h1>
             </div>
 
@@ -275,40 +322,40 @@ const Pricing = () => {
               <div className="flex items-start lg:justify-end">
                 <div className="bg-white rounded-2xl p-5 border border-black/10 shadow-sm flex items-center gap-4">
                   <div className="flex flex-col items-center">
-                    <span className="text-4xl font-extrabold text-[#006af2] leading-none">24</span>
-                    <span className="text-xs font-bold text-gray-400 mt-0.5">/7</span>
+                    <span className="text-3xl font-extrabold text-[#006af2] leading-none">$2.00</span>
+                    <span className="text-[10px] font-bold text-emerald-600 mt-1 uppercase tracking-wider">FREE BONUS</span>
                   </div>
                   <div className="h-10 w-[1px] bg-gray-200" />
-                  <div className="text-xs font-medium text-gray-600 max-w-[140px] leading-snug">
-                    Always online AI support for your users
+                  <div className="text-xs font-medium text-gray-600 max-w-[150px] leading-snug">
+                    Get ~400 free AI message responses instantly on sign up.
                   </div>
                 </div>
               </div>
               <p className="text-base sm:text-lg text-[#444444] leading-relaxed">
-                An affordable, self-learning AI teammate for founders who need every customer answered.
+                Deposit funds starting at $5 into your credit wallet. No monthly subscription commitments, no feature gating, and funds <strong>never expire</strong>.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Section 01 Header & Billing Switcher */}
+        {/* Section 01 Header */}
         <div className="border-t border-b border-black/10 py-4 mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-semibold uppercase tracking-wider text-[#666666] cio-reveal">
           <div className="flex items-center gap-2">
             <span className="text-[#006af2] font-bold">01</span>
             <span>/</span>
-            <span className="text-[#111111]">CHOOSE YOUR LEVEL</span>
+            <span className="text-[#111111]">SELECT DEPOSIT AMOUNT</span>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-xs text-gray-500 uppercase tracking-widest">
-            <span className="text-[#111111] font-bold">MONTHLY</span>
+            <span className="text-[#006af2] font-bold">$0.005 / RESPONSE</span>
             <span className="text-gray-300">/</span>
-            <span className="text-gray-400">NO ENTERPRISE THEATRE</span>
+            <span className="text-gray-600 font-bold">NO EXPIRATION</span>
           </div>
         </div>
 
-        {/* 3-Column Plan Cards */}
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch mb-20 cio-reveal">
-          {plans.map((plan, idx) => {
+        {/* 3-Column Deposit Cards */}
+        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8 items-stretch mb-16 cio-reveal">
+          {depositOptions.map((plan, idx) => {
             return (
               <div
                 key={plan.name}
@@ -326,10 +373,10 @@ const Pricing = () => {
                 )}
 
                 <div>
-                  {/* Plan Category Tag */}
+                  {/* Option Category Tag */}
                   <div className="text-xs font-bold uppercase tracking-wider mb-6 flex items-center gap-2">
                     <span className={plan.isDark ? "text-[#abffae]" : "text-[#006af2]"}>
-                      0{idx + 1} / PLAN
+                      0{idx + 1} / DEPOSIT OPTION
                     </span>
                   </div>
 
@@ -342,8 +389,8 @@ const Pricing = () => {
                       <span className={`text-4xl sm:text-5xl font-extrabold ${plan.isDark ? "text-white" : "text-[#111111]"}`}>
                         ${plan.price}
                       </span>
-                      <span className={`text-sm font-medium ml-1 ${plan.isDark ? "text-gray-400" : "text-gray-500"}`}>
-                        /mo
+                      <span className={`text-xs font-semibold ml-1 ${plan.isDark ? "text-gray-400" : "text-gray-500"}`}>
+                        one-time
                       </span>
                     </div>
                   </div>
@@ -383,11 +430,91 @@ const Pricing = () => {
           })}
         </div>
 
-        {/* Section 02 Header & Reassurance Grid */}
+        {/* Section 02 Interactive Calculator Widget */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
               <span className="text-[#006af2] font-bold">02</span>
+              <span>/</span>
+              <span className="text-[#111111]">RESPONSE ESTIMATOR CALCULATOR</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-black/10 shadow-lg">
+            <div className="grid lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-7 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#006af2] flex items-center justify-center font-bold">
+                    <Calculator className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#111111]">Estimate Your AI Capacity</h3>
+                    <p className="text-xs text-gray-500">Drag the slider to see how many AI customer responses your deposit buys</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="text-sm text-gray-600">Selected Deposit Amount:</span>
+                    <span className="text-3xl text-[#006af2] font-extrabold">${calcAmount} USD</span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="5"
+                    max="200"
+                    step="5"
+                    value={calcAmount}
+                    onChange={(e) => setCalcAmount(Number(e.target.value))}
+                    className="calc-slider"
+                  />
+
+                  <div className="flex justify-between text-xs font-semibold text-gray-400">
+                    <span>$5 (Min)</span>
+                    <span>$50</span>
+                    <span>$100</span>
+                    <span>$200 (Max)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 bg-[#111111] text-white p-8 rounded-2xl flex flex-col justify-between space-y-6 shadow-xl">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#abffae] block mb-1">Estimated Capacity</span>
+                  <div className="text-4xl sm:text-5xl font-extrabold text-white">
+                    ~{calculatedResponses.toLocaleString()}
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium block mt-1">AI Customer Message Responses</span>
+                </div>
+
+                <div className="border-t border-white/10 pt-4 space-y-2 text-xs text-gray-300">
+                  <div className="flex justify-between">
+                    <span>Rate Per Response:</span>
+                    <span className="font-bold text-white">$0.005</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Expiration Date:</span>
+                    <span className="font-bold text-[#abffae]">Never Expire</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => navigate(userId ? "/dashboard?tab=billing" : "/auth")}
+                  className="cio-pill-white text-sm w-full font-bold"
+                >
+                  <span>Deposit ${calcAmount} Now</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 03 Reassurance Grid */}
+        <div className="mb-20 cio-reveal">
+          <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
+            <div className="flex items-center gap-2">
+              <span className="text-[#006af2] font-bold">03</span>
               <span>/</span>
               <span className="text-[#111111]">THE REASSURANCE</span>
             </div>
@@ -396,16 +523,16 @@ const Pricing = () => {
           <div className="grid lg:grid-cols-12 gap-8 items-center mb-8">
             <div className="lg:col-span-4">
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#111111] leading-tight">
-                Start useful.<br />Stay in control.
+                No surprises.<br />Complete control.
               </h2>
             </div>
 
             <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
               {[
-                { num: "01", label: "2-week free trial" },
-                { num: "02", label: "No card to start" },
-                { num: "03", label: "No setup fees" },
-                { num: "04", label: "No hidden charges" },
+                { num: "01", label: "$2.00 Free Credit on Signup" },
+                { num: "02", label: "No Monthly Subscription Lock" },
+                { num: "03", label: "Funds Never Expire" },
+                { num: "04", label: "All AI Features Included" },
               ].map((item, idx) => (
                 <div key={idx} className="bg-white p-5 rounded-2xl border border-black/10 shadow-sm flex flex-col justify-between">
                   <span className="text-xs font-bold text-[#006af2] mb-2">{item.num}</span>
@@ -416,30 +543,30 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 03 Header & Included Features */}
+        {/* Section 04 Included Core Features */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">03</span>
+              <span className="text-[#006af2] font-bold">04</span>
               <span>/</span>
-              <span className="text-[#111111]">ENTERPRISE CORE</span>
+              <span className="text-[#111111]">UNLOCKED FOR ALL USERS</span>
             </div>
           </div>
 
           <div className="bg-white rounded-3xl p-8 sm:p-12 border border-black/10 shadow-sm">
             <h3 className="text-2xl font-bold text-[#111111] mb-8">
-              Included standard in every level
+              All enterprise features included in every wallet deposit
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-y-6 gap-x-8">
               {[
                 "Self-Learning AI",
-                "Conversation Memory",
-                "24/7 Availability",
-                "Multi-Language",
-                "Mobile Responsive",
-                "Real-Time Notifications",
-                "Secure Storage",
-                "GDPR Compliant",
+                "Website Deep Crawler",
+                "PDF & Document Uploads",
+                "Live Agent Handoff",
+                "Proactive Chat Rules",
+                "Multi-Language Support",
+                "Real-Time Email Alerts",
+                "WhatsApp Integration",
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-full bg-blue-50 text-[#006af2] flex items-center justify-center shrink-0">
@@ -452,11 +579,11 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 04 Header & FAQ Section */}
+        {/* Section 05 FAQ Section */}
         <div className="mb-20 cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">04</span>
+              <span className="text-[#006af2] font-bold">05</span>
               <span>/</span>
               <span className="text-[#111111]">FREQUENTLY ASKED QUESTIONS</span>
             </div>
@@ -468,7 +595,7 @@ const Pricing = () => {
                 Frequently asked questions.
               </h2>
               <p className="text-gray-600 text-base leading-relaxed">
-                Everything you need to know about LYQN pricing and plans. Have more questions?{" "}
+                Everything you need to know about LYQN Pay-As-You-Go credit wallet pricing. Have more questions?{" "}
                 <button
                   onClick={() => navigate("/docs")}
                   className="font-semibold text-[#006af2] underline underline-offset-4 hover:text-black transition-colors"
@@ -503,29 +630,29 @@ const Pricing = () => {
           </div>
         </div>
 
-        {/* Section 05 Banner & Autopilot CTA */}
+        {/* Section 06 Banner & Starter Bonus CTA */}
         <div className="cio-reveal">
           <div className="border-t border-b border-black/10 py-4 mb-8 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#666666]">
             <div className="flex items-center gap-2">
-              <span className="text-[#006af2] font-bold">05</span>
+              <span className="text-[#006af2] font-bold">06</span>
               <span>/</span>
-              <span className="text-[#111111]">PUT YOUR SUPPORT ON AUTOPILOT</span>
+              <span className="text-[#111111]">CLAIM YOUR $2.00 FREE STARTER BONUS</span>
             </div>
           </div>
 
           <div className="bg-[#111111] text-white p-10 sm:p-14 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 shadow-2xl">
             <div>
               <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-3 text-white">
-                Start free trial <span className="text-[#abffae]">↗</span>
+                Claim $2.00 Free Credit <span className="text-[#abffae]">↗</span>
               </h2>
               <p className="text-gray-300 text-base max-w-lg">
-                No credit card required. Experience 14 days of full AI automation for your business.
+                No credit card required. Get ~400 free AI message responses instantly upon signup to train your AI assistant.
               </p>
             </div>
 
             <button
               onClick={() => navigate("/auth")}
-              className="cio-pill-white text-sm shrink-0"
+              className="cio-pill-white text-sm shrink-0 font-bold"
             >
               <span>Get Started Now</span>
               <ArrowRight className="w-4 h-4" />
@@ -547,7 +674,7 @@ const Pricing = () => {
                 <span>LYQN</span>
               </div>
               <p style={{ fontSize: 14, color: "var(--slate)", lineHeight: 1.55, maxWidth: 320 }} className="mb-3">
-                AI-powered customer support platform that helps businesses deliver exceptional experiences across every channel.
+                Pay-As-You-Go AI customer support platform. Outperform traditional live chat with self-learning AI and instant handoffs.
               </p>
               <a href="mailto:hello@lyqn.app" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80" style={{ color: "var(--ink)" }}>
                 <Mail className="w-4 h-4" />
