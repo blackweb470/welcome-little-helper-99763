@@ -61,11 +61,15 @@ interface TransactionItem {
   created_at: string;
 }
 
+const ADMIN_CACHE_KEY = "lyqn_admin_dashboard_cache_v2";
+
 export default function Admin() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<string | null>(null);
+  const [isUsingCache, setIsUsingCache] = useState(false);
 
   // Analytics Stats
   const [stats, setStats] = useState({
@@ -109,11 +113,37 @@ export default function Admin() {
   const [sendingProgress, setSendingProgress] = useState("");
 
   useEffect(() => {
-    fetchAdminData();
+    // 1. Instantly load cached dashboard data if available
+    let hasLoadedCache = false;
+    try {
+      const cachedRaw = localStorage.getItem(ADMIN_CACHE_KEY);
+      if (cachedRaw) {
+        const cached = JSON.parse(cachedRaw);
+        if (cached && cached.usersList && Array.isArray(cached.usersList) && cached.usersList.length > 0) {
+          setUsersList(cached.usersList);
+          setBusinessesList(cached.businessesList || []);
+          setTransactionsList(cached.transactionsList || []);
+          setStats(cached.stats || stats);
+          setLastUpdatedTime(cached.updatedAt || null);
+          setIsUsingCache(true);
+          setIsAuthorized(true);
+          setLoading(false);
+          hasLoadedCache = true;
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load admin cache from localStorage:", e);
+    }
+
+    // 2. Perform live fetch / background revalidation
+    fetchAdminData(!hasLoadedCache);
   }, []);
 
-  const fetchAdminData = async () => {
-    setLoading(true);
+  const fetchAdminData = async (showLoadingSpinner = true) => {
+    if (showLoadingSpinner) {
+      setLoading(true);
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || session.user.email !== "akhatasebhudojoseph1@gmail.com") {
@@ -272,7 +302,7 @@ export default function Admin() {
 
       setTransactionsList(formattedTransactions);
 
-      setStats({
+      const newStats = {
         totalUsers: totalUsers || formattedUsers.length,
         totalBusinesses: formattedBusinesses.length,
         totalConversations: totalConversations || 0,
@@ -280,7 +310,26 @@ export default function Admin() {
         totalSystemBalance: systemBalanceSum,
         totalDepositsAmount: depositsTotal,
         planCounts,
-      });
+      };
+
+      setStats(newStats);
+
+      // Save fresh data into client-side cache
+      const nowISO = new Date().toISOString();
+      try {
+        const cachePayload = {
+          usersList: formattedUsers,
+          businessesList: formattedBusinesses,
+          transactionsList: formattedTransactions,
+          stats: newStats,
+          updatedAt: nowISO,
+        };
+        localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(cachePayload));
+        setLastUpdatedTime(nowISO);
+        setIsUsingCache(false);
+      } catch (cacheErr) {
+        console.warn("Failed to write admin cache:", cacheErr);
+      }
     } catch (err) {
       console.error("Error fetching admin stats:", err);
       toast({
@@ -550,8 +599,20 @@ export default function Admin() {
                 <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold">
                   Live System
                 </Badge>
+                {isUsingCache && (
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-[10px] uppercase font-semibold">
+                    ⚡ Fast Cache Active
+                  </Badge>
+                )}
               </h1>
-              <p className="text-xs text-muted-foreground">Platform metrics, user wallets, and custom email broadcasts</p>
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <span>Platform metrics, user wallets, and custom email broadcasts</span>
+                {lastUpdatedTime && (
+                  <span className="text-[11px] text-muted-foreground/80 border-l border-border/60 pl-2">
+                    Last updated: {formatDate(lastUpdatedTime)}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
 
@@ -560,9 +621,9 @@ export default function Admin() {
               <Mail className="w-4 h-4" />
               Send Broadcast Email
             </Button>
-            <Button size="sm" variant="outline" onClick={fetchAdminData} disabled={loading} className="gap-2 font-medium">
+            <Button size="sm" variant="outline" onClick={() => fetchAdminData(true)} disabled={loading} className="gap-2 font-medium">
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+              {loading ? "Syncing..." : "Sync Live Data"}
             </Button>
           </div>
         </div>
